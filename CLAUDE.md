@@ -67,6 +67,60 @@ app/src/main/java/com/jpishimwe/syncplayer/
 - **Coroutines** for async work — no callbacks, no RxJava
 - Keep composables small and focused; extract reusable components
 
+## Commit Messages
+
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
+
+```
+<type>(<scope>): <subject>
+
+<body>
+```
+
+### Types
+
+| Type | When to use |
+|------|-------------|
+| `feat` | New feature or user-facing behavior |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `test` | Adding or updating tests |
+| `chore` | Maintenance (dependencies, config, tooling) |
+| `build` | Build system or dependency changes |
+| `ci` | CI/CD pipeline changes |
+
+### Scopes
+
+Use the feature area as scope: `library`, `playback`, `playlists`, `metadata`, `sync`, `ui`, `db`, `nav`, `settings`. Scope is optional for cross-cutting changes.
+
+### Rules
+
+- Subject line in **imperative mood** ("Add feature" not "Added feature")
+- Subject line **50 characters or less** (72 max)
+- No period at the end of the subject line
+- Blank line between subject and body
+- Body wraps at **72 characters**
+- Body explains **what and why**, not how
+- Use `BREAKING CHANGE:` in the body or `!` after type/scope for breaking changes
+
+### Examples
+
+```
+feat(library): scan device for audio files
+
+Query MediaStore for audio files and display them in a
+scrollable list with title, artist, and duration.
+```
+
+```
+fix(playback): prevent crash when audio focus is lost
+```
+
+```
+docs: add project plan and architecture overview
+```
+
 ## Documentation
 
 Project documentation lives in `docs/` at the project root.
