@@ -2,26 +2,35 @@
 
 Local audio player for Android that syncs metadata (play counts, playlists, favorites) across devices.
 
-## Vision
+## Quick Reference
 
-SyncPlayer is a polished local music player where users' listening data stays consistent across their devices. The app plays audio from on-device storage and syncs metadata — not the audio files themselves — so playlists, play counts, and preferences carry over seamlessly.
+**Before starting work, read the relevant docs:**
+- 🏗️ **New feature?** → Read `docs/process.md` first
+- 📦 **Adding dependencies?** → Read `docs/dependencies.md` first
+- 💻 **Writing code?** → Reference `docs/style-guide.md`
+- 🏛️ **Architecture questions?** → Read `docs/architecture.md`
 
-### Core Features (Planned)
-
-- Local audio playback (on-device music library)
-- Library browsing (songs, albums, artists, playlists)
-- Playlist creation and management
-- Play count and listening history tracking
-- Cross-device metadata sync (playlists, play counts, favorites)
-- Now-playing controls with notification and lock screen support
-
-## Project Info
+## Project Essentials
 
 - **Package**: `com.jpishimwe.syncplayer`
 - **Min SDK**: 34 | **Target SDK**: 36
-- **Language**: Kotlin 2.0.21
+- **Language**: Kotlin 2.2.10 (bundled by AGP 9)
 - **UI**: Jetpack Compose + Material 3
-- **Build**: Gradle 9.1.0, Kotlin DSL, version catalog (`gradle/libs.versions.toml`)
+- **Architecture**: MVVM, single Activity
+- **Build**: AGP 9.0.0, Gradle 9.1.0, Kotlin DSL
+
+## Core Tech Stack
+
+| Category | Library | Version |
+|----------|---------|---------|
+| DI | Hilt | 2.59 |
+| DB | Room | 2.7.1 |
+| KSP | KSP | 2.3.5 |
+| Images | Coil | 3.1.0 |
+| Navigation | Navigation Compose | 2.9.0 |
+| Tests | JUnit 5 + Turbine | 5.11.4 / 1.2.1 |
+
+**See `docs/dependencies.md` for full stack details and AGP 9 compatibility notes.**
 
 ## Build Commands
 
@@ -29,47 +38,45 @@ SyncPlayer is a polished local music player where users' listening data stays co
 gradlew.bat assembleDebug        # Build debug APK
 gradlew.bat test                 # Unit tests
 gradlew.bat connectedAndroidTest # Instrumented tests
+gradlew.bat --stop               # Kill daemons (file locks)
 ```
 
-## Architecture — MVVM
-
-Single Activity, Jetpack Compose, MVVM pattern.
+## Project Structure
 
 ```
 app/src/main/java/com/jpishimwe/syncplayer/
-├── ui/           # Screens, composables, ViewModels
-│   ├── theme/    # Color, Theme, Type
-│   └── screens/  # Feature screens (library, player, playlists, etc.)
-├── data/         # Repositories, local DB, sync logic
-│   ├── local/    # Room database, DAOs
-│   └── sync/     # Metadata sync service
-├── model/        # Data classes (Song, Playlist, Album, Artist)
-└── di/           # Dependency injection setup
+├── ui/             # Screens, composables, ViewModels
+│   ├── theme/      # Color, Theme, Type
+│   ├── components/ # Reusable UI components
+│   └── <feature>/  # Feature packages (library, player, etc.)
+├── data/           # Repositories, local DB
+│   └── local/      # Room database, DAOs
+├── model/          # Data classes (Song, Album, Artist)
+└── di/             # Hilt modules
 ```
 
-- **UI layer**: Compose screens observe ViewModel state via `StateFlow`
-- **ViewModel**: Holds UI state, calls into repositories
-- **Repository**: Single source of truth, coordinates local DB and sync
-- **Local DB**: Room for songs, playlists, play counts, metadata
+## Quick Guidelines
 
-## Coding Guidelines
+### Naming
+- Composables: `PascalCase` (e.g., `LibraryScreen`)
+- ViewModels: `FeatureViewModel` (e.g., `LibraryViewModel`)
+- Repositories: `FeatureRepository` (e.g., `SongRepository`)
+- State: `FeatureUiState` (e.g., `LibraryUiState`)
 
-- **Compose-first UI** — no XML layouts, no Fragments
-- **State hoisting** — composables receive state and events as parameters; ViewModels own the state
-- **Unidirectional data flow** — State flows down, events flow up
-- **Naming**:
-  - Composables: `PascalCase` (e.g., `NowPlayingScreen`, `SongListItem`)
-  - ViewModels: `FeatureNameViewModel` (e.g., `LibraryViewModel`)
-  - Repositories: `FeatureNameRepository` (e.g., `PlaylistRepository`)
-  - State classes: `FeatureNameUiState` (e.g., `LibraryUiState`)
-- **Package by feature** over package by layer where possible
-- **Prefer `StateFlow`** over `LiveData` for reactive state
-- **Coroutines** for async work — no callbacks, no RxJava
-- Keep composables small and focused; extract reusable components
+### Patterns
+- **State hoisting**: ViewModels own state, composables receive it
+- **Testable composables**: Every `FooScreen()` needs `FooScreenContent()` for testing
+- **StateFlow over LiveData**: Always use `StateFlow` for reactive state
+- **Sealed interfaces**: For state variants and events
 
-## Commit Messages
+### File Organization
+- One top-level composable per file
+- ViewModels in same package as screen
+- Max 300 lines per file
 
-Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
+**See `docs/style-guide.md` for complete coding standards.**
+
+## Commit Format
 
 ```
 <type>(<scope>): <subject>
@@ -77,72 +84,70 @@ Follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
 <body>
 ```
 
-### Types
+**Types**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`  
+**Scopes**: `library`, `playback`, `playlists`, `metadata`, `sync`, `ui`, `db`, `nav`, `settings`
 
-| Type | When to use |
-|------|-------------|
-| `feat` | New feature or user-facing behavior |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `test` | Adding or updating tests |
-| `chore` | Maintenance (dependencies, config, tooling) |
-| `build` | Build system or dependency changes |
-| `ci` | CI/CD pipeline changes |
-
-### Scopes
-
-Use the feature area as scope: `library`, `playback`, `playlists`, `metadata`, `sync`, `ui`, `db`, `nav`, `settings`. Scope is optional for cross-cutting changes.
-
-### Rules
-
-- Subject line in **imperative mood** ("Add feature" not "Added feature")
-- Subject line **50 characters or less** (72 max)
-- No period at the end of the subject line
-- Blank line between subject and body
-- Body wraps at **72 characters**
-- Body explains **what and why**, not how
-- Use `BREAKING CHANGE:` in the body or `!` after type/scope for breaking changes
-
-### Examples
-
+**Examples:**
 ```
-feat(library): scan device for audio files
-
-Query MediaStore for audio files and display them in a
-scrollable list with title, artist, and duration.
+feat(library): add artist filtering to song list
+fix(playback): prevent crash on missing audio file
+docs(library): add album view feature plan
 ```
 
-```
-fix(playback): prevent crash when audio focus is lost
-```
+## Documentation Structure
 
 ```
-docs: add project plan and architecture overview
-```
-
-## Documentation
-
-Project documentation lives in `docs/` at the project root.
-
-```
+CLAUDE.md              # This file
 docs/
-└── features/   # Feature planning docs (one file per feature)
+├── process.md         # Implementation workflow
+├── architecture.md    # MVVM pattern details
+├── dependencies.md    # Tech stack & compatibility
+├── style-guide.md     # Coding conventions
+└── features/
+    └── <feature-name>/
+        ├── plan.md    # Before implementation
+        └── design.md  # After implementation
 ```
 
-- Feature plans go in `docs/features/` (e.g., `docs/features/library-browsing.md`)
-- Use these docs to capture requirements, design decisions, and scope before implementation
+## AI Instructions
 
-## Instructions for AI
+### Start Here
 
-- **Always enter plan mode first** before implementing any task. Explore the codebase, design the approach, and get approval before writing code. No exceptions.
-- When planning a new feature, write the plan to `docs/features/<feature-name>.md` before implementing.
-- Before implementing any feature, read its doc in `docs/features/` first. If no doc exists, create one during plan mode.
-- Read relevant files before making changes. Do not guess at code structure.
-- Follow the MVVM pattern described above. Do not introduce other patterns.
-- Keep changes minimal and focused on what was asked. No drive-by refactors.
-- When adding a new feature, place files in the correct package per the architecture above.
-- Add new dependencies to `gradle/libs.versions.toml` — never hardcode versions in `build.gradle.kts`.
-- Prefer extending existing code over creating new files when reasonable.
-- Write idiomatic Kotlin: use data classes, sealed classes/interfaces for state, extension functions where natural.
-- Do not add comments for self-explanatory code. Only comment non-obvious logic.
+1. **Clarify first**: If request is ambiguous, ask questions before proceeding
+2. **Read relevant docs**: Check the list at the top for what to read
+3. **Follow the process**: See `docs/process.md` for step-by-step workflow
+
+### Key Principles
+
+- **Read before changing**: Always examine existing code first
+- **Incremental builds**: Build after each layer (deps → models → VM → UI → tests)
+- **Explain as you go**: Before each layer, briefly explain what and why
+- **Stay focused**: No drive-by refactors, only requested changes
+- **Use version catalog**: Never hardcode dependency versions
+
+### When to Stop and Ask
+
+- Request is ambiguous or has multiple valid interpretations
+- Multiple approaches exist (present options with trade-offs)
+- Design decision will significantly affect future features
+- Unsure about scope boundaries
+
+### Quality Checklist
+
+Before marking any work complete:
+- ✅ `assembleDebug` succeeds
+- ✅ `test` passes
+- ✅ Follows naming conventions
+- ✅ Testable composable pattern used
+- ✅ No hardcoded strings
+- ✅ Design doc complete (if applicable)
+
+## Current Status
+
+- **Phase**: Early development
+- **Focus**: Core music playback and library features
+- **Next up**: Media scanning, playback service
+
+---
+
+**📚 Remember**: This file is just the overview. Read the specific docs before starting work!

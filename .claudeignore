@@ -1,0 +1,89 @@
+# .claudeignore - Reduces token usage in Claude Code
+# Works like .gitignore - excludes files from Claude's context
+
+# ============================================================================
+# BUILD OUTPUTS - Never need these
+# ============================================================================
+build/
+app/build/
+**/build/
+*.apk
+*.aab
+*.dex
+*.class
+
+# Gradle cache and wrapper
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+gradlew
+gradlew.bat
+
+# ============================================================================
+# GENERATED CODE - Don't read generated files
+# ============================================================================
+app/generated/
+**/generated/
+**/*.generated.kt
+
+# KSP generated code
+**/ksp/
+
+# ============================================================================
+# IDE FILES - Not part of source code
+# ============================================================================
+.idea/
+*.iml
+.DS_Store
+*.swp
+*.swo
+*~
+local.properties
+
+# ============================================================================
+# RESOURCES - Read only when actively working on UI
+# ============================================================================
+# Uncomment these if NOT working on UI/resources:
+# app/src/main/res/drawable/
+# app/src/main/res/drawable-*/
+# app/src/main/res/mipmap-*/
+# app/src/main/res/font/
+
+# ============================================================================
+# DOCUMENTATION - Read selectively via direct reference
+# ============================================================================
+# Uncomment when NOT working on documentation:
+# docs/
+
+# ============================================================================
+# TEST ARTIFACTS - Read only when working on tests
+# ============================================================================
+# Uncomment these if NOT actively writing/debugging tests:
+# app/src/test/
+# app/src/androidTest/
+reports/
+coverage/
+test-results/
+
+# ============================================================================
+# VERSION CONTROL - Don't need to read these
+# ============================================================================
+.git/
+.gitignore
+.gitattributes
+
+# ============================================================================
+# LARGE DATA FILES - Usually not needed
+# ============================================================================
+*.db
+*.sqlite
+*.realm
+*.log
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# To temporarily include a normally-ignored file:
+# Use: "read app/build.gradle.kts" (explicit path overrides ignore)
+#
+# To see what's being ignored:
+# Check Claude's initial file scan - it shows what it can see
