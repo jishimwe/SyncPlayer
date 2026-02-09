@@ -69,7 +69,6 @@ class LibraryViewModel
             viewModelScope.launch {
                 refreshError.value = null
                 try {
-                    throw Exception("TEST ERROR")
                     songRepository.refreshLibrary()
                 } catch (e: Exception) {
                     refreshError.value = e.message ?: "Unknown error"

@@ -35,10 +35,10 @@ Local audio player for Android that syncs metadata (play counts, playlists, favo
 ## Build Commands
 
 ```bash
-gradlew.bat assembleDebug        # Build debug APK
-gradlew.bat test                 # Unit tests
-gradlew.bat connectedAndroidTest # Instrumented tests
-gradlew.bat --stop               # Kill daemons (file locks)
+.\gradlew.bat assembleDebug        # Build debug APK
+.\gradlew.bat test                 # Unit tests
+.\gradlew.bat connectedAndroidTest # Instrumented tests
+.\gradlew.bat --stop               # Kill daemons (file locks)
 ```
 
 ## Project Structure
