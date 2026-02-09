@@ -11,7 +11,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.jpishimwe.syncplayer.model.Artist
 
 @Composable
-fun ArtistListItem(artist: Artist, modifier: Modifier = Modifier) {
+fun ArtistListItem(
+    artist: Artist,
+    modifier: Modifier = Modifier,
+) {
     ListItem(
         modifier = modifier,
         leadingContent = {

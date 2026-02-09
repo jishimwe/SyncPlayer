@@ -183,15 +183,19 @@ If changes are requested after initial implementation:
 
 Before considering a feature complete, verify:
 
+- ✅ `./gradlew ktlintFormat` auto-fixes formatting
+- ✅ `./gradlew ktlintCheck` passes
+- ✅ `./gradlew assembleDebug` succeeds
+- ✅ `./gradlew test` passes
+- ✅ Follows style-guide.md patterns (MVVM, naming, state hoisting)
+- ✅ No hardcoded strings
+- ✅ Files under 300 lines
 - ✅ `assembleDebug` builds successfully
 - ✅ `test` passes all tests
 - ✅ All required sections in design.md are complete
-- ✅ Code follows naming conventions (see style-guide.md)
-- ✅ No hardcoded strings (use string resources)
 - ✅ Error states are handled in UI
 - ✅ Testable composable pattern is followed (Screen + ScreenContent)
 - ✅ Files are in correct packages per architecture.md
-- ✅ No files exceed 300 lines
 
 ## Documentation Standards
 

@@ -15,5 +15,5 @@ data class Song(
     val year: Int,
     val dateAdded: Long,
     val contentUri: String,
-    val albumArtUri: String?
+    val albumArtUri: String?,
 )

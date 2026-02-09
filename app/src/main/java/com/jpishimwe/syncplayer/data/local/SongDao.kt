@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SongDao {
-
     @Query("SELECT * FROM songs ORDER BY title ASC")
     fun getAllSongs(): Flow<List<Song>>
 
@@ -21,7 +20,7 @@ interface SongDao {
         FROM songs
         GROUP BY albumId
         ORDER BY album ASC
-        """
+        """,
     )
     fun getAllAlbums(): Flow<List<Album>>
 
@@ -31,7 +30,7 @@ interface SongDao {
         FROM songs
         GROUP BY artist
         ORDER BY artist ASC
-        """
+        """,
     )
     fun getAllArtists(): Flow<List<Artist>>
 

@@ -19,24 +19,29 @@ import coil3.compose.SubcomposeAsyncImage
 import com.jpishimwe.syncplayer.model.Album
 
 @Composable
-fun AlbumGridItem(album: Album, modifier: Modifier = Modifier) {
+fun AlbumGridItem(
+    album: Album,
+    modifier: Modifier = Modifier,
+) {
     Card(modifier = modifier) {
         Column {
             SubcomposeAsyncImage(
                 model = album.albumArtUri,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f),
                 error = {
                     Icon(
                         Icons.Default.Album,
                         contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .padding(24.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .padding(24.dp),
                     )
                 },
             )
