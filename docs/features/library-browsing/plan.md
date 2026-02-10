@@ -56,28 +56,27 @@ This approach avoids adding any new dependencies — `shouldShowRequestPermissio
 - `refreshLibrary error with empty DB emits Error state`
 - `refreshLibrary error with existing songs keeps Loaded state`
 
-### Task 2: Add refresh button, lifecycle-based refresh, and isRefreshing state
+### Task 2: Add lifecycle-based refresh and isRefreshing state
 
 **What changes:**
-- In `LibraryViewModel.kt`:
-    - Add `_isRefreshing: MutableStateFlow<Boolean>`, set `true` before scan, `false` after (in finally block)
-    - Add `_lastScanTimestamp: MutableStateFlow<Long>` initialized to `0L`
-    - Add `onAppResumed()` function that checks if `System.currentTimeMillis() - lastScanTimestamp > 24 hours`, and if so, calls `refreshLibrary()`
-    - Update `refreshLibrary()` to set `_lastScanTimestamp` to current time at the start of the scan
-    - `init` block already calls `refreshLibrary()` on creation, so no change needed there
-- In `LibraryScreen.kt`:
-    - Add `isRefreshing: Boolean` param to `LibraryScreenContent`
-    - Rename `onRetry` → `onRefresh` for consistency
-    - Add `IconButton(Icons.Default.Refresh)` in `TopAppBar` actions
-    - Add lifecycle observer using `DisposableEffect` that calls `viewModel.onAppResumed()` on `Lifecycle.Event.ON_RESUME`
+- In `LibraryViewModel.kt`: 
+  - Add `_isRefreshing: MutableStateFlow<Boolean>`, set `true` before scan, `false` after (in finally block)
+  - Add `_lastScanTimestamp: MutableStateFlow<Long>` initialized to `0L`
+  - Add `onAppResumed()` function that checks if `System.currentTimeMillis() - lastScanTimestamp > 24 hours`, and if so, calls `refreshLibrary()`
+  - Update `refreshLibrary()` to set `_lastScanTimestamp` to current time at the start of the scan
+  - `init` block already calls `refreshLibrary()` on creation, so no change needed there
+- In `LibraryScreen.kt`: 
+  - Add `isRefreshing: Boolean` param to `LibraryScreenContent`
+  - Rename `onRetry` → `onRefresh` for consistency (Error state still needs retry)
+  - Add lifecycle observer using `DisposableEffect` that calls `viewModel.onAppResumed()` on `Lifecycle.Event.ON_RESUME`
 - In `LibraryScreen` (ViewModel-connected version): collect and pass `isRefreshing`
 - Update `LibraryScreenTest.kt`: all `LibraryScreenContent` calls need the new `isRefreshing` param and renamed `onRefresh`
 
-**Why rename onRetry → onRefresh?** The callback now serves two purposes (retry after error AND manual refresh), so `onRefresh` is more accurate. The Error state's button label stays "Retry" — only the callback name changes.
+**Why no refresh button?** Manual refresh is a power-user feature that belongs in settings, not the main UI. The automatic lifecycle-based refresh (on creation + every 24h on resume) handles the common case. A settings option for manual rescan can be added in a future feature.
 
-**Why a toolbar button?** It's always visible regardless of tab or list state, making it discoverable. It provides manual control when the user knows they've added music.
+**Why rename onRetry → onRefresh?** The callback is used for retrying after errors. The name `onRefresh` better describes triggering a library rescan, whether from error state or (in future) from settings.
 
-**Why 24 hours?** Local music files don't change frequently. Most users add music rarely (weekly or monthly), so checking once per day on app resume is sufficient to catch new files without wasteful scanning. The manual button covers immediate needs.
+**Why 24 hours?** Local music files don't change frequently. Most users add music rarely (weekly or monthly), so checking once per day on app resume is sufficient to catch new files without wasteful scanning.
 
 **Why lifecycle observer?** The `ON_RESUME` event fires when the app returns to the foreground from background. By checking the timestamp here, we catch the case where the user added music while the app was backgrounded and returns after 24+ hours.
 
@@ -107,9 +106,9 @@ This approach avoids adding any new dependencies — `shouldShowRequestPermissio
 
 **What changes:** Update `docs/features/library-browsing/design.md`:
 - Update descriptions for `LibraryViewModel.kt` (error flow, isRefreshing, lastScanTimestamp, onAppResumed)
-- Update description for `LibraryScreen.kt` (refresh button, lifecycle observer for auto-refresh)
+- Update description for `LibraryScreen.kt` (lifecycle observer for auto-refresh, onRetry renamed to onRefresh)
 - Update description for `PermissionHandler.kt` (three-state handling)
-- Add design decisions for error strategy, lifecycle-based refresh (why 24 hours, why not pull-to-refresh), and permission handling
+- Add design decisions for error strategy, lifecycle-based refresh (why 24 hours, why no manual refresh button), and permission handling
 - Remove "Known Gaps" section (all gaps addressed)
 
 ## Dependencies
@@ -117,7 +116,6 @@ This approach avoids adding any new dependencies — `shouldShowRequestPermissio
 None. Everything needed is already in the project:
 - `shouldShowRequestPermissionRationale()` is a standard Activity API
 - `Settings.ACTION_APPLICATION_DETAILS_SETTINGS` is a standard Android intent
-- `Icons.Default.Refresh` is in Material Icons (already imported via `material-icons-extended`)
 - `Lifecycle.Event.ON_RESUME` and `LifecycleEventObserver` are part of AndroidX Lifecycle (already in project)
 
 ## Open questions
@@ -133,7 +131,6 @@ None — the approach uses standard Android patterns with no ambiguity.
 - `gradlew.bat test` passes (including new tests)
 - Manual test: Add music file to device, wait 24+ hours (or change timestamp in code for testing), resume app → verify scan happens
 - Manual test: Resume app multiple times within 24 hours → verify scan doesn't happen each time
-- Manual test: Tap refresh button → verify scan happens immediately regardless of timestamp
 
 **After Task 3:**
 - Manual test: deny permission once → see rationale screen

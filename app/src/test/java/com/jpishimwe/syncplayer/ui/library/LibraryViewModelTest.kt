@@ -94,6 +94,20 @@ class LibraryViewModelTest {
 //            assertTrue(state is LibraryUiState.Error)
         }
 
+    @Test
+    fun `isRefreshing is true during refresh and false after`() =
+        runTest {
+            repository.refreshCallCount = 0
+
+            assertEquals(false, viewModel.isRefreshing.value)
+
+            viewModel.refreshLibrary()
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.isRefreshing.value)
+            assertEquals(1, repository.refreshCallCount)
+        }
+
     private fun testSong(id: Long) =
         Song(
             id = id,

@@ -39,9 +39,12 @@ class LibraryViewModel
         private val songRepository: SongRepository,
     ) : ViewModel() {
         private val _selectedTab = MutableStateFlow(LibraryTab.SONGS)
+        private val _isRefreshing = MutableStateFlow(false)
+        private val lastScanTimestamp = MutableStateFlow(0L)
         private val refreshError = MutableStateFlow<String?>(null)
 
         val selectedTab: StateFlow<LibraryTab> = _selectedTab.asStateFlow()
+        val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
         val uiState: StateFlow<LibraryUiState> =
             combine(
@@ -67,12 +70,25 @@ class LibraryViewModel
 
         fun refreshLibrary() {
             viewModelScope.launch {
+                _isRefreshing.value = true
+                lastScanTimestamp.value = System.currentTimeMillis()
                 refreshError.value = null
                 try {
                     songRepository.refreshLibrary()
                 } catch (e: Exception) {
                     refreshError.value = e.message ?: "Unknown error"
+                } finally {
+                    _isRefreshing.value = false
                 }
+            }
+        }
+
+        fun onAppResumed() {
+            val now = System.currentTimeMillis()
+            val lastScan = lastScanTimestamp.value
+            val refreshDelay = 24 * 60 * 60 * 1000L // 24 hours in milliseconds
+            if (now - lastScan > refreshDelay) {
+                refreshLibrary()
             }
         }
     }
