@@ -60,6 +60,8 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.exoplayer)
     ksp(libs.androidx.room.compiler)
 
     // Hilt

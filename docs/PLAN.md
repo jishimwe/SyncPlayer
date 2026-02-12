@@ -74,7 +74,7 @@ Play audio using Media3 with full media session support.
 - Lock screen controls
 - Background playback
 
-### Phase 3: Playlists
+### Phase 3: Playlists  
 
 Create, edit, and manage playlists stored locally.
 
