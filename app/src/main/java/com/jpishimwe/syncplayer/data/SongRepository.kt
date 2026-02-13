@@ -6,6 +6,10 @@ import com.jpishimwe.syncplayer.model.Song
 import kotlinx.coroutines.flow.Flow
 
 interface SongRepository {
+    fun getSongById(id: Long): Flow<Song?>
+
+    fun getSongsByIds(idList: List<Long>): Flow<List<Song>>
+
     fun getAllSongs(): Flow<List<Song>>
 
     fun getAllAlbums(): Flow<List<Album>>

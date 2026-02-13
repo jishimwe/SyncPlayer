@@ -5,13 +5,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.jpishimwe.syncplayer.model.Album
-import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Song
 import org.junit.Rule
 import org.junit.Test
 
 class LibraryScreenTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -34,11 +32,12 @@ class LibraryScreenTest {
     fun loadedState_showsSongList() {
         composeTestRule.setContent {
             LibraryScreenContent(
-                uiState = LibraryUiState.Loaded(
-                    songs = listOf(testSong(1, "My Song")),
-                    albums = emptyList(),
-                    artists = emptyList(),
-                ),
+                uiState =
+                    LibraryUiState.Loaded(
+                        songs = listOf(testSong(1, "My Song")),
+                        albums = emptyList(),
+                        artists = emptyList(),
+                    ),
                 selectedTab = LibraryTab.SONGS,
                 onTabSelected = {},
                 onRetry = {},
@@ -53,13 +52,15 @@ class LibraryScreenTest {
         var selectedTab = LibraryTab.SONGS
         composeTestRule.setContent {
             LibraryScreenContent(
-                uiState = LibraryUiState.Loaded(
-                    songs = emptyList(),
-                    albums = listOf(
-                        Album(1, "Test Album", "Test Artist", 5, null)
+                uiState =
+                    LibraryUiState.Loaded(
+                        songs = emptyList(),
+                        albums =
+                            listOf(
+                                Album(1, "Test Album", "Test Artist", 5, null),
+                            ),
+                        artists = emptyList(),
                     ),
-                    artists = emptyList(),
-                ),
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
                 onRetry = {},
@@ -73,11 +74,12 @@ class LibraryScreenTest {
     fun emptyState_showsMessage() {
         composeTestRule.setContent {
             LibraryScreenContent(
-                uiState = LibraryUiState.Loaded(
-                    songs = emptyList(),
-                    albums = emptyList(),
-                    artists = emptyList(),
-                ),
+                uiState =
+                    LibraryUiState.Loaded(
+                        songs = emptyList(),
+                        albums = emptyList(),
+                        artists = emptyList(),
+                    ),
                 selectedTab = LibraryTab.SONGS,
                 onTabSelected = {},
                 onRetry = {},
@@ -102,7 +104,10 @@ class LibraryScreenTest {
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
     }
 
-    private fun testSong(id: Long, title: String) = Song(
+    private fun testSong(
+        id: Long,
+        title: String,
+    ) = Song(
         id = id,
         title = title,
         artist = "Artist",

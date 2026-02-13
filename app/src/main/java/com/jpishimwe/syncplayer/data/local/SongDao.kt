@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SongDao {
+    @Query("SELECT * FROM songs WHERE id = :id")
+    fun getSongById(id: Long): Flow<Song?>
+
+    @Query("SELECT * FROM songs WHERE id in (:idList)")
+    fun getSongsByIds(idList: List<Long>): Flow<List<Song>>
+
     @Query("SELECT * FROM songs ORDER BY title ASC")
     fun getAllSongs(): Flow<List<Song>>
 

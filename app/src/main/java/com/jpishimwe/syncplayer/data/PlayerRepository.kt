@@ -1,0 +1,251 @@
+package com.jpishimwe.syncplayer.data
+
+import android.content.ComponentName
+import android.content.Context
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.jpishimwe.syncplayer.data.local.QueueDao
+import com.jpishimwe.syncplayer.data.local.QueueEntity
+import com.jpishimwe.syncplayer.model.PlaybackState
+import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.model.toMediaItem
+import com.jpishimwe.syncplayer.model.toSong
+import com.jpishimwe.syncplayer.service.PlaybackService
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.guava.await
+import javax.inject.Inject
+
+class PlayerRepository
+    @Inject
+    constructor(
+        private val context: Context,
+        private val queueDao: QueueDao,
+        private val songRepository: SongRepository,
+    ) {
+        private val _playbackState = MutableStateFlow(PlayerUiState())
+        val playbackState: StateFlow<PlayerUiState> = _playbackState.asStateFlow()
+
+        private var mediaController: MediaController? = null
+
+        private val playerListener =
+            object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    _playbackState.update {
+                        it.copy(
+                            playbackState =
+                                if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED,
+                        )
+                    }
+                }
+
+                override fun onMediaItemTransition(
+                    mediaItem: MediaItem?,
+                    reason: Int,
+                ) {
+                    _playbackState.update {
+                        it.copy(
+                            currentSong = mediaItem?.toSong(),
+                        )
+                    }
+                }
+
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    _playbackState.update {
+                        it.copy(
+                            playbackState =
+                                when (playbackState) {
+                                    Player.STATE_BUFFERING -> PlaybackState.BUFFERING
+                                    Player.STATE_IDLE -> PlaybackState.IDLE
+                                    Player.STATE_ENDED -> PlaybackState.ENDED
+                                    else -> _playbackState.value.playbackState
+                                },
+                        )
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    _playbackState.update {
+                        it.copy(
+                            playbackState = PlaybackState.ERROR,
+                            error = error.message,
+                        )
+                    }
+                }
+            }
+
+        suspend fun initialize() {
+            val sessionToken =
+                SessionToken(
+                    context,
+                    ComponentName(
+                        context,
+                        PlaybackService::class.java,
+                    ),
+                )
+
+            mediaController =
+                MediaController
+                    .Builder(context, sessionToken)
+                    .buildAsync()
+                    .await()
+
+            mediaController?.addListener(playerListener)
+
+            restoreQueue()
+        }
+
+        fun play() = mediaController?.play()
+
+        fun pause() = mediaController?.pause()
+
+        fun skipToNext() = mediaController?.seekToNext()
+
+        fun skipToPrevious() = mediaController?.seekToPrevious()
+
+        fun seekTo(position: Long) = mediaController?.seekTo(position)
+
+        suspend fun playSongs(
+            songs: List<Song>,
+            startIndex: Int = 0,
+        ) {
+            mediaController?.clearMediaItems()
+            mediaController?.addMediaItems(songs.map { it.toMediaItem() })
+            mediaController?.prepare()
+            mediaController?.seekToDefaultPosition(startIndex)
+            mediaController?.play()
+
+            var index = startIndex
+            queueDao.clearQueue()
+            queueDao.insertList(songs.map { QueueEntity(it.id.toString(), it.id, index++) })
+        }
+
+        suspend fun addToQueue(song: Song) {
+            mediaController?.addMediaItem(song.toMediaItem())
+            queueDao.addToQueue(QueueEntity(song.id.toString(), song.id, queueDao.getQueue().size))
+        }
+
+        suspend fun playNext(song: Song) {
+            mediaController?.addMediaItem(mediaController?.currentMediaItemIndex?.plus(1) ?: 0, song.toMediaItem())
+
+            val currentSong = mediaController?.currentMediaItem?.toSong()
+            val queue = queueDao.getQueue()
+
+            val currentPosition = queue.find { it.id == currentSong?.id.toString() }?.position ?: 0
+            queue.filter { it.position > currentPosition }.forEach { it.position++ }
+            queueDao.clearQueue()
+            queueDao.insertList(queue)
+            queueDao.addToQueue(QueueEntity(song.id.toString(), song.id, currentPosition + 1))
+        }
+
+        suspend fun removeFromQueue(queueItemId: String) {
+            val mediaIndex =
+                (0 until (mediaController?.mediaItemCount ?: 0)).find {
+                    mediaController?.getMediaItemAt(it)?.mediaId == queueItemId
+                } ?: -1
+
+            val queue = queueDao.getQueue()
+            val removedPosition = queue.find { it.id == queueItemId }?.position ?: -1
+            if (removedPosition < 0 || mediaIndex < 0) {
+                return
+            }
+
+            mediaController?.removeMediaItem(mediaIndex)
+
+            queue.filter { it.position > removedPosition }.forEach { it.position-- }
+            queueDao.clearQueue()
+            queueDao.insertList(queue.filter { it.id != queueItemId })
+        }
+
+        suspend fun reorderQueue(
+            queueItemId: String,
+            newPosition: Int,
+        ) {
+            val mediaIndex =
+                (0 until (mediaController?.mediaItemCount ?: 0)).find {
+                    mediaController?.getMediaItemAt(it)?.mediaId == queueItemId
+                } ?: -1
+            if (mediaIndex < 0) return
+
+            mediaController?.moveMediaItem(mediaIndex, newPosition)
+
+            val queue = queueDao.getQueue()
+            queue.find { it.id == queueItemId }?.let { entity ->
+                val oldPosition = entity.position
+                if (oldPosition == newPosition) return
+                if (oldPosition > newPosition) {
+                    moveUp(queue, oldPosition, newPosition)
+                } else {
+                    moveDown(queue, oldPosition, newPosition)
+                }
+                entity.position = newPosition
+                queueDao.clearQueue()
+                queueDao.insertList(queue)
+            }
+        }
+
+        fun moveUp(
+            queue: List<QueueEntity>,
+            oldPosition: Int,
+            newPosition: Int,
+        ) {
+            queue.filter { it.position in newPosition until oldPosition }.forEach {
+                it.position++
+            }
+        }
+
+        fun moveDown(
+            queue: List<QueueEntity>,
+            oldPosition: Int,
+            newPosition: Int,
+        ) {
+            queue.filter { it.position in oldPosition until newPosition }.forEach {
+                it.position--
+            }
+        }
+
+        fun toggleShuffle() {
+            mediaController?.shuffleModeEnabled?.let { mediaController?.shuffleModeEnabled = !it }
+        }
+
+        fun toggleRepeat() {
+            val repeatMode = mediaController?.repeatMode ?: Player.REPEAT_MODE_OFF
+            mediaController?.setRepeatMode(
+                when (repeatMode) {
+                    Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                    Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                    Player.REPEAT_MODE_ONE -> Player.REPEAT_MODE_OFF
+                    else -> Player.REPEAT_MODE_OFF
+                },
+            )
+        }
+
+        private suspend fun restoreQueue() {
+            val queue = queueDao.getQueue()
+            val songIdList = queue.map { it.songId }
+
+            val songsFlow = songRepository.getSongsByIds(songIdList)
+            val songs = songsFlow.first()
+            val songsQueueMap: Map<Long, QueueEntity> = queue.associateBy { it.songId }
+
+            val sortedSongs = songs.sortedBy { song -> songsQueueMap[song.id]?.position }
+
+            mediaController?.clearMediaItems()
+            mediaController?.addMediaItems(sortedSongs.map { it.toMediaItem() })
+            mediaController?.prepare()
+            mediaController?.seekToDefaultPosition(0)
+        }
+
+        private suspend fun clearQueue() {
+            mediaController?.clearMediaItems()
+            queueDao.clearQueue()
+        }
+    }
