@@ -15,13 +15,18 @@ import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.model.toMediaItem
 import com.jpishimwe.syncplayer.model.toSong
 import com.jpishimwe.syncplayer.service.PlaybackService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.guava.await
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class PlayerRepository
@@ -81,6 +86,19 @@ class PlayerRepository
                     }
                 }
             }
+
+        private val repositoryScope = CoroutineScope((SupervisorJob() + Dispatchers.Main))
+
+        private fun startPositionUdates() {
+            repositoryScope.launch {
+                while (isActive && mediaController?.isPlaying == true) {
+                    delay(1000)
+                    _playbackState.value.currentSong?.let {
+                        _playbackState.update { it.copy(currentPosition = mediaController?.currentPosition ?: 0L) }
+                    }
+                }
+            }
+        }
 
         suspend fun initialize() {
             val sessionToken =
