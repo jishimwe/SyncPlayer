@@ -8,15 +8,19 @@ SyncPlayer plays audio from on-device storage and syncs listening data — not t
 
 | Layer | Technology |
 |-------|-----------|
-| Language | Kotlin 2.0 |
+| Language | Kotlin 2.2.10 (bundled by AGP 9) |
 | UI | Jetpack Compose + Material 3 |
 | Architecture | MVVM, single Activity |
-| Local DB | Room |
-| Playback | Media3 (ExoPlayer) |
-| DI | Hilt |
+| Local DB | Room 2.7.1 |
+| Playback | Media3 1.9.2 (ExoPlayer) |
+| DI | Hilt 2.59 |
+| KSP | 2.3.5 |
+| Images | Coil 3.1.0 |
+| Navigation | Navigation Compose 2.9.0 |
 | Auth | Firebase Auth (Google sign-in) |
 | Sync | Cloud Firestore |
-| Build | Gradle 9.1, Kotlin DSL, version catalog |
+| Build | AGP 9.0.0, Gradle 9.1.0, Kotlin DSL, version catalog |
+| Tests | JUnit 5 5.11.4, Turbine 1.2.1, Compose UI Test |
 
 ## Architecture
 
@@ -24,14 +28,17 @@ Single Activity, Jetpack Compose, MVVM pattern.
 
 ```
 app/src/main/java/com/jpishimwe/syncplayer/
-├── ui/           # Screens, composables, ViewModels
-│   ├── theme/    # Color, Theme, Type
-│   └── screens/  # Feature screens
-├── data/         # Repositories, local DB, sync logic
-│   ├── local/    # Room database, DAOs
-│   └── sync/     # Metadata sync service
-├── model/        # Data classes (Song, Playlist, Album, Artist)
-└── di/           # Hilt modules
+├── ui/             # Screens, composables, ViewModels
+│   ├── theme/      # Color, Theme, Type
+│   ├── components/ # Reusable UI components
+│   ├── library/    # Library browsing (songs, albums, artists, detail screens)
+│   ├── player/     # Now Playing screen, player controls, MiniPlayer
+│   └── navigation/ # NavGraph, Screen routes
+├── data/           # Repositories, local DB
+│   └── local/      # Room database, DAOs, entities
+├── model/          # Data classes (Song, Album, Artist, PlaybackState, PlayerUiState)
+├── service/        # PlaybackService, AudioFocusHandler
+└── di/             # Hilt modules
 ```
 
 - **UI layer**: Compose screens observe ViewModel state via `StateFlow`
@@ -41,40 +48,70 @@ app/src/main/java/com/jpishimwe/syncplayer/
 
 ## Navigation
 
-Bottom navigation bar with three top-level destinations:
+Current routes:
 
-- **Library** — Browse songs, albums, artists
-- **Playlists** — User-created playlists
-- **Settings** — App preferences, account, sync status
+| Route | Screen | Description |
+|-------|--------|-------------|
+| `library` | LibraryScreen | Songs/Albums/Artists tabs with MiniPlayer |
+| `now_playing` | NowPlayingScreen | Full-screen player with controls |
+| `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album (planned) |
+| `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist (planned) |
 
-A persistent mini now-playing bar sits above the bottom nav (added in Phase 6).
+Future: Bottom navigation bar with Library, Playlists, and Settings top-level destinations.
+
+A persistent MiniPlayer sits above the bottom content when a song is playing (already implemented in Phase 2).
 
 ## Build Phases
 
 Phases are ordered from simple to complex. Each phase builds on the previous one.
 
-### Phase 1: Library
+### Phase 1: Library ✅
 
 Scan the device for audio files and display them in a browsable list.
 
-- Query `MediaStore` for audio files on device
-- Display songs in a scrollable list (title, artist, duration)
-- Browse by songs, albums, artists (tabbed or segmented)
-- Room database to cache the scanned library
-- Handle runtime permissions (`READ_MEDIA_AUDIO`)
+- ✅ Query `MediaStore` for audio files on device
+- ✅ Display songs in a scrollable list (title, artist, duration)
+- ✅ Browse by songs, albums, artists (tabbed with `PrimaryTabRow`)
+- ✅ Room database to cache the scanned library
+- ✅ Handle runtime permissions (`READ_MEDIA_AUDIO`) with three-state handling
+- ✅ Automatic rescan on app resume (24-hour threshold)
+- ✅ Stale data over error screen when DB has cached songs
 
-### Phase 2: Playback
+**Design doc**: `docs/features/library-browsing/design.md`
+
+### Phase 2: Playback ✅
 
 Play audio using Media3 with full media session support.
 
-- Media3 `ExoPlayer` setup with `MediaSession`
-- Now-playing screen (album art, track info, seek bar, controls)
-- Play/pause, next, previous, seek
-- Notification controls with `MediaSessionService`
-- Lock screen controls
-- Background playback
+- ✅ Media3 `ExoPlayer` setup with `MediaSession`
+- ✅ Now-playing screen (album art, track info, seek bar, controls)
+- ✅ Play/pause, next, previous, seek
+- ✅ Notification controls with `MediaSessionService`
+- ✅ Lock screen controls
+- ✅ Background playback
+- ✅ Custom audio focus handling with smooth volume fades (500ms)
+- ✅ Headphone disconnect pauses playback
+- ✅ Queue management with drag-and-drop reordering (play next, add to end, remove, reorder)
+- ✅ Shuffle and repeat modes (off / all / one)
+- ✅ MiniPlayer on library screen
+- ✅ Queue persistence via Room (restore on app restart)
+- ✅ Navigation: Library ↔ NowPlaying
 
-### Phase 3: Playlists  
+**Design doc**: `docs/features/playback/design.md`
+
+### Phase 3: Library → Playback Navigation ⬅️ Current
+
+Connect the library browsing UI to the playback system. Currently, tapping songs, albums, or artists does nothing.
+
+- Tap song in Songs tab → queue all songs, start at tapped index, navigate to NowPlaying
+- Tap album → Album detail screen (song list by track number) → tap song to play
+- Tap artist → Artist detail screen (song list by album + track) → tap song to play
+- Fix `PlayerEvent.PlaySongs` to include `startIndex`
+- Add `AlbumDetail` and `ArtistDetail` navigation routes
+
+**Plan doc**: `docs/features/library-playback-nav/plan.md`
+
+### Phase 4: Playlists
 
 Create, edit, and manage playlists stored locally.
 
@@ -84,7 +121,7 @@ Create, edit, and manage playlists stored locally.
 - Playlist detail screen
 - Bottom navigation wired up
 
-### Phase 4: Metadata Tracking
+### Phase 5: Metadata Tracking
 
 Track listening data locally in Room.
 
@@ -93,7 +130,7 @@ Track listening data locally in Room.
 - Listening history (timestamped log of played tracks)
 - Surface stats in the UI (most played, recently played, favorites list)
 
-### Phase 5: Sync
+### Phase 6: Sync
 
 Sync metadata across devices using Firebase.
 
@@ -104,16 +141,14 @@ Sync metadata across devices using Firebase.
 - Offline support (Firestore offline persistence)
 - Sync status indicator in Settings
 
-### Phase 6: Polish
+### Phase 7: Polish
 
 UI refinements and quality-of-life features.
 
-- Mini now-playing bar (persistent above bottom nav)
 - Search across songs, albums, artists
 - Sorting and filtering (by name, date added, play count)
 - Settings screen (theme, playback preferences, account management)
-- Shuffle and repeat modes
-- Queue management
+- Bottom navigation bar (Library, Playlists, Settings)
 
 ## External Integrations
 
@@ -173,41 +208,44 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 
 - Every Repository has an interface — ViewModels depend on the interface, tests provide a fake
 - ViewModels expose `StateFlow` — tests collect and assert on state transitions
-- Composables receive state as parameters — testable in isolation without ViewModels
+- Composables receive state as parameters — testable in isolation without ViewModels (`ScreenContent` pattern)
 - Suspend functions and Flows use `kotlinx-coroutines-test` for deterministic execution
 
 ### Tests per phase
 
-**Phase 1: Library**
+**Phase 1: Library** ✅
 - Unit: `LibraryViewModel` state transitions (loading → loaded, empty state, error)
-- Unit: Song mapping logic (MediaStore cursor → Song model)
-- Room: Song DAO queries (insert, query by album/artist, search)
+- Room: Song DAO queries (insert, query by album/artist)
 - UI: Song list renders correctly, tab switching works
 
-**Phase 2: Playback**
-- Unit: `PlaybackViewModel` state (play/pause toggling, track advancement, seek)
-- Unit: Queue logic (next, previous, shuffle ordering)
-- UI: Now-playing screen displays correct track info, controls respond
+**Phase 2: Playback** ✅
+- Unit: `PlayerViewModel` event routing (play/pause toggle, skip, seek, shuffle, repeat, playSongs)
+- Unit: `formatTime` utility
+- UI: NowPlayingScreenContent displays correct track info, controls respond
 
-**Phase 3: Playlists**
+**Phase 3: Library → Playback Navigation**
+- Unit: `PlayerViewModel` passes `startIndex` to repository
+- UI: Song click triggers playback + navigation callback
+- UI: Album/Artist detail screens display songs and handle clicks
+
+**Phase 4: Playlists**
 - Unit: `PlaylistViewModel` CRUD operations reflected in state
 - Room: Playlist DAO (create, rename, delete, add/remove/reorder songs)
 - UI: Create playlist flow, add song to playlist
 
-**Phase 4: Metadata Tracking**
+**Phase 5: Metadata Tracking**
 - Unit: Play count increment logic (threshold-based counting)
 - Room: Metadata DAO (play counts, favorites toggle, history insertion and queries)
 - UI: Favorites toggle updates immediately
 
-**Phase 5: Sync**
+**Phase 6: Sync**
 - Unit: Conflict resolution logic (last-write-wins, merge)
 - Unit: Sync state machine (idle → syncing → success/error)
 - Integration: `SyncProvider` implementations against fake/mock backends
 - Integration: Merge scenarios (local-only changes, remote-only, conflicts)
 
-**Phase 6: Polish**
+**Phase 7: Polish**
 - UI: Search returns correct results, sorting changes list order
-- UI: Mini player bar appears when a track is playing
 
 ### Test libraries
 
@@ -254,12 +292,13 @@ GitHub Actions pipeline for automated builds, tests, and releases.
 
 | Phase | Libraries |
 |-------|-----------|
-| 1 — Library | Room, Coil (album art), Hilt, Accompanist Permissions |
-| 2 — Playback | Media3 (ExoPlayer, Session, UI) |
-| 3 — Playlists | (Room — already added) |
-| 4 — Metadata | (Room — already added) |
-| 5 — Sync | Firebase Auth, Cloud Firestore, Google Play Services Auth |
-| 6 — Polish | (no new major libraries expected) |
+| 1 — Library | Room, Coil (album art), Hilt, Activity Result API (permissions) |
+| 2 — Playback | Media3 (ExoPlayer, Session, UI), kotlinx-coroutines-guava, reorderable |
+| 3 — Navigation | (no new libraries) |
+| 4 — Playlists | (Room — already added) |
+| 5 — Metadata | (Room — already added) |
+| 6 — Sync | Firebase Auth, Cloud Firestore, Google Play Services Auth |
+| 7 — Polish | (no new major libraries expected) |
 | External — MusicBee | XML parsing (kotlinx.serialization or built-in), file I/O |
 | External — YouTube Music | YouTube Music API / unofficial client libraries, Retrofit |
 | Testing (all phases) | JUnit 5, Turbine, kotlinx-coroutines-test, Compose UI Test, Hilt Testing |

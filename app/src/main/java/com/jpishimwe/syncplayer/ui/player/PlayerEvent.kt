@@ -13,12 +13,17 @@ sealed interface PlayerEvent {
         val positionMs: Long,
     ) : PlayerEvent
 
+    data class SeekToQueueItem(
+        val index: Int,
+    ) : PlayerEvent
+
     data object ToggleShuffle : PlayerEvent
 
     data object ToggleRepeat : PlayerEvent
 
     data class PlaySongs(
         val songs: List<Song>,
+        val startIndex: Int = 0,
     ) : PlayerEvent
 
     data class AddToQueue(

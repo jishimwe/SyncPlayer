@@ -43,6 +43,12 @@ android {
             it.useJUnitPlatform()
         }
     }
+
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.test.espresso:espresso-core:3.5.1")
+        }
+    }
 }
 
 dependencies {
@@ -65,6 +71,8 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.test.junit4)
+    implementation(libs.androidx.room.external.antlr)
     ksp(libs.androidx.room.compiler)
 
     // Hilt

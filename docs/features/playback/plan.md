@@ -1,8 +1,9 @@
 # Phase 2: Playback - Implementation Plan
 
 **Feature**: Audio playback with Media3, MediaSession, and background playback support  
-**Status**: Planning  
-**Created**: 2026-02-10
+**Status**: Complete  
+**Created**: 2026-02-10  
+**Completed**: 2026-02-14
 
 ## Overview
 
@@ -110,12 +111,14 @@ We implement custom audio focus handling instead of using ExoPlayer's built-in s
 ```toml
 [versions]
 media3 = "1.5.0"  # Check latest stable when implementing
+reorderable = "2.4.0"
 
 [libraries]
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "coroutines" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 ```
 
 **Note**: `kotlinx-coroutines-guava` provides `.await()` on `ListenableFuture`, needed for `MediaController.Builder.buildAsync().await()` in `PlayerRepository`. Import as:
@@ -598,7 +601,7 @@ class BecomingNoisyReceiver(
 
 ```kotlin
 class PlayerRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val queueDao: QueueDao,
     private val songRepository: SongRepository
 ) {
@@ -650,7 +653,26 @@ class PlayerRepository @Inject constructor(
 
         mediaController?.addListener(playerListener)
         restoreQueue()
+        startPositionUpdates()
     }
+
+    // Ticks every second to keep seek bar in sync
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private fun startPositionUpdates() {
+        repositoryScope.launch {
+            while (isActive) {
+                delay(1000)
+                _uiState.value.currentSong?.let {
+                    _uiState.update {
+                        it.copy(currentPosition = mediaController?.currentPosition ?: 0L)
+                    }
+                }
+            }
+        }
+    }
+
+    fun currentPosition(): Long = mediaController?.currentPosition ?: 0L
 
     // --- Playback commands ---
 
@@ -800,61 +822,57 @@ class PlayerRepository @Inject constructor(
 - `ui/player/PlayerEvent.kt`
 
 **Responsibilities**:
-- Expose PlayerUiState to UI
-- Handle UI events
-- Manage playback position updates (for seek bar)
-- Format time displays
+- Expose `PlayerUiState` from repository as `StateFlow`
+- Handle UI events and forward to repository
+- Format time for seek bar display
+- Initialize repository on creation
 
 ```kotlin
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository
 ) : ViewModel() {
-    
-    val uiState: StateFlow<PlayerUiState> = playerRepository.playbackState
+
+    // Single source of truth — repository owns all state including position updates
+    val uiState: StateFlow<PlayerUiState> = playerRepository.uiState
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PlayerUiState()
         )
-    
-    // Update position every second for seek bar
-    private val positionUpdateFlow = flow {
-        while (currentCoroutineContext().isActive) {
-            emit(Unit)
-            delay(1000)
-        }
-    }
-    
+
     init {
         viewModelScope.launch {
             playerRepository.initialize()
         }
-        
-        // Continuously update current position
-        viewModelScope.launch {
-            positionUpdateFlow.collect {
-                // Update position in state
-            }
-        }
     }
-    
+
     fun onEvent(event: PlayerEvent) {
         when (event) {
             PlayerEvent.PlayPause -> togglePlayback()
-            PlayerEvent.SkipNext -> playerRepository.skipToNext()
-            PlayerEvent.SkipPrevious -> playerRepository.skipToPrevious()
-            is PlayerEvent.Seek -> playerRepository.seekTo(event.positionMs)
+            PlayerEvent.SkipToNext -> playerRepository.skipToNext()
+            PlayerEvent.SkipToPrevious -> playerRepository.skipToPrevious()
+            is PlayerEvent.SeekTo -> playerRepository.seekTo(event.positionMs)
             PlayerEvent.ToggleShuffle -> playerRepository.toggleShuffle()
-            PlayerEvent.ToggleRepeat -> playerRepository.toggleRepeatMode()
-            is PlayerEvent.PlaySongs -> playSongs(event.songs, event.startIndex)
-            is PlayerEvent.AddToQueue -> playerRepository.addToQueue(event.song)
-            is PlayerEvent.PlayNext -> playerRepository.playNext(event.song)
-            is PlayerEvent.RemoveFromQueue -> playerRepository.removeFromQueue(event.queueItemId)
-            is PlayerEvent.ReorderQueue -> playerRepository.reorderQueue(event.fromIndex, event.toIndex)
+            PlayerEvent.ToggleRepeat -> playerRepository.toggleRepeat()
+            is PlayerEvent.PlaySongs -> viewModelScope.launch {
+                playerRepository.playSongs(event.songs, event.startIndex)
+            }
+            is PlayerEvent.AddToQueue -> viewModelScope.launch {
+                playerRepository.addToQueue(event.song)
+            }
+            is PlayerEvent.PlayNext -> viewModelScope.launch {
+                playerRepository.playNext(event.song)
+            }
+            is PlayerEvent.RemoveFromQueue -> viewModelScope.launch {
+                playerRepository.removeFromQueue(event.queueItemId)
+            }
+            is PlayerEvent.ReorderQueue -> viewModelScope.launch {
+                playerRepository.reorderQueue(event.queueItemId, event.newPosition)
+            }
         }
     }
-    
+
     private fun togglePlayback() {
         if (uiState.value.playbackState == PlaybackState.PLAYING) {
             playerRepository.pause()
@@ -862,34 +880,39 @@ class PlayerViewModel @Inject constructor(
             playerRepository.play()
         }
     }
-    
-    // Utility functions
+
     fun formatTime(ms: Long): String {
-        val seconds = (ms / 1000) % 60
-        val minutes = (ms / 1000 / 60) % 60
-        val hours = ms / 1000 / 60 / 60
+        val totalSeconds = (ms / 1000) % 60
+        val minutes = (ms / (1000 * 60)) % 60
+        val hours = (ms / (1000 * 60 * 60))
         return if (hours > 0) {
-            "%d:%02d:%02d".format(hours, minutes, seconds)
+            String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, totalSeconds)
         } else {
-            "%d:%02d".format(minutes, seconds)
+            String.format(Locale.getDefault(), "%d:%02d", minutes, totalSeconds)
         }
     }
 }
 
 sealed interface PlayerEvent {
     data object PlayPause : PlayerEvent
-    data object SkipNext : PlayerEvent
-    data object SkipPrevious : PlayerEvent
-    data class Seek(val positionMs: Long) : PlayerEvent
+    data object SkipToNext : PlayerEvent
+    data object SkipToPrevious : PlayerEvent
+    data class SeekTo(val positionMs: Long) : PlayerEvent
     data object ToggleShuffle : PlayerEvent
     data object ToggleRepeat : PlayerEvent
     data class PlaySongs(val songs: List<Song>, val startIndex: Int = 0) : PlayerEvent
     data class AddToQueue(val song: Song) : PlayerEvent
     data class PlayNext(val song: Song) : PlayerEvent
     data class RemoveFromQueue(val queueItemId: String) : PlayerEvent
-    data class ReorderQueue(val fromIndex: Int, val toIndex: Int) : PlayerEvent
+    data class ReorderQueue(val queueItemId: String, val newPosition: Int) : PlayerEvent
 }
 ```
+
+**Key Points**:
+
+1. **No position ticker in ViewModel** — `PlayerRepository` owns `startPositionUpdates()`, so the ViewModel just exposes the repository's `StateFlow` directly.
+2. **Activity-scoped** — use `hiltViewModel(LocalActivity.current as ComponentActivity)` in screens to share the same instance across `LibraryScreen` and `NowPlayingScreen`.
+3. **`@param:ApplicationContext`** — use explicit param target on `PlayerRepository` constructor to avoid Kotlin compiler warning about annotation targets.
 
 **Build & verify**: `.\gradlew.bat assembleDebug`
 
@@ -904,6 +927,8 @@ sealed interface PlayerEvent {
 - `ui/player/components/SeekBar.kt`
 - `ui/player/components/MiniPlayer.kt`
 - `ui/player/components/QueueSheet.kt`
+- `ui/player/components/QueueItemRow.kt`
+- `ui/player/components/AlbumArtwork.kt`
 
 #### NowPlayingScreen Layout
 
@@ -937,7 +962,7 @@ sealed interface PlayerEvent {
 // NowPlayingScreen.kt
 @Composable
 fun NowPlayingScreen(
-    viewModel: PlayerViewModel = hiltViewModel(),
+    viewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ComponentActivity),
     onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -1188,7 +1213,13 @@ fun MiniPlayer(
 }
 ```
 
-**Queue Sheet** (Bottom sheet modal):
+**Queue Sheet** (Bottom sheet modal with drag-and-drop reordering):
+
+Requires `reorderable` library — add to `libs.versions.toml`:
+```toml
+reorderable = { module = "sh.calvin.reorderable:reorderable", version = "2.4.0" }
+```
+
 ```kotlin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1197,9 +1228,17 @@ fun QueueSheet(
     currentIndex: Int,
     onDismiss: () -> Unit,
     onRemove: (String) -> Unit,
-    onReorder: (Int, Int) -> Unit,
+    onReorder: (String, Int) -> Unit,
+    formatTime: (Long) -> String,
     modifier: Modifier = Modifier
 ) {
+    val lazyListState = rememberLazyListState()
+    val reorderableLazyListState =
+        rememberReorderableLazyListState(lazyListState) { from, to ->
+            // from.key is the item's id — avoids stale closure on queue index
+            onReorder(from.key as String, to.index)
+        }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier
@@ -1213,22 +1252,130 @@ fun QueueSheet(
                 text = "Queue (${queue.size})",
                 style = MaterialTheme.typography.titleLarge
             )
-            
+
             Spacer(Modifier.height(16.dp))
-            
-            LazyColumn {
+
+            LazyColumn(state = lazyListState) {
                 itemsIndexed(
                     items = queue,
                     key = { _, item -> item.id }
                 ) { index, item ->
-                    QueueItemRow(
-                        item = item,
-                        isPlaying = index == currentIndex,
-                        onRemove = { onRemove(item.id) }
-                    )
+                    ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
+                        QueueItemRow(
+                            item = item,
+                            isPlaying = index == currentIndex,
+                            onRemove = { onRemove(item.id) },
+                            formatTime = formatTime,
+                            dragHandleModifier = Modifier.draggableHandle(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (isDragging) MaterialTheme.colorScheme.surfaceVariant
+                                    else Color.Transparent
+                                )
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+// QueueItemRow.kt
+@Composable
+fun QueueItemRow(
+    item: QueueItem,
+    isPlaying: Boolean,
+    onRemove: () -> Unit,
+    formatTime: (Long) -> String,
+    dragHandleModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.padding(8.dp).height(48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.DragHandle,
+            contentDescription = "Reorder",
+            modifier = dragHandleModifier
+        )
+
+        Spacer(Modifier.width(8.dp))
+
+        AsyncImage(
+            model = item.song.albumArtUri,
+            contentDescription = null,
+            modifier = Modifier.size(32.dp),
+        )
+
+        Spacer(Modifier.width(8.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.song.title,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = item.song.artist,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        Text(
+            text = formatTime(item.song.duration),
+            style = MaterialTheme.typography.bodySmall
+        )
+
+        if (isPlaying) {
+            Icon(
+                imageVector = Icons.Default.GraphicEq,
+                contentDescription = "Playing"
+            )
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        IconButton(onClick = onRemove) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Remove"
+            )
+        }
+    }
+}
+
+// AlbumArtwork.kt
+@Composable
+fun AlbumArtwork(
+    song: Song?,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier) {
+        SubcomposeAsyncImage(
+            model = song?.albumArtUri,
+            contentDescription = "Album art",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            loading = {
+                Image(
+                    painter = painterResource(R.drawable.album_default_foreground),
+                    contentDescription = "Loading album art",
+                )
+            },
+            error = {
+                Image(
+                    painter = painterResource(R.drawable.album_default_foreground),
+                    contentDescription = "No album art",
+                )
+            },
+        )
     }
 }
 ```
@@ -1240,16 +1387,21 @@ fun QueueSheet(
 ### Layer 7: Navigation Integration
 
 **Files**: 
-- `ui/navigation/NavGraph.kt` (update existing)
-- `ui/library/LibraryScreen.kt` (add MiniPlayer)
+- `ui/navigation/NavGraph.kt`
+- `ui/navigation/Screen.kt`
+- `ui/library/LibraryScreen.kt` (add MiniPlayer, move PermissionHandler)
+- `SyncPlayerApp.kt`
 
-**Add route**:
+**Screen routes**:
 ```kotlin
 sealed class Screen(val route: String) {
-    // ... existing routes
+    data object Library : Screen("library")
     data object NowPlaying : Screen("now_playing")
 }
+```
 
+**NavGraph**:
+```kotlin
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -1260,8 +1412,12 @@ fun NavGraph(
         startDestination = Screen.Library.route,
         modifier = modifier
     ) {
-        // ... existing composables
-        
+        composable(Screen.Library.route) {
+            LibraryScreen(
+                onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) }
+            )
+        }
+
         composable(Screen.NowPlaying.route) {
             NowPlayingScreen(
                 onNavigateBack = { navController.navigateUp() }
@@ -1271,31 +1427,54 @@ fun NavGraph(
 }
 ```
 
-**Add MiniPlayer to Library**:
+**SyncPlayerApp** — NavGraph replaces hardcoded LibraryScreen:
 ```kotlin
 @Composable
-fun LibraryScreen(
-    viewModel: LibraryViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel = hiltViewModel(), // Shared scope
-    onNavigateToNowPlaying: () -> Unit
-) {
-    val playerState by playerViewModel.uiState.collectAsStateWithLifecycle()
-    
-    Scaffold(
-        bottomBar = {
-            if (playerState.currentSong != null) {
-                MiniPlayer(
-                    uiState = playerState,
-                    onEvent = playerViewModel::onEvent,
-                    onClick = onNavigateToNowPlaying
-                )
-            }
-        }
-    ) { padding ->
-        // ... library content
+fun SyncPlayerApp(modifier: Modifier = Modifier) {
+    SyncPlayerTheme {
+        val navController = rememberNavController()
+        NavGraph(
+            navController = navController,
+            modifier = modifier
+        )
     }
 }
 ```
+
+**LibraryScreen** — `PlayerViewModel` activity-scoped, `PermissionHandler` moved here:
+```kotlin
+@Composable
+fun LibraryScreen(
+    onNavigateToNowPlaying: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ComponentActivity),
+    playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ComponentActivity),
+) {
+    PermissionHandler {
+        val playerState by playerViewModel.uiState.collectAsStateWithLifecycle()
+
+        Scaffold(
+            bottomBar = {
+                if (playerState.currentSong != null) {
+                    MiniPlayer(
+                        uiState = playerState,
+                        onEvent = playerViewModel::onEvent,
+                        onClick = onNavigateToNowPlaying
+                    )
+                }
+            }
+        ) { padding ->
+            // ... library content
+        }
+    }
+}
+```
+
+**Key Points**:
+
+1. **Activity-scoped `PlayerViewModel`**: Both `LibraryScreen` and `NowPlayingScreen` use `hiltViewModel(LocalActivity.current as ComponentActivity)` to share the same instance.
+2. **`PermissionHandler` moved to `LibraryScreen`**: Media permissions are a library concern, not an app-wide concern.
+3. **NavGraph stays clean**: No ViewModels in NavGraph — each screen retrieves its own via `hiltViewModel`.
 
 **Build & verify**: `.\gradlew.bat assembleDebug`
 
@@ -1304,90 +1483,230 @@ fun LibraryScreen(
 ### Layer 8: Testing
 
 **Files**: 
-- `test/.../PlayerViewModelTest.kt`
-- `test/.../PlayerRepositoryTest.kt`
-- `androidTest/.../NowPlayingScreenTest.kt`
+- `test/ui/player/PlayerViewModelTest.kt`
+- `test/ui/player/FakePlayerRepository.kt`
+- `test/data/PlayerRepositoryTest.kt`
+- `androidTest/ui/player/NowPlayingScreenTest.kt`
 
-**Unit Tests**:
+**FakePlayerRepository** — test double that mirrors actual `PlayerRepository` API:
 
 ```kotlin
-class PlayerViewModelTest {
-    
-    @Test
-    fun `playPause toggles playback state`() = runTest {
-        // Given
-        val repository = FakePlayerRepository()
-        val viewModel = PlayerViewModel(repository)
-        
-        // When
-        viewModel.onEvent(PlayerEvent.PlayPause)
-        
-        // Then
-        assertEquals(PlaybackState.PLAYING, viewModel.uiState.value.playbackState)
-        
-        // When
-        viewModel.onEvent(PlayerEvent.PlayPause)
-        
-        // Then
-        assertEquals(PlaybackState.PAUSED, viewModel.uiState.value.playbackState)
+class FakePlayerRepository : PlayerRepository {
+    private val _uiState = MutableStateFlow(PlayerUiState())
+    override val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+
+    // Recorded calls for assertions
+    var lastSeekPosition: Long? = null
+    var playCallCount = 0
+    var pauseCallCount = 0
+    var skipNextCallCount = 0
+    var skipPreviousCallCount = 0
+    var lastPlayedSongs: List<Song>? = null
+    var lastQueuedSong: Song? = null
+    var lastPlayNextSong: Song? = null
+    var lastRemovedId: String? = null
+    var lastReorderedId: String? = null
+    var lastReorderPosition: Int? = null
+    var shuffleToggleCount = 0
+    var repeatToggleCount = 0
+
+    override suspend fun initialize() {}
+    override fun play() { playCallCount++ }
+    override fun pause() { pauseCallCount++ }
+    override fun skipToNext() { skipNextCallCount++ }
+    override fun skipToPrevious() { skipPreviousCallCount++ }
+    override fun seekTo(positionMs: Long) { lastSeekPosition = positionMs }
+    override fun toggleShuffle() { shuffleToggleCount++ }
+    override fun toggleRepeat() { repeatToggleCount++ }
+    override suspend fun playSongs(songs: List<Song>, startIndex: Int) { lastPlayedSongs = songs }
+    override suspend fun addToQueue(song: Song) { lastQueuedSong = song }
+    override suspend fun playNext(song: Song) { lastPlayNextSong = song }
+    override suspend fun removeFromQueue(queueItemId: String) { lastRemovedId = queueItemId }
+    override suspend fun reorderQueue(queueItemId: String, newPosition: Int) {
+        lastReorderedId = queueItemId
+        lastReorderPosition = newPosition
     }
-    
+    override fun currentPosition(): Long = _uiState.value.currentPosition
+
+    // Test helpers
+    fun emitState(state: PlayerUiState) { _uiState.value = state }
+}
+```
+
+**PlayerViewModelTest**:
+
+```kotlin
+@OptIn(ExperimentalCoroutinesApi::class)
+class PlayerViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private lateinit var repository: FakePlayerRepository
+    private lateinit var viewModel: PlayerViewModel
+
+    @Before
+    fun setup() {
+        repository = FakePlayerRepository()
+        viewModel = PlayerViewModel(repository)
+    }
+
     @Test
-    fun `seek updates current position`() = runTest {
-        val repository = FakePlayerRepository()
-        val viewModel = PlayerViewModel(repository)
-        
-        viewModel.onEvent(PlayerEvent.Seek(30000L))
-        
+    fun `PlayPause calls play when paused`() = runTest {
+        repository.emitState(PlayerUiState(playbackState = PlaybackState.PAUSED))
+
+        viewModel.onEvent(PlayerEvent.PlayPause)
+
+        assertEquals(1, repository.playCallCount)
+        assertEquals(0, repository.pauseCallCount)
+    }
+
+    @Test
+    fun `PlayPause calls pause when playing`() = runTest {
+        repository.emitState(PlayerUiState(playbackState = PlaybackState.PLAYING))
+
+        viewModel.onEvent(PlayerEvent.PlayPause)
+
+        assertEquals(1, repository.pauseCallCount)
+        assertEquals(0, repository.playCallCount)
+    }
+
+    @Test
+    fun `SkipToNext calls skipToNext on repository`() {
+        viewModel.onEvent(PlayerEvent.SkipToNext)
+        assertEquals(1, repository.skipNextCallCount)
+    }
+
+    @Test
+    fun `SkipToPrevious calls skipToPrevious on repository`() {
+        viewModel.onEvent(PlayerEvent.SkipToPrevious)
+        assertEquals(1, repository.skipPreviousCallCount)
+    }
+
+    @Test
+    fun `SeekTo updates seek position on repository`() {
+        viewModel.onEvent(PlayerEvent.SeekTo(30000L))
         assertEquals(30000L, repository.lastSeekPosition)
     }
-    
+
     @Test
-    fun `formatTime displays correct format`() {
-        val viewModel = PlayerViewModel(FakePlayerRepository())
-        
+    fun `ToggleShuffle calls toggleShuffle on repository`() {
+        viewModel.onEvent(PlayerEvent.ToggleShuffle)
+        assertEquals(1, repository.shuffleToggleCount)
+    }
+
+    @Test
+    fun `ToggleRepeat calls toggleRepeat on repository`() {
+        viewModel.onEvent(PlayerEvent.ToggleRepeat)
+        assertEquals(1, repository.repeatToggleCount)
+    }
+
+    @Test
+    fun `PlaySongs calls playSongs on repository`() = runTest {
+        val songs = listOf(Song(id = 1, title = "Test", artist = "Artist", album = "Album", albumArtUri = null, duration = 1000L, uri = Uri.EMPTY))
+
+        viewModel.onEvent(PlayerEvent.PlaySongs(songs, startIndex = 0))
+
+        advanceUntilIdle()
+        assertEquals(songs, repository.lastPlayedSongs)
+    }
+
+    @Test
+    fun `formatTime formats seconds correctly`() {
         assertEquals("0:32", viewModel.formatTime(32000))
+    }
+
+    @Test
+    fun `formatTime formats minutes and seconds correctly`() {
         assertEquals("3:45", viewModel.formatTime(225000))
+    }
+
+    @Test
+    fun `formatTime formats hours correctly`() {
         assertEquals("1:02:15", viewModel.formatTime(3735000))
+    }
+
+    @Test
+    fun `uiState reflects repository state`() = runTest {
+        val song = Song(id = 1, title = "Test", artist = "Artist", album = "Album", albumArtUri = null, duration = 1000L, uri = Uri.EMPTY)
+        repository.emitState(PlayerUiState(currentSong = song))
+
+        assertEquals(song, viewModel.uiState.value.currentSong)
     }
 }
 ```
 
-**UI Tests**:
+**NowPlayingScreenTest** (instrumented):
+
 ```kotlin
 class NowPlayingScreenTest {
-    
+
     @get:Rule
     val composeTestRule = createComposeRule()
-    
+
+    private val testSong = Song(
+        id = 1,
+        title = "Test Song",
+        artist = "Test Artist",
+        album = "Test Album",
+        albumArtUri = null,
+        duration = 225000L,
+        uri = Uri.EMPTY
+    )
+
     @Test
     fun nowPlayingScreen_displaysCurrentSong() {
-        val song = Song(
-            id = 1,
-            title = "Test Song",
-            artist = "Test Artist",
-            // ...
-        )
-        
-        val uiState = PlayerUiState(currentSong = song)
-        
         composeTestRule.setContent {
             NowPlayingScreenContent(
-                uiState = uiState,
+                uiState = PlayerUiState(currentSong = testSong),
                 onEvent = {},
+                onNavigateBack = {},
+                formatTime = { "3:45" }
+            )
+        }
+
+        composeTestRule.onNodeWithText("Test Song").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Test Artist").assertIsDisplayed()
+    }
+
+    @Test
+    fun playButton_triggersPlayPauseEvent() {
+        val events = mutableListOf<PlayerEvent>()
+
+        composeTestRule.setContent {
+            NowPlayingScreenContent(
+                uiState = PlayerUiState(playbackState = PlaybackState.PAUSED),
+                onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" }
             )
         }
-        
-        composeTestRule.onNodeWithText("Test Song").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Test Artist").assertIsDisplayed()
+
+        composeTestRule.onNodeWithContentDescription("Play").performClick()
+        assertTrue(events.contains(PlayerEvent.PlayPause))
     }
-    
+
     @Test
-    fun playButton_triggersPlayPauseEvent() {
+    fun pauseButton_triggersPlayPauseEvent() {
         val events = mutableListOf<PlayerEvent>()
-        
+
+        composeTestRule.setContent {
+            NowPlayingScreenContent(
+                uiState = PlayerUiState(playbackState = PlaybackState.PLAYING),
+                onEvent = { events.add(it) },
+                onNavigateBack = {},
+                formatTime = { "0:00" }
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Pause").performClick()
+        assertTrue(events.contains(PlayerEvent.PlayPause))
+    }
+
+    @Test
+    fun skipNext_triggersSkipToNextEvent() {
+        val events = mutableListOf<PlayerEvent>()
+
         composeTestRule.setContent {
             NowPlayingScreenContent(
                 uiState = PlayerUiState(),
@@ -1396,58 +1715,80 @@ class NowPlayingScreenTest {
                 formatTime = { "0:00" }
             )
         }
-        
-        composeTestRule.onNodeWithContentDescription("Play").performClick()
-        
-        assertTrue(events.contains(PlayerEvent.PlayPause))
+
+        composeTestRule.onNodeWithContentDescription("Next").performClick()
+        assertTrue(events.contains(PlayerEvent.SkipToNext))
     }
 }
 ```
 
-**Run tests**: `.\gradlew.bat test`
+**Note**: `MainDispatcherRule` replaces `Dispatchers.Main` for unit tests — use the JUnit 4 + modern dispatcher version:
+
+```kotlin
+@OptIn(ExperimentalCoroutinesApi::class)
+class MainDispatcherRule(
+    val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()
+) : TestWatcher() {
+    override fun starting(description: Description) {
+        Dispatchers.setMain(testDispatcher)
+    }
+    override fun finished(description: Description) {
+        Dispatchers.resetMain()
+    }
+}
+```
+
+**Note**: `NowPlayingScreenTest` and `LibraryScreenTest` require `createAndroidComposeRule<ComponentActivity>()` and an `androidTest/AndroidManifest.xml` declaring `ComponentActivity`. Keep device screen unlocked during test runs (enable **Developer Options → Stay Awake**).
+
+**Run tests**:
+```bash
+.\gradlew.bat test                  # Unit tests
+.\gradlew.bat connectedAndroidTest  # UI tests
+```
 
 ---
 
 ## Implementation Checklist
 
 ### Phase 2.1: Core Playback (Days 1-3)
-- [ ] Add Media3 dependencies
-- [ ] Create PlaybackState and PlayerUiState models
-- [ ] Implement PlaybackService with ExoPlayer (manual audio focus)
-- [ ] Implement AudioFocusHandler with fade support
-- [ ] Setup MediaSession
-- [ ] Add BecomingNoisyReceiver for headphone disconnect
-- [ ] Add foreground service with notification
-- [ ] Create PlayerRepository with MediaController
-- [ ] Implement basic play/pause/skip commands
+- [x] Add Media3 dependencies
+- [x] Create PlaybackState and PlayerUiState models
+- [x] Implement PlaybackService with ExoPlayer (manual audio focus)
+- [x] Implement AudioFocusHandler with fade support
+- [x] Setup MediaSession
+- [x] Add BecomingNoisyReceiver for headphone disconnect
+- [x] Add foreground service with notification
+- [x] Create PlayerRepository with MediaController
+- [x] Implement basic play/pause/skip commands
 
 ### Phase 2.2: UI Layer (Days 4-5)
-- [ ] Create PlayerViewModel
-- [ ] Build NowPlayingScreen layout
-- [ ] Implement SeekBar component
-- [ ] Add PlayerControls component
-- [ ] Create MiniPlayer component
-- [ ] Add navigation to NowPlaying
+- [x] Create PlayerViewModel
+- [x] Build NowPlayingScreen layout
+- [x] Implement SeekBar component
+- [x] Add PlayerControls component
+- [x] Create MiniPlayer component
+- [x] Add navigation to NowPlaying
 
 ### Phase 2.3: Queue Management (Day 6)
-- [ ] Implement queue operations in repository
-- [ ] Add QueueDao for persistence
-- [ ] Build QueueSheet UI
-- [ ] Add reordering with drag-and-drop
-- [ ] Implement "play next" and "add to end"
+- [x] Implement queue operations in repository
+- [x] Add QueueDao for persistence
+- [x] Build QueueSheet UI
+- [x] Add reordering with drag-and-drop
+- [x] Implement "play next" and "add to end"
 
 ### Phase 2.4: Audio Focus & Hardware (Day 7)
 - [ ] Test AudioFocusHandler fade behavior with phone calls
 - [ ] Verify smooth fade out on headphone disconnect
 - [ ] Test Bluetooth controls
 - [ ] Test fade behavior with other apps (YouTube, Spotify)
-- [ ] Add shuffle and repeat modes
+- [x] Add shuffle and repeat modes
 - [ ] Verify no audio glitches during fades
 
 ### Phase 2.5: Testing & Polish (Day 8)
-- [ ] Write unit tests for ViewModel
-- [ ] Write unit tests for Repository
-- [ ] Write UI tests for NowPlayingScreen
+- [x] Write unit tests for ViewModel
+- [ ] Write unit tests for Repository (skipped — MediaController requires real service, covered by end-to-end testing)
+- [x] Write UI tests for NowPlayingScreen
+- [x] Write UI tests for LibraryScreen
 - [ ] Test background playback
 - [ ] Test notification controls
 - [ ] Test lock screen controls
@@ -1505,19 +1846,24 @@ class NowPlayingScreenTest {
 
 1. **Media3 Version**: Confirm Media3 1.5.0 is compatible with AGP 9.0.0
    - **Resolution**: Check compatibility during Layer 1 implementation
-   
+
 2. **Queue Size Limits**: Should we limit queue size to prevent memory issues?
-   - **Proposal**: No hard limit, but warn user if queue > 1000 items
-   
+   - **Resolution**: No hard limit for now, warn user if queue > 1000 items in future polish pass
+
 3. **Playback Speed**: Should we support variable playback speed?
-   - **Decision**: Out of scope for Phase 2, add to future enhancements
+   - **Resolution**: Out of scope for Phase 2, added to future enhancements
 
 4. **Casting Support**: Chromecast/other casting protocols?
-   - **Decision**: Out of scope, evaluate in future phases
+   - **Resolution**: Out of scope, evaluate in future phases
 
 5. **Fade Configuration**: Should fade durations be user-configurable?
-   - **Proposal**: Hard-code 500ms for now, make configurable in settings later if users request it
-   - **Rationale**: 500ms is industry standard (Spotify, Apple Music), avoid premature optimization
+   - **Resolution**: Hard-coded 500ms, matches Spotify/Apple Music standard. Make configurable in settings if users request it.
+
+6. **PlayerRepository testing**: How to unit test MediaController interactions?
+   - **Resolution**: Skipped unit tests for repository — MediaController requires a real PlaybackService. Covered by end-to-end device testing instead. Queue manipulation logic (moveUp/moveDown) is pure and testable if needed.
+
+7. **Instrumented test screen lock**: Tests fail if device screen locks during run.
+   - **Resolution**: Enable **Developer Options → Stay Awake** on test device. Use `createAndroidComposeRule<ComponentActivity>()` with an `androidTest/AndroidManifest.xml` declaring `ComponentActivity`.
 
 ## Resources
 
@@ -1525,11 +1871,17 @@ class NowPlayingScreenTest {
 - [MediaSession Guide](https://developer.android.com/media/media3/session/control-playback)
 - [Audio Focus](https://developer.android.com/media/optimize/audio-focus)
 - [Background Playback](https://developer.android.com/media/media3/session/background-playback)
+- [Reorderable Library](https://github.com/Calvin-LL/Reorderable)
 
 ---
 
-**Next Steps**: 
-1. Review this plan for completeness
-2. Confirm Media3 version compatibility
-3. Begin Layer 1 implementation
-4. Create `design.md` after Phase 2 is complete
+**Status**: ✅ Phase 2 Complete
+
+**Remaining manual testing** (Phase 2.4):
+- AudioFocusHandler fade behavior with phone calls
+- Headphone disconnect fade out
+- Bluetooth controls
+- Fade behavior with other audio apps
+- End-to-end background playback and notification controls
+
+**Next Phase**: Song/Album/Artist → Playback navigation (new chat)

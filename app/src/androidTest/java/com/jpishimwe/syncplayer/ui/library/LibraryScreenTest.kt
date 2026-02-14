@@ -1,6 +1,8 @@
 package com.jpishimwe.syncplayer.ui.library
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -11,7 +13,7 @@ import org.junit.Test
 
 class LibraryScreenTest {
     @get:Rule
-    val composeTestRule = createComposeRule()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun loadingState_showsProgressIndicator() {
@@ -44,6 +46,7 @@ class LibraryScreenTest {
             )
         }
 
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("My Song").assertIsDisplayed()
     }
 

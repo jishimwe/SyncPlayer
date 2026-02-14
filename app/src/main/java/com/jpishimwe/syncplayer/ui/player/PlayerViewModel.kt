@@ -3,6 +3,7 @@ package com.jpishimwe.syncplayer.ui.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jpishimwe.syncplayer.data.PlayerRepository
+import com.jpishimwe.syncplayer.data.PlayerRepositoryImpl
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -61,6 +62,10 @@ class PlayerViewModel
 
                 is PlayerEvent.SeekTo -> {
                     playerRepository.seekTo(event.positionMs)
+                }
+
+                is PlayerEvent.SeekToQueueItem -> {
+                    playerRepository.seekToQueueItem(event.index)
                 }
 
                 PlayerEvent.ToggleShuffle -> {

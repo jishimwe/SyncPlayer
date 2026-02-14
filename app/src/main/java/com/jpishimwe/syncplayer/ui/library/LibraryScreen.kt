@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.ui.library
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,43 +30,65 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayer
 
 @Composable
 fun LibraryScreen(
+    onNavigateToNowPlaying: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibraryViewModel = hiltViewModel(),
+    viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
+    playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    PermissionHandler {
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val playerState by playerViewModel.uiState.collectAsStateWithLifecycle()
+        val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.refreshLibrary()
-    }
+        LaunchedEffect(Unit) {
+            viewModel.refreshLibrary()
+        }
 
-    val lifeCycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifeCycleOwner) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_RESUME) {
-                    viewModel.onAppResumed()
+        val lifeCycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifeCycleOwner) {
+            val observer =
+                LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        viewModel.onAppResumed()
+                    }
                 }
-            }
 
-        lifeCycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifeCycleOwner.lifecycle.removeObserver(observer)
+            lifeCycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                lifeCycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
+
+        Scaffold(
+            bottomBar = {
+                if (playerState.currentSong != null) {
+                    MiniPlayer(
+                        uiState = playerState,
+                        onEvent = playerViewModel::onEvent,
+                        onClick = onNavigateToNowPlaying,
+                    )
+                }
+            },
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding)) {
+                LibraryScreenContent(
+                    uiState = uiState,
+                    selectedTab = selectedTab,
+                    onTabSelected = viewModel::selectTab,
+                    onRetry = viewModel::refreshLibrary,
+                    modifier = modifier,
+                )
+            }
         }
     }
-
-    LibraryScreenContent(
-        uiState = uiState,
-        selectedTab = selectedTab,
-        onTabSelected = viewModel::selectTab,
-        onRetry = viewModel::refreshLibrary,
-        modifier = modifier,
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

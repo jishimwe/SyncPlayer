@@ -1,12 +1,14 @@
 package com.jpishimwe.syncplayer.ui.player
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun NowPlaingScreen(
-    viewModel: PlayerViewModel = hiltViewModel(),
+fun NowPlayingScreen(
+    viewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     onNavigateBack: () -> Unit,
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
