@@ -43,6 +43,7 @@ import com.jpishimwe.syncplayer.ui.player.components.MiniPlayer
 fun LibraryScreen(
     onNavigateToNowPlaying: () -> Unit,
     onNavigateToAlbumDetail: (albumId: Long, albumName: String) -> Unit,
+    onNavigateToArtistDetail: (artistName: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
@@ -86,7 +87,7 @@ fun LibraryScreen(
                     onNavigateToAlbumDetail(albumId, albumName)
                 },
                 onArtistClick = { artistName ->
-                    onNavigateToAlbumDetail(artistName.hashCode().toLong(), artistName)
+                    onNavigateToArtistDetail(artistName)
                 },
                 modifier = modifier,
             )

@@ -7,6 +7,7 @@ enum class PlaybackState {
     PAUSED,
     ENDED,
     ERROR,
+    READY,
 }
 
 enum class RepeatMode {

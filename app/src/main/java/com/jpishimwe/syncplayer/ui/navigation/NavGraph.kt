@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.jpishimwe.syncplayer.ui.library.AlbumDetailScreen
+import com.jpishimwe.syncplayer.ui.library.ArtistDetailScreen
 import com.jpishimwe.syncplayer.ui.library.LibraryScreen
 import com.jpishimwe.syncplayer.ui.player.NowPlayingScreen
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
@@ -69,6 +70,9 @@ fun NavGraph(
                     onNavigateToAlbumDetail = { id, name ->
                         navController.navigate(Screen.AlbumDetail.createRoute(id, name))
                     },
+                    onNavigateToArtistDetail = { name ->
+                        navController.navigate(Screen.ArtistDetail.createRoute(name))
+                    },
                     modifier = modifier,
                 )
             }
@@ -84,6 +88,20 @@ fun NavGraph(
                 AlbumDetailScreen(
                     albumId = backStackEntry.arguments?.getLong("albumId") ?: 0L,
                     albumName = backStackEntry.arguments?.getString("albumName") ?: "",
+                    onNavigateBack = { navController.navigateUp() },
+                    onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
+                )
+            }
+
+            composable(
+                Screen.ArtistDetail.route,
+                arguments =
+                    listOf(
+                        navArgument("artistName") { type = NavType.StringType },
+                    ),
+            ) { backStackEntry ->
+                ArtistDetailScreen(
+                    artistName = backStackEntry.arguments?.getString("artistName") ?: "",
                     onNavigateBack = { navController.navigateUp() },
                     onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
                 )

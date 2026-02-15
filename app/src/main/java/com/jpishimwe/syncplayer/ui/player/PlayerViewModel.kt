@@ -6,13 +6,9 @@ import com.jpishimwe.syncplayer.data.PlayerRepository
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -30,14 +26,6 @@ class PlayerViewModel
                     started = SharingStarted.WhileSubscribed(5000),
                     initialValue = PlayerUiState(),
                 )
-
-        private val positionUpdateFlow =
-            flow {
-                while (currentCoroutineContext().isActive) {
-                    emit(Unit)
-                    delay(1000)
-                }
-            }
 
         init {
             viewModelScope.launch {

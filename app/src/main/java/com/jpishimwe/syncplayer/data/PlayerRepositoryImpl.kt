@@ -19,6 +19,7 @@ import com.jpishimwe.syncplayer.service.PlaybackService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +53,11 @@ class PlayerRepositoryImpl
                                 if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED,
                         )
                     }
+                    if (isPlaying) {
+                        startPositionUpdates()
+                    } else {
+                        stopPositionUpdates()
+                    }
                 }
 
                 override fun onMediaItemTransition(
@@ -74,8 +80,10 @@ class PlayerRepositoryImpl
                                     Player.STATE_BUFFERING -> PlaybackState.BUFFERING
                                     Player.STATE_IDLE -> PlaybackState.IDLE
                                     Player.STATE_ENDED -> PlaybackState.ENDED
+                                    Player.STATE_READY -> PlaybackState.READY
                                     else -> _playbackState.value.playbackState
                                 },
+                            duration = mediaController?.duration?.coerceAtLeast(0L) ?: 0L,
                         )
                     }
                 }
@@ -114,15 +122,30 @@ class PlayerRepositoryImpl
 
         private val repositoryScope = CoroutineScope((SupervisorJob() + Dispatchers.Main))
 
-        private fun startPositionUdates() {
-            repositoryScope.launch {
-                while (isActive && mediaController?.isPlaying == true) {
-                    delay(1000)
-                    _playbackState.value.currentSong?.let {
-                        _playbackState.update { it.copy(currentPosition = mediaController?.currentPosition ?: 0L) }
+        private var positionUpdateJob: Job? = null
+
+        private fun startPositionUpdates() {
+            positionUpdateJob?.cancel()
+            positionUpdateJob =
+                repositoryScope.launch {
+                    while (isActive && mediaController?.isPlaying == true) {
+                        delay(500)
+                        _playbackState.value.currentSong?.let {
+                            _playbackState.update {
+                                it.copy(
+                                    currentPosition = mediaController?.currentPosition ?: 0L,
+                                    duration =
+                                        mediaController?.duration ?: 0L,
+                                )
+                            }
+                        }
                     }
                 }
-            }
+        }
+
+        private fun stopPositionUpdates() {
+            positionUpdateJob?.cancel()
+            positionUpdateJob = null
         }
 
         override suspend fun initialize() {
@@ -164,6 +187,7 @@ class PlayerRepositoryImpl
 
         override fun seekTo(positionMs: Long) {
             mediaController?.seekTo(positionMs)
+            _playbackState.update { it.copy(currentPosition = positionMs) }
         }
 
         override suspend fun playSongs(

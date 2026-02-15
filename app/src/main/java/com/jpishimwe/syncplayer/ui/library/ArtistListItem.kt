@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.ui.library
 
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -13,11 +14,11 @@ import com.jpishimwe.syncplayer.model.Artist
 @Composable
 fun ArtistListItem(
     artist: Artist,
-    onArtistClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onArtistClick: () -> Unit = {},
 ) {
     ListItem(
-        modifier = modifier,
+        modifier = modifier.clickable(onClick = onArtistClick),
         leadingContent = {
             Icon(Icons.Default.Person, contentDescription = null)
         },

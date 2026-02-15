@@ -21,8 +21,8 @@ import com.jpishimwe.syncplayer.model.Album
 @Composable
 fun AlbumGridItem(
     album: Album,
-    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     Card(
         modifier = modifier,

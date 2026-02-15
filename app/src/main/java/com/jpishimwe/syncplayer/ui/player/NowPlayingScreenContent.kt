@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.PlaylistAddCircle
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOn
+import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.ShuffleOn
 import androidx.compose.material3.CircularProgressIndicator
@@ -80,7 +81,7 @@ fun NowPlayingScreenContent(
 
             SeekBar(
                 currentPosition = uiState.currentPosition,
-                duration = uiState.currentSong?.duration ?: 0L,
+                duration = uiState.duration,
                 onSeek = { onEvent(PlayerEvent.SeekTo(it)) },
                 formatTime = formatTime,
             )
@@ -123,7 +124,7 @@ fun RepeatButton(
     IconButton(onClick = onClick) {
         when (mode) {
             RepeatMode.ALL -> Icon(Icons.Default.RepeatOn, contentDescription = "Repeat all")
-            RepeatMode.ONE -> Icon(Icons.Default.RepeatOn, contentDescription = "Repeat one")
+            RepeatMode.ONE -> Icon(Icons.Default.RepeatOne, contentDescription = "Repeat one")
             RepeatMode.OFF -> Icon(Icons.Default.Repeat, contentDescription = "Repeat off")
         }
     }
