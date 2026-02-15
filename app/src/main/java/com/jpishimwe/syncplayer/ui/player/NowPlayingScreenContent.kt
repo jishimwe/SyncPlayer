@@ -136,9 +136,9 @@ fun ShuffleButton(
 ) {
     IconButton(onClick) {
         if (isEnabled) {
-            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle on")
+            Icon(Icons.Default.ShuffleOn, contentDescription = "Shuffle on")
         } else {
-            Icon(Icons.Default.ShuffleOn, contentDescription = "Shuffle off")
+            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle off")
         }
     }
 }

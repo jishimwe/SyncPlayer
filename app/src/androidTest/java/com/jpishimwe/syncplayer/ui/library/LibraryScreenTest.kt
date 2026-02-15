@@ -1,6 +1,7 @@
 package com.jpishimwe.syncplayer.ui.library
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -23,6 +24,10 @@ class LibraryScreenTest {
                 selectedTab = LibraryTab.SONGS,
                 onTabSelected = {},
                 onRetry = {},
+                onSongClick = { _, _ -> },
+                onAlbumClick = { _, _ -> },
+                onArtistClick = {},
+                modifier = Modifier,
             )
         }
 
@@ -43,6 +48,10 @@ class LibraryScreenTest {
                 selectedTab = LibraryTab.SONGS,
                 onTabSelected = {},
                 onRetry = {},
+                onSongClick = { _, _ -> },
+                onAlbumClick = { _, _ -> },
+                onArtistClick = {},
+                modifier = Modifier,
             )
         }
 
@@ -67,6 +76,10 @@ class LibraryScreenTest {
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
                 onRetry = {},
+                onSongClick = { _, _ -> },
+                onAlbumClick = { _, _ -> },
+                onArtistClick = {},
+                modifier = Modifier,
             )
         }
 
@@ -86,6 +99,10 @@ class LibraryScreenTest {
                 selectedTab = LibraryTab.SONGS,
                 onTabSelected = {},
                 onRetry = {},
+                onSongClick = { _, _ -> },
+                onAlbumClick = { _, _ -> },
+                onArtistClick = {},
+                modifier = Modifier,
             )
         }
 
@@ -100,6 +117,10 @@ class LibraryScreenTest {
                 selectedTab = LibraryTab.SONGS,
                 onTabSelected = {},
                 onRetry = {},
+                onSongClick = { _, _ -> },
+                onAlbumClick = { _, _ -> },
+                onArtistClick = {},
+                modifier = Modifier,
             )
         }
 

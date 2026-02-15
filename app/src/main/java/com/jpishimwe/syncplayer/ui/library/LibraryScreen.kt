@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,12 +34,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 import com.jpishimwe.syncplayer.ui.player.components.MiniPlayer
 
 @Composable
 fun LibraryScreen(
     onNavigateToNowPlaying: () -> Unit,
+    onNavigateToAlbumDetail: (albumId: Long, albumName: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
@@ -67,26 +71,25 @@ fun LibraryScreen(
             }
         }
 
-        Scaffold(
-            bottomBar = {
-                if (playerState.currentSong != null) {
-                    MiniPlayer(
-                        uiState = playerState,
-                        onEvent = playerViewModel::onEvent,
-                        onClick = onNavigateToNowPlaying,
-                    )
-                }
-            },
-        ) { padding ->
-            Column(modifier = Modifier.padding(padding)) {
-                LibraryScreenContent(
-                    uiState = uiState,
-                    selectedTab = selectedTab,
-                    onTabSelected = viewModel::selectTab,
-                    onRetry = viewModel::refreshLibrary,
-                    modifier = modifier,
-                )
-            }
+        Column(modifier = Modifier.padding(8.dp)) {
+            LibraryScreenContent(
+                uiState = uiState,
+                selectedTab = selectedTab,
+                onTabSelected = viewModel::selectTab,
+                onRetry = viewModel::refreshLibrary,
+                onSongClick =
+                    { songs, index ->
+                        playerViewModel.onEvent(PlayerEvent.PlaySongs(songs, index))
+                        onNavigateToNowPlaying()
+                    },
+                onAlbumClick = { albumId, albumName ->
+                    onNavigateToAlbumDetail(albumId, albumName)
+                },
+                onArtistClick = { artistName ->
+                    onNavigateToAlbumDetail(artistName.hashCode().toLong(), artistName)
+                },
+                modifier = modifier,
+            )
         }
     }
 }
@@ -98,6 +101,9 @@ fun LibraryScreenContent(
     selectedTab: LibraryTab,
     onTabSelected: (LibraryTab) -> Unit,
     onRetry: () -> Unit,
+    onSongClick: (songs: List<Song>, index: Int) -> Unit,
+    onAlbumClick: (albumId: Long, albumName: String) -> Unit,
+    onArtistClick: (artistName: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -143,9 +149,9 @@ fun LibraryScreenContent(
 
                 is LibraryUiState.Loaded -> {
                     when (selectedTab) {
-                        LibraryTab.SONGS -> SongsTab(uiState)
-                        LibraryTab.ALBUMS -> AlbumsTab(uiState)
-                        LibraryTab.ARTISTS -> ArtistsTab(uiState)
+                        LibraryTab.SONGS -> SongsTab(uiState, onSongClick)
+                        LibraryTab.ALBUMS -> AlbumsTab(uiState, onAlbumClick)
+                        LibraryTab.ARTISTS -> ArtistsTab(uiState, onArtistClick)
                     }
                 }
             }
@@ -154,20 +160,29 @@ fun LibraryScreenContent(
 }
 
 @Composable
-private fun SongsTab(state: LibraryUiState.Loaded) {
+private fun SongsTab(
+    state: LibraryUiState.Loaded,
+    onSongClick: (songs: List<Song>, index: Int) -> Unit,
+) {
     if (state.songs.isEmpty()) {
         EmptyState("No songs found")
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(state.songs, key = { it.id }) { song ->
-                SongListItem(song)
+            itemsIndexed(state.songs, key = { _, song -> song.id }) { index, song ->
+                SongListItem(
+                    song,
+                    onClick = { onSongClick(state.songs, index) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AlbumsTab(state: LibraryUiState.Loaded) {
+private fun AlbumsTab(
+    state: LibraryUiState.Loaded,
+    onAlbumClick: (albumId: Long, albumName: String) -> Unit,
+) {
     if (state.albums.isEmpty()) {
         EmptyState("No albums found")
     } else {
@@ -179,20 +194,26 @@ private fun AlbumsTab(state: LibraryUiState.Loaded) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.albums, key = { it.id }) { album ->
-                AlbumGridItem(album)
+                AlbumGridItem(
+                    album,
+                    onClick = { onAlbumClick(album.id, album.name) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ArtistsTab(state: LibraryUiState.Loaded) {
+private fun ArtistsTab(
+    state: LibraryUiState.Loaded,
+    onArtistClick: (artistName: String) -> Unit,
+) {
     if (state.artists.isEmpty()) {
         EmptyState("No artists found")
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(state.artists, key = { it.name }) { artist ->
-                ArtistListItem(artist)
+                ArtistListItem(artist, onArtistClick = { onArtistClick(artist.name) })
             }
         }
     }

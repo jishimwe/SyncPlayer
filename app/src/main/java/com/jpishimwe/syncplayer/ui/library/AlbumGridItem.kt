@@ -21,9 +21,13 @@ import com.jpishimwe.syncplayer.model.Album
 @Composable
 fun AlbumGridItem(
     album: Album,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier) {
+    Card(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
         Column {
             SubcomposeAsyncImage(
                 model = album.albumArtUri,

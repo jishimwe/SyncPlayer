@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.ui.library
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
@@ -17,17 +18,22 @@ import coil3.compose.SubcomposeAsyncImage
 import com.jpishimwe.syncplayer.model.Song
 
 @Composable
-fun SongListItem(song: Song, modifier: Modifier = Modifier) {
+fun SongListItem(
+    song: Song,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     ListItem(
-        modifier = modifier,
+        modifier = modifier.clickable(onClick = onClick),
         leadingContent = {
             SubcomposeAsyncImage(
                 model = song.albumArtUri,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(MaterialTheme.shapes.small),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(MaterialTheme.shapes.small),
                 error = { Icon(Icons.Default.MusicNote, contentDescription = null) },
             )
         },

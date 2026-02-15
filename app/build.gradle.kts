@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.test.junit4)
     implementation(libs.androidx.room.external.antlr)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     ksp(libs.androidx.room.compiler)
 
     // Hilt

@@ -11,6 +11,7 @@ import com.jpishimwe.syncplayer.data.local.QueueDao
 import com.jpishimwe.syncplayer.data.local.QueueEntity
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.RepeatMode
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.model.toMediaItem
 import com.jpishimwe.syncplayer.model.toSong
@@ -60,6 +61,7 @@ class PlayerRepositoryImpl
                     _playbackState.update {
                         it.copy(
                             currentSong = mediaItem?.toSong(),
+                            currentQueueIndex = mediaController?.currentMediaItemIndex ?: -1,
                         )
                     }
                 }
@@ -83,6 +85,28 @@ class PlayerRepositoryImpl
                         it.copy(
                             playbackState = PlaybackState.ERROR,
                             error = error.message,
+                        )
+                    }
+                }
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    _playbackState.update {
+                        it.copy(
+                            isShuffleEnabled = shuffleModeEnabled,
+                        )
+                    }
+                }
+
+                override fun onRepeatModeChanged(repeatMode: Int) {
+                    _playbackState.update {
+                        it.copy(
+                            repeatMode =
+                                when (repeatMode) {
+                                    Player.REPEAT_MODE_ALL -> RepeatMode.ALL
+                                    Player.REPEAT_MODE_ONE -> RepeatMode.ONE
+                                    Player.REPEAT_MODE_OFF -> RepeatMode.OFF
+                                    else -> _playbackState.value.repeatMode
+                                },
                         )
                     }
                 }
@@ -219,6 +243,10 @@ class PlayerRepositoryImpl
                 queueDao.clearQueue()
                 queueDao.insertList(queue)
             }
+        }
+
+        override fun seekToQueueItem(index: Int) {
+            TODO("Not yet implemented")
         }
 
         fun moveUp(

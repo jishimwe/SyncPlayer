@@ -13,6 +13,7 @@ import com.jpishimwe.syncplayer.model.Artist
 @Composable
 fun ArtistListItem(
     artist: Artist,
+    onArtistClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ListItem(

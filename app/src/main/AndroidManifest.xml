@@ -3,8 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
         android:name=".SyncPlayerApplication"
@@ -28,9 +29,13 @@
         </activity>
         <service
             android:name=".service.PlaybackService"
-            android:foregroundServiceType="mediaPlayback"
             android:exported="true"
-            android:permission="android.permission.BIND_MEDIA_BROWSER_SERVICE">
+            android:permission="android.permission.BIND_MEDIA_BROWSER_SERVICE"
+            android:foregroundServiceType="mediaPlayback|mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>

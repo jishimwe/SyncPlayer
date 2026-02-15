@@ -7,6 +7,7 @@ import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -91,4 +92,8 @@ class LibraryViewModel
                 refreshLibrary()
             }
         }
+
+        fun getSongsByAlbum(albumId: Long): Flow<List<Song>> = songRepository.getSongsByAlbum(albumId)
+
+        fun getSongsByArtist(artist: String): Flow<List<Song>> = songRepository.getSongsByArtist(artist)
     }

@@ -24,6 +24,7 @@ class FakePlayerRepository : PlayerRepository {
     var lastReorderPosition: Int? = null
     var shuffleToggleCount = 0
     var repeatToggleCount = 0
+    var lastSeekToQueueItemIndex: Int? = null
 
     override suspend fun initialize() {}
 
@@ -80,6 +81,10 @@ class FakePlayerRepository : PlayerRepository {
     ) {
         lastReorderedId = queueItemId
         lastReorderPosition = newPosition
+    }
+
+    override fun seekToQueueItem(index: Int) {
+        lastSeekToQueueItemIndex = index
     }
 
     // Test helpers
