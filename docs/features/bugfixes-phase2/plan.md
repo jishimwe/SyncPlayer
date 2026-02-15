@@ -447,14 +447,112 @@ The dead `positionUpdateFlow` is removed from `PlayerViewModel`. No test current
 
 ## Implementation checklist
 
-- [ ] Layer 1: Add shuffle/repeat/queue index listener callbacks to `playerListener`
-- [ ] Layer 2: Fix position polling (rename, trigger from listener, update seekTo)
-- [ ] Layer 3a: Wire `Modifier.clickable` to `ArtistListItem`
-- [ ] Layer 3b: Add `onNavigateToArtistDetail` to `LibraryScreen`
-- [ ] Layer 3c: Add `ArtistDetail` composable route to `NavGraph`
-- [ ] Layer 4a: Populate queue in `PlayerUiState` + `syncQueueState` helper
-- [ ] Layer 4b: Implement `seekToQueueItem`
-- [ ] Layer 4c: Wire `QueueSheet` in `NowPlayingScreenContent`
-- [ ] Layer 5: Fix `ShuffleButton` icon swap
-- [ ] Layer 6: Fix manifest duplicates
+- [x] Layer 1: Add shuffle/repeat/queue index listener callbacks to `playerListener`
+- [x] Layer 2: Fix position polling (rename, trigger from listener, update seekTo)
+  - [x] Call `startPositionUpdates()` from `onIsPlayingChanged`
+  - [x] Populate `duration` in polling loop
+  - [x] Populate `duration` in `onPlaybackStateChanged` (pre-play case — not in original plan)
+  - [x] Fix `SeekBar` call site to use `uiState.duration` instead of `uiState.currentSong?.duration`
+  - [x] Optimistic position update in `seekTo`
+- [x] Layer 3a: Wire `Modifier.clickable` to `ArtistListItem`
+- [x] Layer 3b: Add `onNavigateToArtistDetail` to `LibraryScreen`
+- [x] Layer 3c: Add `ArtistDetail` composable route to `NavGraph`
+- [x] Layer 4a: Populate queue in `PlayerUiState` + `syncQueueState` helper
+  - [x] Fix `syncQueueState` to use `mapNotNull` correctly (original plan had `?: null` bug)
+- [x] Layer 4b: Implement `seekToQueueItem`
+- [x] Layer 4c: Wire `QueueSheet` in `NowPlayingScreenContent`
+- [x] Layer 5: Fix `ShuffleButton` icon swap
+- [x] Layer 6: Fix manifest duplicates
+- [x] Bonus: Hide MiniPlayer when on NowPlayingScreen (not in original plan)
 - [ ] Layer 7: Run tests, verify no regressions
+
+---
+
+## Phase 3 — Queue Bug Fixes
+
+### Context
+
+After wiring the queue sheet, manual testing revealed 3 remaining queue bugs:
+
+1. **Reorder not working** — dragging queue items has no effect
+2. **Delete not working** — removing a queue item has no effect
+3. **Can't play a song from the queue** — tapping a queue item doesn't start playback
+
+All three bugs shared a single root cause: `QueueItem.id` was a randomly generated UUID, making it impossible to match queue items against `MediaItem.mediaId` (which is `song.id.toString()`) or `QueueEntity.id` in the DB.
+
+### Root cause analysis
+
+**Root cause (all 3 bugs):** `QueueItem.id` was defined as `UUID.randomUUID().toString()` — a new random value generated every time a `QueueItem` is instantiated. This made it impossible to correlate a `QueueItem` with its corresponding `MediaItem` in the media controller (which uses `song.id.toString()` as `mediaId`) or with its `QueueEntity` in the DB.
+
+**Secondary bug (reorder):** `itemsIndexed` used `item.id` as the key, but `ReorderableItem` used `item.song.id.toString()` as its key. The reorderable library reads keys from the `LazyColumn`, so `from.key` in the `rememberReorderableLazyListState` callback was `item.id`, not `item.song.id.toString()` — causing a key mismatch that silently dropped reorder events.
+
+**Additional bug (reorder):** `ReorderableItem` key was cast to `String` via `from.key as String`, but the `LazyColumn` key was `item.song.id` (a `Long`) — causing a runtime `ClassCastException`.
+
+**Additional bug (playSongs):** Queue positions in the DB were initialized starting at `startIndex` instead of `0`, causing an off-by-one mismatch when `removeFromQueue` used the DB position as a media controller index.
+
+### Layer 8: Fix queue item ID and key consistency
+
+**Files:** `model/QueueItem.kt`, `ui/player/components/QueueSheet.kt`
+
+**Fix 1 — Use stable ID in `QueueItem`:**
+
+```kotlin
+// Change from:
+data class QueueItem(
+    val song: Song,
+    val id: String = UUID.randomUUID().toString(),
+)
+
+// To:
+data class QueueItem(
+    val song: Song,
+    val id: String = song.id.toString(),
+)
+```
+
+**Fix 2 — Make `LazyColumn` and `ReorderableItem` keys consistent in `QueueSheet`:**
+
+```kotlin
+itemsIndexed(
+    items = queue,
+    key = { _, item -> item.id },  // was item.id (UUID), now song.id.toString()
+) { index, item ->
+    ReorderableItem(reorderableLazyListState, key = item.id) {  // match LazyColumn key
+        ...
+    }
+}
+```
+
+**Fix 3 — Fix `Long` → `String` cast in reorder callback:**
+
+```kotlin
+// Change from:
+onReorder(from.key as String, to.index)
+
+// To:
+onReorder(from.key.toString(), to.index)
+```
+
+**Fix 4 — Fix queue position initialization in `playSongs`:**
+
+```kotlin
+// Change from:
+var index = startIndex
+
+// To:
+var index = 0
+```
+
+### Layer 9 & 10: Delete and play from queue
+
+Both were fixed by the same root cause fix (Layer 8). Once `QueueItem.id == song.id.toString()`, the lookups in `removeFromQueue` and `seekToQueueItem` correctly match against `MediaItem.mediaId` and `QueueEntity.id`.
+
+## Phase 3 checklist
+
+- [x] Layer 8: Fix `QueueItem.id` to use `song.id.toString()` instead of random UUID
+- [x] Fix `LazyColumn` and `ReorderableItem` key mismatch in `QueueSheet`
+- [x] Fix `Long` → `String` cast crash in reorder callback
+- [x] Fix queue position off-by-one in `playSongs`
+- [x] Layer 9: Delete working (fixed by Layer 8)
+- [x] Layer 10: Play from queue working (fixed by Layer 8)
+- [ ] Run tests, verify no regressions

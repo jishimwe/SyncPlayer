@@ -17,6 +17,7 @@ class FakePlayerRepository : PlayerRepository {
     var skipNextCallCount = 0
     var skipPreviousCallCount = 0
     var lastPlayedSongs: List<Song>? = null
+    var lastPlayedStartIndex: Int? = null
     var lastQueuedSong: Song? = null
     var lastPlayNextSong: Song? = null
     var lastRemovedId: String? = null
@@ -61,6 +62,7 @@ class FakePlayerRepository : PlayerRepository {
         startIndex: Int,
     ) {
         lastPlayedSongs = songs
+        lastPlayedStartIndex = startIndex
     }
 
     override suspend fun addToQueue(song: Song) {

@@ -28,17 +28,23 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
+import com.google.common.collect.Queues
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.PlayerUiState
 import com.jpishimwe.syncplayer.model.RepeatMode
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.components.PlayerControls
+import com.jpishimwe.syncplayer.ui.player.components.QueueSheet
 import com.jpishimwe.syncplayer.ui.player.components.SeekBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,12 +55,29 @@ fun NowPlayingScreenContent(
     onNavigateBack: () -> Unit,
     formatTime: (Long) -> String,
 ) {
+    var showQueue by remember { mutableStateOf(false) }
+
+    if (showQueue) {
+        QueueSheet(
+            queue = uiState.queue,
+            currentIndex = uiState.currentQueueIndex,
+            onDismiss = { showQueue = false },
+            onSongClick = { index ->
+                onEvent(PlayerEvent.SeekToQueueItem(index))
+                onEvent(PlayerEvent.PlayPause)
+            },
+            onRemove = { id -> onEvent(PlayerEvent.RemoveFromQueue(id)) },
+            onReorder = { id, position -> onEvent(PlayerEvent.ReorderQueue(id, position)) },
+            formatTime = formatTime,
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Now Playing") },
                 navigationIcon = { BackButon(onClick = onNavigateBack) },
-                actions = { QueueButton(onClick = {}) },
+                actions = { QueueButton(onClick = { showQueue = true }) },
             )
         },
     ) { padding ->

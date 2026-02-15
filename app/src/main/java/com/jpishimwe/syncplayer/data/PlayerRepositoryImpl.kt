@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.data
 
 import android.content.ComponentName
 import android.content.Context
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -11,6 +12,7 @@ import com.jpishimwe.syncplayer.data.local.QueueDao
 import com.jpishimwe.syncplayer.data.local.QueueEntity
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.QueueItem
 import com.jpishimwe.syncplayer.model.RepeatMode
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.model.toMediaItem
@@ -70,6 +72,7 @@ class PlayerRepositoryImpl
                             currentQueueIndex = mediaController?.currentMediaItemIndex ?: -1,
                         )
                     }
+                    syncQueueState()
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
@@ -199,8 +202,16 @@ class PlayerRepositoryImpl
             mediaController?.prepare()
             mediaController?.seekToDefaultPosition(startIndex)
             mediaController?.play()
+            var index = 0
+            _playbackState.update {
+                it.copy(
+                    queue = songs.map { song -> QueueItem(song, index++) },
+                    currentSong = songs[startIndex],
+                    currentQueueIndex = startIndex,
+                )
+            }
 
-            var index = startIndex
+            index = 0
             queueDao.clearQueue()
             queueDao.insertList(songs.map { QueueEntity(it.id.toString(), it.id, index++) })
         }
@@ -208,6 +219,7 @@ class PlayerRepositoryImpl
         override suspend fun addToQueue(song: Song) {
             mediaController?.addMediaItem(song.toMediaItem())
             queueDao.addToQueue(QueueEntity(song.id.toString(), song.id, queueDao.getQueue().size))
+            syncQueueState()
         }
 
         override suspend fun playNext(song: Song) {
@@ -221,11 +233,13 @@ class PlayerRepositoryImpl
             queueDao.clearQueue()
             queueDao.insertList(queue)
             queueDao.addToQueue(QueueEntity(song.id.toString(), song.id, currentPosition + 1))
+            syncQueueState()
         }
 
         override suspend fun removeFromQueue(queueItemId: String) {
             val mediaIndex =
                 (0 until (mediaController?.mediaItemCount ?: 0)).find {
+                    Log.d("PlayerRepositoryImpl", "removeFromQueue: $it")
                     mediaController?.getMediaItemAt(it)?.mediaId == queueItemId
                 } ?: -1
 
@@ -240,6 +254,7 @@ class PlayerRepositoryImpl
             queue.filter { it.position > removedPosition }.forEach { it.position-- }
             queueDao.clearQueue()
             queueDao.insertList(queue.filter { it.id != queueItemId })
+            syncQueueState()
         }
 
         override suspend fun reorderQueue(
@@ -267,10 +282,11 @@ class PlayerRepositoryImpl
                 queueDao.clearQueue()
                 queueDao.insertList(queue)
             }
+            syncQueueState()
         }
 
         override fun seekToQueueItem(index: Int) {
-            TODO("Not yet implemented")
+            mediaController?.seekToDefaultPosition(index)
         }
 
         fun moveUp(
@@ -328,5 +344,20 @@ class PlayerRepositoryImpl
         private suspend fun clearQueue() {
             mediaController?.clearMediaItems()
             queueDao.clearQueue()
+        }
+
+        private fun syncQueueState() {
+            val controller = mediaController ?: return
+            val items =
+                (0 until controller.mediaItemCount).mapNotNull { index ->
+                    controller.getMediaItemAt(index).toSong()?.let { QueueItem(it, index) }
+                }
+
+            _playbackState.update {
+                it.copy(
+                    queue = items,
+                    currentQueueIndex = controller.currentMediaItemIndex,
+                )
+            }
         }
     }

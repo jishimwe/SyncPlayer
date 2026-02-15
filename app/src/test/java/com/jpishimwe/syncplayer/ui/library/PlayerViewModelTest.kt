@@ -105,7 +105,54 @@ class PlayerViewModelTest {
 
             advanceUntilIdle()
             assertEquals(songs, repository.lastPlayedSongs)
+            assertEquals(0, repository.lastPlayedStartIndex)
         }
+
+    @Test
+    fun `PlaySongs passes startIndex to repository`() =
+        runTest {
+            val songs =
+                listOf(
+                    Song(
+                        id = 1,
+                        title = "Test",
+                        artist = "Artist",
+                        album = "Album",
+                        albumArtUri = null,
+                        duration = 1000L,
+                        albumId = 1,
+                        trackNumber = 1,
+                        year = 1993,
+                        dateAdded = 2024,
+                        contentUri = null,
+                    ),
+                    Song(
+                        id = 2,
+                        title = "Test 2",
+                        artist = "Artist",
+                        album = "Album",
+                        albumArtUri = null,
+                        duration = 2000L,
+                        albumId = 1,
+                        trackNumber = 2,
+                        year = 1993,
+                        dateAdded = 2024,
+                        contentUri = null,
+                    ),
+                )
+
+            viewModel.onEvent(PlayerEvent.PlaySongs(songs, startIndex = 1))
+
+            advanceUntilIdle()
+            assertEquals(songs, repository.lastPlayedSongs)
+            assertEquals(1, repository.lastPlayedStartIndex)
+        }
+
+    @Test
+    fun `SeekToQueueItem calls seekToQueueItem on repository`() {
+        viewModel.onEvent(PlayerEvent.SeekToQueueItem(3))
+        assertEquals(3, repository.lastSeekToQueueItemIndex)
+    }
 
     @Test
     fun `formatTime formats seconds correctly`() {

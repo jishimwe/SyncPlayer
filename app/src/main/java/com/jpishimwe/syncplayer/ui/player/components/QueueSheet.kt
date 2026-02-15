@@ -3,6 +3,7 @@ package com.jpishimwe.syncplayer.ui.player.components
 import android.widget.Button
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,7 @@ fun QueueSheet(
     queue: List<QueueItem>,
     currentIndex: Int,
     onDismiss: () -> Unit,
+    onSongClick: (index: Int) -> Unit,
     onRemove: (String) -> Unit,
     onReorder: (String, Int) -> Unit,
     formatTime: (Long) -> String,
@@ -52,7 +54,7 @@ fun QueueSheet(
 
     val reorderableLazyListState =
         rememberReorderableLazyListState(lazyListState) { from, to ->
-            onReorder(from.key as String, to.index)
+            onReorder(from.key.toString(), to.index)
         }
 
     ModalBottomSheet(
@@ -75,13 +77,14 @@ fun QueueSheet(
             LazyColumn(state = lazyListState) {
                 itemsIndexed(
                     items = queue,
-                    key = { _, item -> item.id },
+                    key = { _, item -> item.song.id },
                 ) { index, item ->
-                    ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
+                    ReorderableItem(reorderableLazyListState, key = item.song.id) { isDragging ->
                         QueueItemRow(
                             item = item,
                             isPlaying = index == currentIndex,
-                            onRemove = { onRemove(item.id) },
+                            onSongClick = { onSongClick(index) },
+                            onRemove = { onRemove(item.song.id.toString()) },
                             formatTime = formatTime,
                             isDragging = isDragging,
                             modifier = Modifier.draggableHandle(),
@@ -97,7 +100,8 @@ fun QueueSheet(
 fun QueueItemRow(
     item: QueueItem,
     isPlaying: Boolean,
-    onRemove: () -> Unit,
+    onSongClick: (index: Int) -> Unit,
+    onRemove: (id: String) -> Unit,
     formatTime: (Long) -> String,
     isDragging: Boolean,
     modifier: Modifier = Modifier,
@@ -114,7 +118,7 @@ fun QueueItemRow(
                     } else {
                         Color.Transparent
                     },
-                ),
+                ).clickable(onClick = { onSongClick(item.index) }),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -161,7 +165,7 @@ fun QueueItemRow(
         Spacer(Modifier.width(8.dp))
 
         IconButton(
-            onClick = onRemove,
+            onClick = { onRemove(item.song.id.toString()) },
         ) {
             Icon(
                 imageVector = Icons.Default.Delete,

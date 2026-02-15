@@ -54,8 +54,8 @@ Current routes:
 |-------|--------|-------------|
 | `library` | LibraryScreen | Songs/Albums/Artists tabs with MiniPlayer |
 | `now_playing` | NowPlayingScreen | Full-screen player with controls |
-| `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album (planned) |
-| `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist (planned) |
+| `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album |
+| `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist |
 
 Future: Bottom navigation bar with Library, Playlists, and Settings top-level destinations.
 
@@ -77,7 +77,8 @@ Scan the device for audio files and display them in a browsable list.
 - ✅ Automatic rescan on app resume (24-hour threshold)
 - ✅ Stale data over error screen when DB has cached songs
 
-**Design doc**: `docs/features/library-browsing/design.md`
+**Plan doc**: [`docs/features/library-browsing/plan.md`](features/library-browsing/plan.md)
+**Design doc**: [`docs/features/library-browsing/design.md`](features/library-browsing/design.md)
 
 ### Phase 2: Playback ✅
 
@@ -97,21 +98,40 @@ Play audio using Media3 with full media session support.
 - ✅ Queue persistence via Room (restore on app restart)
 - ✅ Navigation: Library ↔ NowPlaying
 
-**Design doc**: `docs/features/playback/design.md`
+**Plan doc**: [`docs/features/playback/plan.md`](features/playback/plan.md)
+**Design doc**: [`docs/features/playback/design.md`](features/playback/design.md)
 
-### Phase 3: Library → Playback Navigation ⬅️ Current
+### Phase 3: Library → Playback Navigation ✅
 
-Connect the library browsing UI to the playback system. Currently, tapping songs, albums, or artists does nothing.
+Connect the library browsing UI to the playback system.
 
-- Tap song in Songs tab → queue all songs, start at tapped index, navigate to NowPlaying
-- Tap album → Album detail screen (song list by track number) → tap song to play
-- Tap artist → Artist detail screen (song list by album + track) → tap song to play
-- Fix `PlayerEvent.PlaySongs` to include `startIndex`
-- Add `AlbumDetail` and `ArtistDetail` navigation routes
+- ✅ Tap song in Songs tab → queue all songs, start at tapped index, navigate to NowPlaying
+- ✅ Tap album → Album detail screen (song list by track number) → tap song to play
+- ✅ Tap artist → Artist detail screen (song list by album + track) → tap song to play
+- ✅ Fix `PlayerEvent.PlaySongs` to include `startIndex`
+- ✅ Add `AlbumDetail` and `ArtistDetail` navigation routes
 
-**Plan doc**: `docs/features/library-playback-nav/plan.md`
+**Plan doc**: [`docs/features/library-playback-nav/plan.md`](features/library-playback-nav/plan.md)
+**Design doc**: [`docs/features/library-playback-nav/design.md`](features/library-playback-nav/design.md)
 
-### Phase 4: Playlists
+### Phase 3.1: Post-Phase 2 Bug Fixes ✅
+
+Fixed bugs discovered during manual testing after Phases 2 and 3.
+
+- ✅ Shuffle/repeat buttons: added `onShuffleModeEnabledChanged` and `onRepeatModeChanged` listener callbacks
+- ✅ Seek bar frozen: wired position polling from `onIsPlayingChanged`, fixed duration tracking
+- ✅ Artist click not working: wired `Modifier.clickable`, added `onNavigateToArtistDetail` callback, registered `ArtistDetail` route in NavGraph
+- ✅ Queue sheet not opening: wired `QueueSheet` with show/hide state, populated queue in `PlayerUiState` via `syncQueueState()` helper
+- ✅ Queue reorder/delete/play-from-queue: fixed `QueueItem.id` from random UUID to stable song ID, fixed key mismatches in `QueueSheet`
+- ✅ ShuffleButton icons swapped, RepeatOne icon missing
+- ✅ MiniPlayer hidden on NowPlaying screen
+- ✅ Dead `positionUpdateFlow` removed from PlayerViewModel
+- ✅ Tests updated: `startIndex` passthrough, `SeekToQueueItem` routing, shuffle/repeat/skip button events
+
+**Plan doc**: [`docs/features/bugfixes-phase2/plan.md`](features/bugfixes-phase2/plan.md)
+**Design doc**: [`docs/features/bugfixes-phase2/design.md`](features/bugfixes-phase2/design.md)
+
+### Phase 4: Playlists ⬅️ Next
 
 Create, edit, and manage playlists stored locally.
 
@@ -223,10 +243,15 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 - Unit: `formatTime` utility
 - UI: NowPlayingScreenContent displays correct track info, controls respond
 
-**Phase 3: Library → Playback Navigation**
+**Phase 3: Library → Playback Navigation** ✅
 - Unit: `PlayerViewModel` passes `startIndex` to repository
+- Unit: `SeekToQueueItem` routes to repository
 - UI: Song click triggers playback + navigation callback
 - UI: Album/Artist detail screens display songs and handle clicks
+
+**Phase 3.1: Bug Fixes** ✅
+- Unit: Shuffle/repeat/skip button events fire correct `PlayerEvent`
+- UI: NowPlayingScreenContent shuffle, repeat, skip previous buttons
 
 **Phase 4: Playlists**
 - Unit: `PlaylistViewModel` CRUD operations reflected in state

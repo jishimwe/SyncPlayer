@@ -13,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.jpishimwe.syncplayer.ui.library.AlbumDetailScreen
 import com.jpishimwe.syncplayer.ui.library.ArtistDetailScreen
@@ -47,10 +48,16 @@ fun NavGraph(
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
 ) {
     val playerState by playerViewModel.uiState.collectAsStateWithLifecycle()
+    val isOnNowPlayingScreen: Boolean =
+        navController
+            .currentBackStackEntryAsState()
+            .value
+            ?.destination
+            ?.route == Screen.NowPlaying.route
 
     Scaffold(
         bottomBar = {
-            if (playerState.currentSong != null) {
+            if (playerState.currentSong != null && !isOnNowPlayingScreen) {
                 MiniPlayer(
                     uiState = playerState,
                     onEvent = playerViewModel::onEvent,

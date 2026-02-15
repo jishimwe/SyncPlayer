@@ -98,4 +98,55 @@ class NowPlayingScreenTest {
         composeTestRule.onNodeWithContentDescription("Next").performClick()
         assertTrue(events.contains(PlayerEvent.SkipToNext))
     }
+
+    @Test
+    fun skipPrevious_triggersSkipToPreviousEvent() {
+        val events = mutableListOf<PlayerEvent>()
+
+        composeTestRule.setContent {
+            NowPlayingScreenContent(
+                uiState = PlayerUiState(),
+                onEvent = { events.add(it) },
+                onNavigateBack = {},
+                formatTime = { "0:00" },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Previous").performClick()
+        assertTrue(events.contains(PlayerEvent.SkipToPrevious))
+    }
+
+    @Test
+    fun shuffleButton_triggersToggleShuffleEvent() {
+        val events = mutableListOf<PlayerEvent>()
+
+        composeTestRule.setContent {
+            NowPlayingScreenContent(
+                uiState = PlayerUiState(),
+                onEvent = { events.add(it) },
+                onNavigateBack = {},
+                formatTime = { "0:00" },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Shuffle off").performClick()
+        assertTrue(events.contains(PlayerEvent.ToggleShuffle))
+    }
+
+    @Test
+    fun repeatButton_triggersToggleRepeatEvent() {
+        val events = mutableListOf<PlayerEvent>()
+
+        composeTestRule.setContent {
+            NowPlayingScreenContent(
+                uiState = PlayerUiState(),
+                onEvent = { events.add(it) },
+                onNavigateBack = {},
+                formatTime = { "0:00" },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription("Repeat off").performClick()
+        assertTrue(events.contains(PlayerEvent.ToggleRepeat))
+    }
 }

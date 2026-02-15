@@ -45,9 +45,9 @@ Connected the library browsing UI to the playback system so users can start play
 
 - **No dedicated ViewModels for detail screens**: `AlbumDetailScreen` and `ArtistDetailScreen` reuse the activity-scoped `LibraryViewModel` for `getSongsByAlbum`/`getSongsByArtist` data, and the activity-scoped `PlayerViewModel` for playback commands. This avoids creating 2 new ViewModels + 2 Hilt bindings + 2 test fakes for what amounts to a single `Flow` collection and one event dispatch each.
 
-- **Artist navigation via album detail route (workaround)**: The `ArtistDetail` route is declared in `Screen` and `ArtistDetailScreen.kt` exists, but `NavGraph.kt` does not have a `composable(Screen.ArtistDetail.route)` entry. Instead, `LibraryScreen` wires artist clicks through `onNavigateToAlbumDetail` using `artistName.hashCode().toLong()` as a fake album ID. This is listed as a known gap.
+- **Artist navigation via album detail route (workaround)**: The `ArtistDetail` route was declared in `Screen` and `ArtistDetailScreen.kt` existed, but `NavGraph.kt` did not have a `composable(Screen.ArtistDetail.route)` entry. Instead, `LibraryScreen` wired artist clicks through `onNavigateToAlbumDetail` using `artistName.hashCode().toLong()` as a fake album ID. **Fixed in bugfixes-phase2**: `NavGraph.kt` now has the `ArtistDetail` composable route, `LibraryScreen` has a dedicated `onNavigateToArtistDetail` callback, and `ArtistListItem` has `Modifier.clickable` wired.
 
-- **`onArtistClick` naming inconsistency**: `SongListItem` and `AlbumGridItem` use `onClick: () -> Unit`. `ArtistListItem` uses `onArtistClick: () -> Unit` with a default value. This happened because `ArtistListItem` doesn't use `Modifier.clickable` — the click handler is passed but not wired to the composable's modifier, meaning artist taps may not work. This is listed as a known gap.
+- **`onArtistClick` naming inconsistency**: `SongListItem` and `AlbumGridItem` use `onClick: () -> Unit`. `ArtistListItem` uses `onArtistClick: () -> Unit` with a default value. This naming inconsistency remains but the click is now functional — `Modifier.clickable(onClick = onArtistClick)` was added in bugfixes-phase2.
 
 - **`FOREGROUND_SERVICE` permission fix**: The Phase 2 manifest had `FOREGROUND_SERVICE_MEDIA_PLAYBACK` but was missing the base `FOREGROUND_SERVICE` permission. This was always latent — it only surfaced when song taps actually triggered playback for the first time. Both permissions are now declared.
 
@@ -57,12 +57,12 @@ Connected the library browsing UI to the playback system so users can start play
 
 ## Known gaps
 
-- **Artist navigation not wired in NavGraph**: `NavGraph.kt` has no `composable(Screen.ArtistDetail.route)` entry. Artist taps currently route through `onNavigateToAlbumDetail` with a hashed ID, which will show an empty or wrong album detail screen. The `ArtistDetailScreen.kt` composable exists but is unreachable.
-- **`ArtistListItem` click not attached to modifier**: `onArtistClick` is accepted as a parameter but `ListItem`'s `modifier` doesn't include `.clickable(onClick = onArtistClick)`. Tapping an artist row may not trigger the callback.
-- **Shuffle, repeat, and next buttons not working**: Reported during manual testing but not investigated in this phase.
-- **Seek bar not working**: No time displayed, not updating during playback, and seeking restarts the song. Related to the position polling gap noted in the Phase 2 design doc (`startPositionUpdates()` never called).
-- **Queue sheet not showing**: Queue button in NowPlaying top bar has an empty `onClick = {}`.
+- ~~**Artist navigation not wired in NavGraph**~~: Fixed in bugfixes-phase2. `NavGraph.kt` now has `composable(Screen.ArtistDetail.route)` with proper `navArgument("artistName")`.
+- ~~**`ArtistListItem` click not attached to modifier**~~: Fixed in bugfixes-phase2. `Modifier.clickable(onClick = onArtistClick)` added.
+- ~~**Shuffle, repeat, and next buttons not working**~~: Fixed in bugfixes-phase2. Added `onShuffleModeEnabledChanged` and `onRepeatModeChanged` listener callbacks to `PlayerRepositoryImpl`. Fixed swapped shuffle icons.
+- ~~**Seek bar not working**~~: Fixed in bugfixes-phase2. Position polling now triggered from `onIsPlayingChanged`, duration set in both polling loop and `onPlaybackStateChanged(STATE_READY)`.
+- ~~**Queue sheet not showing**~~: Fixed in bugfixes-phase2. `QueueButton` wired to show `QueueSheet`, queue state populated via `syncQueueState()` helper.
+- ~~**`PlayerViewModelTest` not updated**~~: Fixed. Added `startIndex` passthrough test and `SeekToQueueItem` routing test.
+- ~~**`FakePlayerRepository.playSongs` doesn't record `startIndex`**~~: Fixed. Added `lastPlayedStartIndex` tracking.
 - **No new tests for detail screens**: `AlbumDetailScreenTest` and `ArtistDetailScreenTest` were planned but not created. Only existing `LibraryScreenTest` was updated with new callback parameters.
-- **`PlayerViewModelTest` not updated**: The `startIndex` passthrough test was planned but not added. The existing `PlaySongs calls playSongs on repository` test still passes `PlaySongs(songs)` without `startIndex`.
-- **`FakePlayerRepository.playSongs` doesn't record `startIndex`**: `lastPlayedStartIndex` field was not added. Only `lastPlayedSongs` is tracked.
-- **Duplicate intent-filter in manifest**: `PlaybackService` declares the `androidx.media3.session.MediaSessionService` intent-filter twice, and `foregroundServiceType` has a redundant `mediaPlayback|mediaPlayback`.
+- **Duplicate intent-filter in manifest**: `PlaybackService` still declares the `androidx.media3.session.MediaSessionService` intent-filter twice, and `foregroundServiceType` has a redundant `mediaPlayback|mediaPlayback`.
