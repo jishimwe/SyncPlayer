@@ -257,6 +257,13 @@ class PlayerRepositoryImpl
             syncQueueState()
         }
 
+        /**
+         * Reorders an item within the playback queue and synchronizes the change with the media controller
+         * and the local database.
+         *
+         * @param queueItemId The unique identifier (media ID) of the song to be moved.
+         * @param newPosition The target index in the queue where the item should be placed.
+         */
         override suspend fun reorderQueue(
             queueItemId: String,
             newPosition: Int,

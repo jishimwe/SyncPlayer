@@ -4,6 +4,8 @@ import android.content.ContentResolver
 import android.content.Context
 import com.jpishimwe.syncplayer.data.PlayerRepository
 import com.jpishimwe.syncplayer.data.PlayerRepositoryImpl
+import com.jpishimwe.syncplayer.data.PlaylistRepository
+import com.jpishimwe.syncplayer.data.PlaylistRepositoryImpl
 import com.jpishimwe.syncplayer.data.SongRepository
 import com.jpishimwe.syncplayer.data.SongRepositoryImpl
 import dagger.Binds
@@ -21,6 +23,9 @@ abstract class AppModule {
 
     @Binds
     abstract fun bindPlayerRepository(impl: PlayerRepositoryImpl): PlayerRepository
+
+    @Binds
+    abstract fun bindPlaylistRepository(impl: PlaylistRepositoryImpl): PlaylistRepository
 
     companion object {
         @Provides

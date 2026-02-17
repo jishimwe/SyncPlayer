@@ -4,7 +4,8 @@
       "WebFetch(domain:github.com)",
       "WebSearch",
       "WebFetch(domain:mvnrepository.com)",
-      "WebFetch(domain:blog.jetbrains.com)"
+      "WebFetch(domain:blog.jetbrains.com)",
+      "Bash(./gradlew.bat test:*)"
     ]
   }
 }

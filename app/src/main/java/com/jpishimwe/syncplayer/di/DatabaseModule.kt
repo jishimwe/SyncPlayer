@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.di
 
 import android.content.Context
 import androidx.room.Room
+import com.jpishimwe.syncplayer.data.local.PlaylistDao
 import com.jpishimwe.syncplayer.data.local.QueueDao
 import com.jpishimwe.syncplayer.data.local.SongDao
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase
@@ -33,4 +34,7 @@ object DatabaseModule {
 
     @Provides
     fun provideQueueDao(database: SyncPlayerDatabase): QueueDao = database.queueDao()
+
+    @Provides
+    fun providePlaylistDao(database: SyncPlayerDatabase): PlaylistDao = database.playlistDao()
 }
