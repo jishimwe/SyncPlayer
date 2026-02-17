@@ -1,6 +1,7 @@
 package com.jpishimwe.syncplayer.ui.navigation
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -94,7 +95,10 @@ fun NavGraph(
                     ?.destination
                     ?.route
             val showBottomNav = currentRoute in setOf(Screen.Library.route, Screen.Playlists.route)
+            Log.d("NavGraph", "showBottomNav: $showBottomNav $currentRoute")
+
             Column {
+                Log.d("NavGraph", "showBottomNav > Column: $showBottomNav")
                 if (showBottomNav) {
                     NavigationBar {
                         BottomNavDestination.entries.forEach { destination ->

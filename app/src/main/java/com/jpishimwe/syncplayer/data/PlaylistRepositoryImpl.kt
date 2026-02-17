@@ -22,7 +22,7 @@ class PlaylistRepositoryImpl
 
         override fun getPlaylistById(playlistId: Long): Flow<Playlist?> =
             playlistDao.getPlaylistById(playlistId).map { entity ->
-                entity?.let { Playlist(it.id, it.name, it.createdAt) }
+                entity?.let { Playlist(it.id, it.name, it.createdAt, playlistDao.getSongCountForPlaylist(it.id).first()) }
             }
 
         override fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = playlistDao.getSongsForPlaylist(playlistId)

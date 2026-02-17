@@ -25,8 +25,7 @@ class FakePlaylistRepository : PlaylistRepository {
 
     override fun getAllPlaylists(): Flow<List<Playlist>> = playlistsFlow
 
-    override fun getPlaylistById(playlistId: Long): Flow<Playlist?> =
-        playlistsFlow.map { list -> list.find { it.id == playlistId } }
+    override fun getPlaylistById(playlistId: Long): Flow<Playlist?> = playlistsFlow.map { list -> list.find { it.id == playlistId } }
 
     override fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = songsForPlaylistFlow
 
@@ -35,11 +34,14 @@ class FakePlaylistRepository : PlaylistRepository {
         lastCreatedName = name
         val id = nextId++
         val playlist = Playlist(id = id, name = name, createdAt = System.currentTimeMillis())
-        playlistsFlow.value = playlistsFlow.value + playlist
+        playlistsFlow.value += playlist
         return id
     }
 
-    override suspend fun renamePlaylist(playlistId: Long, newName: String) {
+    override suspend fun renamePlaylist(
+        playlistId: Long,
+        newName: String,
+    ) {
         renameCallCount++
         lastRenamedId = playlistId
         lastRenamedName = newName
@@ -50,15 +52,24 @@ class FakePlaylistRepository : PlaylistRepository {
         lastDeletedId = playlistId
     }
 
-    override suspend fun addSongToPlaylist(playlistId: Long, songId: Long) {
+    override suspend fun addSongToPlaylist(
+        playlistId: Long,
+        songId: Long,
+    ) {
         addSongCallCount++
     }
 
-    override suspend fun removeSongFromPlaylist(playlistId: Long, songId: Long) {
+    override suspend fun removeSongFromPlaylist(
+        playlistId: Long,
+        songId: Long,
+    ) {
         removeSongCallCount++
     }
 
-    override suspend fun reorderSongs(playlistId: Long, orderedSongsId: List<Long>) {
+    override suspend fun reorderSongs(
+        playlistId: Long,
+        orderedSongsId: List<Long>,
+    ) {
         reorderCallCount++
     }
 }

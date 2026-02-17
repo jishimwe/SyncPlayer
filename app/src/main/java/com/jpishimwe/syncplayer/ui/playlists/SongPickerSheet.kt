@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.ui.playlists
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,7 +54,7 @@ fun SongPickerSheet(
         modifier = modifier,
     ) {
         Column {
-            LazyColumn(state = lazyListState) {
+            LazyColumn(state = lazyListState, modifier = Modifier.weight(1f)) {
                 itemsIndexed(
                     items = allSongs,
                     key = { _, item -> item.id },
@@ -98,7 +99,13 @@ fun SongSelectorItem(
     ListItem(
         modifier = modifier,
         leadingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier.clickable(
+                        onClick = { onSelected(!isSelected) },
+                    ),
+            ) {
                 Checkbox(
                     isSelected,
                     onCheckedChange = { onSelected(it) },

@@ -80,7 +80,6 @@ fun PlaylistDetailScreenContent(
 
     val reorderableLazyListState =
         rememberReorderableLazyListState(lazyListState) { from, to ->
-
             onReorderSongs(
                 playlistSongs
                     .mapIndexed { _, song -> song.id }
@@ -106,7 +105,10 @@ fun PlaylistDetailScreenContent(
             }
         },
     ) { padding ->
-        LazyColumn(state = lazyListState, modifier = Modifier.padding(padding)) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.padding(padding),
+        ) {
             itemsIndexed(
                 items = playlistSongs,
                 key = { _, item -> item.id },
@@ -117,19 +119,19 @@ fun PlaylistDetailScreenContent(
                         onSongClick = { onSongClick(index) },
                         onRemove = { onRemoveSong(item.id) },
                         isDragging = isDragging,
+                        modifier = Modifier.draggableHandle(),
                     )
                 }
             }
         }
-
-        if (showSongPicker) {
-            SongPickerSheet(
-                allSongs = allSongs,
-                selectedSongs = playlistSongs,
-                onDismiss = { showSongPicker = false },
-                onAddSongs = onAddSongs,
-                onRemoveSongs = onRemoveSongs,
-            )
-        }
+    }
+    if (showSongPicker) {
+        SongPickerSheet(
+            allSongs = allSongs,
+            selectedSongs = playlistSongs,
+            onDismiss = { showSongPicker = false },
+            onAddSongs = onAddSongs,
+            onRemoveSongs = onRemoveSongs,
+        )
     }
 }

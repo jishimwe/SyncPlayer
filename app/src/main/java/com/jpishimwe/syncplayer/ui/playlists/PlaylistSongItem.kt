@@ -45,7 +45,11 @@ fun PlaylistSongItem(
                 ),
         leadingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.DragHandle, contentDescription = "Reorder")
+                Icon(
+                    Icons.Default.DragHandle,
+                    contentDescription = "Reorder",
+                    modifier = modifier,
+                )
                 Spacer(Modifier.width(8.dp))
                 AsyncImage(
                     model = song.albumArtUri,
@@ -58,15 +62,15 @@ fun PlaylistSongItem(
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
             )
         },
         supportingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "${song.artist} • ${song.album}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+            Text(
+                text = "${song.artist} • ${song.album}",
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+            )
         },
         trailingContent = {
             IconButton(onClick = onRemove) {

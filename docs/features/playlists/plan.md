@@ -1,4 +1,4 @@
-# Playlists — Plan (Updated)
+# Playlists — Plan (Final - All Layers Complete)
 
 ## Context
 
@@ -33,6 +33,11 @@ Phases 1-3 built library browsing, playback, and library→playback navigation. 
      - `PlaylistListItem.onRenamePlaylist: () -> Unit` (parent has playlist object)
      - `RenamePlaylistDialog.onRenamePlaylist: (Long, String) -> Unit` (child has new name)
 
+5. **Drag-to-Reorder Implementation** (Layer 6)
+   - Uses `.draggableHandle()` modifier on `PlaylistSongItem` (same pattern as `QueueSheet`)
+   - Requires plain `LazyColumn` (not `ReorderableLazyColumn`)
+   - Callback fires on position swap, not every pixel of drag
+
 ### Bug Fixes Applied
 
 1. **PlaylistDao.getPlaylistById** return type: `Flow<PlaylistEntity?>` (nullable)
@@ -40,6 +45,16 @@ Phases 1-3 built library browsing, playback, and library→playback navigation. 
 3. **RenamePlaylist event** added `isNotBlank()` guard in ViewModel (consistency with CreatePlaylist)
 4. **DeletePlaylistDialog** signature: `onDeletePlaylist: () -> Unit` (not `(Playlist) -> Unit`)
 5. **Song Picker dismiss** calls `onDismiss()` after confirm button
+6. **Dialog placement** moved outside `Scaffold` content to prevent early-return issues
+7. **Song Picker button** moved inside `Column` with `LazyColumn` using `Modifier.weight(1f)`
+8. **Drag handle** added `.draggableHandle()` modifier to enable reordering
+
+### Build Issues Encountered
+
+1. **NoClassDefFoundError after adding new screens**
+   - Cause: Stale DEX files in build cache
+   - Solution: Uninstall app from device before rebuild during major refactoring
+   - Prevention: Use `adb uninstall com.jpishimwe.syncplayer && ./gradlew installDebug`
 
 ## Scope
 
@@ -75,7 +90,7 @@ No new dependencies needed — `reorderable`, `material-icons-extended`, and Roo
 
 ## Tasks
 
-### Layer 1: Entities and DAO
+### Layer 1: Entities and DAO ✅
 
 **New file:** `data/local/PlaylistDao.kt`
 
@@ -141,19 +156,17 @@ interface PlaylistDao {
 }
 ```
 
-**Modify:** `data/local/SyncPlayerDatabase.kt`
+**Modified:** `data/local/SyncPlayerDatabase.kt`
 - Add `PlaylistEntity::class, PlaylistSongCrossRef::class` to `entities` array
 - Bump `version` from 2 to 3 (`fallbackToDestructiveMigration` handles it — no migration script)
 - Add `abstract fun playlistDao(): PlaylistDao`
 
-**Modify:** `di/DatabaseModule.kt`
+**Modified:** `di/DatabaseModule.kt`
 - Add `@Provides fun providePlaylistDao(db: SyncPlayerDatabase): PlaylistDao = db.playlistDao()`
-
-**Build & verify:** `assembleDebug`
 
 ---
 
-### Layer 2: Domain model
+### Layer 2: Domain model ✅
 
 **New file:** `model/Playlist.kt`
 
@@ -170,7 +183,7 @@ data class Playlist(
 
 ---
 
-### Layer 3: Repository
+### Layer 3: Repository ✅
 
 **New file:** `data/PlaylistRepository.kt`
 
@@ -242,14 +255,12 @@ class PlaylistRepositoryImpl @Inject constructor(
 }
 ```
 
-**Modify:** `di/AppModule.kt`
+**Modified:** `di/AppModule.kt`
 - Add `@Binds abstract fun bindPlaylistRepository(impl: PlaylistRepositoryImpl): PlaylistRepository`
-
-**Build & verify:** `assembleDebug`
 
 ---
 
-### Layer 4: ViewModel
+### Layer 4: ViewModel ✅
 
 **New file:** `ui/playlists/PlaylistEvent.kt`
 
@@ -322,11 +333,9 @@ class PlaylistViewModel @Inject constructor(
 }
 ```
 
-**Build & verify:** `assembleDebug`
-
 ---
 
-### Layer 5: UI — Playlists list screen
+### Layer 5: UI — Playlists list screen ✅
 
 **New file:** `ui/playlists/PlaylistsScreen.kt`
 
@@ -346,6 +355,7 @@ Two composables following the testable pattern:
 - Each item: `ListItem` with playlist name, trailing `IconButton` (MoreVert) → `DropdownMenu` with Rename/Delete
 - Empty state: "No playlists yet" message when list is empty
 - Dialog state (`showCreateDialog`, `renameTarget: Playlist?`, `deleteTarget: Playlist?`) as local `remember` state
+- **Critical**: Dialogs placed **outside** `Scaffold` to prevent early-return issues
 - `CreatePlaylistDialog`: `AlertDialog` + `TextField`, confirm enabled when non-blank
 - `RenamePlaylistDialog`: same, pre-filled with `playlist.name`
 - `DeleteConfirmationDialog`: destructive confirm with playlist name
@@ -357,11 +367,9 @@ Two composables following the testable pattern:
   - `RenamePlaylistDialog`: `onRenamePlaylist: (Long, String) -> Unit`
   - `DeletePlaylistDialog`: `onDeletePlaylist: () -> Unit`
 
-**Build & verify:** `assembleDebug`
-
 ---
 
-### Layer 6: UI — Playlist detail screen + song picker
+### Layer 6: UI — Playlist detail screen + song picker ✅
 
 **New file:** `ui/playlists/PlaylistDetailScreen.kt`
 
@@ -377,7 +385,7 @@ Same pattern as `AlbumDetailScreen`:
 - `TopAppBar` with back button and playlist name
 - `FloatingActionButton` (Add icon) → opens `SongPickerSheet`
 - Drag-to-reorder via `rememberReorderableLazyListState` (same pattern as `QueueSheet`)
-- Each song: `PlaylistSongItem` + trailing delete `IconButton`
+- Each song: `PlaylistSongItem` with `.draggableHandle()` modifier
 - `PlaylistSongItem`: `ListItem` with drag handle + album art in `leadingContent`, title/artist, delete button in `trailingContent`
 
 **New file:** `ui/playlists/SongPickerSheet.kt`
@@ -385,20 +393,19 @@ Same pattern as `AlbumDetailScreen`:
 `ModalBottomSheet` showing all songs with checkboxes:
 - Pre-checks songs already in the playlist (via `selectedSongs: List<Song>`)
 - Maintains local state: `var songsToAdd by remember { mutableStateOf(selectedSongs.map { it.id }) }`
+- **Critical**: Button placed **inside** `Column`, `LazyColumn` uses `Modifier.weight(1f)` to allow scrolling
 - Confirm button computes diff and calls both:
   - `onAddSongs((songsToAdd - selectedSongIds).toSet().toList())`
   - `onRemoveSongs((selectedSongIds - songsToAdd.toSet()).toSet().toList())`
   - Then calls `onDismiss()`
 - `LazyColumn` of `SongSelectorItem`s (song title + artist + checkbox + album art)
-- Full-width `Button` at bottom with "Confirm" text
-
-**Build & verify:** `assembleDebug`
+- Full-width `Button` at bottom with "Confirm" text and icon
 
 ---
 
-### Layer 7: Bottom navigation
+### Layer 7: Bottom navigation ✅
 
-**Modify:** `ui/navigation/NavGraph.kt`
+**Modified:** `ui/navigation/NavGraph.kt`
 
 Add routes to `Screen` sealed class:
 ```kotlin
@@ -462,11 +469,9 @@ Add `composable` blocks for `Screen.Playlists` and `Screen.PlaylistDetail` in `N
 - `launchSingleTop = true`: Prevent duplicate screens when tapping current tab
 - `popUpTo(Screen.Library.route)`: Clear back stack to top-level
 
-**Build & verify:** `assembleDebug`
-
 ---
 
-### Layer 8: Tests
+### Layer 8: Tests ✅
 
 **New file:** `test/data/FakePlaylistRepository.kt`
 - `MutableStateFlow<List<Playlist>>` for `getAllPlaylists()`
@@ -483,8 +488,6 @@ Add `composable` blocks for `Screen.Playlists` and `Screen.PlaylistDetail` in `N
   - `RenamePlaylist event calls repository`
   - `RenamePlaylist with blank name does NOT call repository`
   - `DeletePlaylist event calls repository`
-
-**Verify:** `gradlew.bat test`
 
 ---
 
@@ -522,17 +525,16 @@ No new dependencies. `reorderable`, `material-icons-extended`, and Room are alre
 
 ## Verification
 
-- `assembleDebug` after each layer
-- `test` after Layer 8
-- Manual: create playlist → appears in list
-- Manual: rename and delete playlist via 3-dot menu
-- Manual: open playlist detail → FAB → song picker → add/remove songs
-- Manual: drag-reorder songs in playlist detail → persisted on re-open
-- Manual: remove song from playlist
-- Manual: tap song in playlist detail → NowPlaying with playlist queue
-- Manual: bottom nav switches between Library and Playlists (state preserved)
-- Manual: MiniPlayer visible below bottom nav when song is playing
-- Manual: bottom nav hidden on detail screens and NowPlaying
+All manual tests passed:
+- ✅ Create playlist → appears in list
+- ✅ Rename and delete playlist via 3-dot menu
+- ✅ Open playlist detail → FAB → song picker → add/remove songs
+- ✅ Drag-reorder songs in playlist detail → persisted on re-open
+- ✅ Remove song from playlist
+- ✅ Tap song in playlist detail → NowPlaying with playlist queue
+- ✅ Bottom nav switches between Library and Playlists (state preserved)
+- ✅ MiniPlayer visible below bottom nav when song is playing
+- ✅ Bottom nav hidden on detail screens and NowPlaying
 
 ## Implementation checklist
 
@@ -543,7 +545,21 @@ No new dependencies. `reorderable`, `material-icons-extended`, and Room are alre
 - [x] Layer 5: PlaylistsScreen + PlaylistsScreenContent (list, dialogs)
 - [x] Layer 6: PlaylistDetailScreen + PlaylistDetailScreenContent + SongPickerSheet
 - [x] Layer 7: Bottom navigation + routes in NavGraph with state preservation
-- [ ] Layer 8: FakePlaylistRepository + PlaylistViewModelTest
+- [x] Layer 8: FakePlaylistRepository + PlaylistViewModelTest
+
+## Key Learnings
+
+1. **Composable scope and callbacks**: Child composables should use `() -> Unit` when they only signal events; parent captures data from scope. Use `(T) -> Unit` only when child generates new data (user input).
+
+2. **Dialog placement**: Always place dialogs outside `Scaffold` content blocks to avoid early-return issues from `when` statements or conditional logic.
+
+3. **ModalBottomSheet layout**: Buttons must be inside the `Column` with `LazyColumn` using `Modifier.weight(1f)` to prevent the list from pushing the button off-screen.
+
+4. **Drag-to-reorder**: Use `.draggableHandle()` modifier on items (not `.reorderable()` on `LazyColumn`). Pattern matches `QueueSheet`.
+
+5. **Build cache issues**: After major refactoring, uninstall the app before rebuilding to clear stale DEX files: `adb uninstall <package> && ./gradlew installDebug`
+
+6. **Navigation state preservation**: Use `saveState`, `restoreState`, and `launchSingleTop` in bottom nav to maintain scroll position and nav stack across tab switches.
 
 ## Future Enhancements (Out of Scope)
 
@@ -552,3 +568,5 @@ No new dependencies. `reorderable`, `material-icons-extended`, and Room are alre
 3. Playlist import/export
 4. Search within song picker
 5. Smart/auto-generated playlists
+6. Playlist cover art customization
+7. Collaborative playlists

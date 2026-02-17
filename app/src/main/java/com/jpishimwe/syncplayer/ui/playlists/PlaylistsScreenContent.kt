@@ -33,6 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.jpishimwe.syncplayer.model.Playlist
+import com.jpishimwe.syncplayer.ui.library.formatDuration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,30 +86,30 @@ fun PlaylistsScreenContent(
                 }
             }
         }
-        if (showCreateDialog) {
-            CreatePlaylistDialog(
-                onCreatePlaylist = { name ->
-                    onCreatePlaylist(name)
-                    showCreateDialog = false
-                },
-                onDismiss = { showCreateDialog = false },
-            )
-        }
+    }
+    if (showCreateDialog) {
+        CreatePlaylistDialog(
+            onCreatePlaylist = { name ->
+                onCreatePlaylist(name)
+                showCreateDialog = false
+            },
+            onDismiss = { showCreateDialog = false },
+        )
+    }
 
-        renameTarget?.let { playlistToRename ->
-            RenamePlaylistDialog(
-                playlist = playlistToRename,
-                onRenamePlaylist = { id, name -> onRenamePlaylist(id, name) },
-                onDismiss = { renameTarget = null },
-            )
-        }
-        deleteTarget?.let { playlistToDelete ->
-            DeletePlaylistDialog(
-                playlist = playlistToDelete,
-                onDeletePlaylist = { onDeletePlaylist(playlistToDelete.id) },
-                onDismiss = { deleteTarget = null },
-            )
-        }
+    renameTarget?.let { playlistToRename ->
+        RenamePlaylistDialog(
+            playlist = playlistToRename,
+            onRenamePlaylist = { id, name -> onRenamePlaylist(id, name) },
+            onDismiss = { renameTarget = null },
+        )
+    }
+    deleteTarget?.let { playlistToDelete ->
+        DeletePlaylistDialog(
+            playlist = playlistToDelete,
+            onDeletePlaylist = { onDeletePlaylist(playlistToDelete.id) },
+            onDismiss = { deleteTarget = null },
+        )
     }
 }
 
@@ -116,11 +120,12 @@ fun PlaylistListItem(
     onRenamePlaylist: () -> Unit,
     onDeletePlaylist: () -> Unit,
 ) {
+    val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
     ListItem(
         modifier = Modifier.clickable(onClick = { onPlaylistClick() }),
         leadingContent = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
         overlineContent = {
-            Text(playlist.createdAt.toString())
+            Text(Instant.ofEpochMilli(playlist.createdAt).atZone(ZoneId.systemDefault()).format(formatter))
         },
         headlineContent = { Text(playlist.name) },
         supportingContent = { Text(playlist.songCount.toString()) },
@@ -176,7 +181,7 @@ fun CreatePlaylistDialog(
             TextButton(
                 onClick = {
                     if (name.isNotBlank()) {
-                        onCreatePlaylist(name)
+                        onCreatePlaylist(name.trim())
                         onDismiss()
                     }
                 },
@@ -216,7 +221,7 @@ fun RenamePlaylistDialog(
             TextButton(
                 onClick = {
                     if (name.isNotBlank()) {
-                        onRenamePlaylist(playlist.id, name)
+                        onRenamePlaylist(playlist.id, name.trim())
                         onDismiss()
                     }
                 },
