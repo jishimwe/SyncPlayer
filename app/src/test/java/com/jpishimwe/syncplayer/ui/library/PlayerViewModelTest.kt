@@ -1,32 +1,40 @@
 package com.jpishimwe.syncplayer.ui.library
 
+import app.cash.turbine.test
 import com.jpishimwe.syncplayer.MainDispatcherRule
 import com.jpishimwe.syncplayer.data.FakePlayerRepository
+import com.jpishimwe.syncplayer.data.FakeSongRepository
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
-import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val mainDispatcherRule = MainDispatcherRule()
+    }
 
     private lateinit var repository: FakePlayerRepository
+    private lateinit var songRepository: FakeSongRepository
     private lateinit var viewModel: PlayerViewModel
 
-    @Before
+    @BeforeEach
     fun setup() {
         repository = FakePlayerRepository()
-        viewModel = PlayerViewModel(repository)
+        songRepository = FakeSongRepository()
+        viewModel = PlayerViewModel(repository, songRepository)
     }
 
     @Test
@@ -34,10 +42,14 @@ class PlayerViewModelTest {
         runTest {
             repository.emitState(PlayerUiState(playbackState = PlaybackState.PAUSED))
 
-            viewModel.onEvent(PlayerEvent.PlayPause)
+            viewModel.uiState.test {
+                awaitItem() // activate upstream so uiState.value is current
+                viewModel.onEvent(PlayerEvent.PlayPause)
 
-            assertEquals(1, repository.playCallCount)
-            assertEquals(0, repository.pauseCallCount)
+                assertEquals(1, repository.playCallCount)
+                assertEquals(0, repository.pauseCallCount)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -45,10 +57,14 @@ class PlayerViewModelTest {
         runTest {
             repository.emitState(PlayerUiState(playbackState = PlaybackState.PLAYING))
 
-            viewModel.onEvent(PlayerEvent.PlayPause)
+            viewModel.uiState.test {
+                awaitItem() // activate upstream so uiState.value is current
+                viewModel.onEvent(PlayerEvent.PlayPause)
 
-            assertEquals(1, repository.pauseCallCount)
-            assertEquals(0, repository.playCallCount)
+                assertEquals(1, repository.pauseCallCount)
+                assertEquals(0, repository.playCallCount)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -188,6 +204,54 @@ class PlayerViewModelTest {
                 )
             repository.emitState(PlayerUiState(currentSong = song))
 
-            assertEquals(song, viewModel.uiState.value.currentSong)
+            viewModel.uiState.test {
+                assertEquals(song, awaitItem().currentSong)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
+
+    @Test
+    fun `SetRating calls songRepository setRating with current song id and rating`() =
+        runTest {
+            val song = testSong(42L)
+            repository.emitState(PlayerUiState(currentSong = song))
+
+            viewModel.uiState.test {
+                awaitItem() // activate upstream so uiState.value reflects currentSong
+                viewModel.onEvent(PlayerEvent.SetRating(Rating.FAVORITE))
+                advanceUntilIdle()
+
+                assertEquals(42L, songRepository.lastSetRatingSongId)
+                assertEquals(Rating.FAVORITE, songRepository.lastSetRating)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `SetRating does nothing when no song is playing`() =
+        runTest {
+            viewModel.uiState.test {
+                awaitItem() // default state — no current song
+                viewModel.onEvent(PlayerEvent.SetRating(Rating.FAVORITE))
+                advanceUntilIdle()
+
+                assertEquals(0, songRepository.setRatingCallCount)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    private fun testSong(id: Long) =
+        Song(
+            id = id,
+            title = "Song $id",
+            artist = "Artist",
+            album = "Album",
+            albumId = 1,
+            duration = 200_000,
+            trackNumber = id.toInt(),
+            year = 2024,
+            dateAdded = 1000L,
+            contentUri = null,
+            albumArtUri = null,
+        )
 }

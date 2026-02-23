@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.NowPlayingScreenContent
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
@@ -41,6 +42,7 @@ class NowPlayingScreenTest {
                 onEvent = {},
                 onNavigateBack = {},
                 formatTime = { "3:45" },
+                rating = Rating.NONE,
             )
         }
 
@@ -58,6 +60,7 @@ class NowPlayingScreenTest {
                 onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" },
+                rating = Rating.NONE,
             )
         }
 
@@ -75,6 +78,7 @@ class NowPlayingScreenTest {
                 onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" },
+                rating = Rating.NONE,
             )
         }
 
@@ -92,6 +96,7 @@ class NowPlayingScreenTest {
                 onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" },
+                rating = Rating.NONE,
             )
         }
 
@@ -109,6 +114,7 @@ class NowPlayingScreenTest {
                 onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" },
+                rating = Rating.NONE,
             )
         }
 
@@ -126,6 +132,7 @@ class NowPlayingScreenTest {
                 onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" },
+                rating = Rating.NONE,
             )
         }
 
@@ -143,6 +150,7 @@ class NowPlayingScreenTest {
                 onEvent = { events.add(it) },
                 onNavigateBack = {},
                 formatTime = { "0:00" },
+                rating = Rating.NONE,
             )
         }
 
