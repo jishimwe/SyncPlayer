@@ -146,16 +146,23 @@ Create, edit, and manage playlists stored locally.
 **Plan doc**: [`docs/features/playlists/plan.md`](features/playlists/plan.md)
 **Design doc**: [`docs/features/playlists/design.md`](features/playlists/design.md)
 
-### Phase 5: Metadata Tracking ⬅️ Next
+### Phase 5: Metadata Tracking ✅
 
 Track listening data locally in Room.
 
-- Play count per song (increment on completion or threshold)
-- Favorites (toggle per song)
-- Listening history (timestamped log of played tracks)
-- Surface stats in the UI (most played, recently played, favorites list)
+- ✅ Play count per song — increments once per play when position passes `min(150s, 70% of duration)`
+- ✅ 5-star rating system (`Rating` enum: NONE, POOR, FAIR, GOOD, GREAT, FAVORITE) replacing `isFavorite: Boolean`
+- ✅ Favorite button on NowPlaying — shortcut to `Rating.FAVORITE`; tap again clears to `Rating.NONE`
+- ✅ Star rating bar on NowPlaying — tap a star to set rating; tap active star to clear back to `Rating.NONE`
+- ✅ Listening history log (`ListeningHistoryEntity` with timestamp, append-only)
+- ✅ `lastPlayed` timestamp on Song entity
+- ✅ Three new Library tabs: Faves (4+ stars), Top Plays, Recent (deduplicated by `GROUP BY songs.id`)
+- ✅ `currentSongRating` StateFlow on `PlayerViewModel` — reacts to song changes via `flatMapLatest`
 
-### Phase 6: Sync
+**Plan doc**: [`docs/features/metadata-tracking/plan.md`](features/metadata-tracking/plan.md)
+**Design doc**: [`docs/features/metadata-tracking/design.md`](features/metadata-tracking/design.md)
+
+### Phase 6: Sync ⬅️ Next
 
 Sync metadata across devices using Firebase.
 
@@ -262,10 +269,11 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 - Unit: `PlaylistViewModel` state transitions, CRUD events, blank-name guards
 - Fake: `FakePlaylistRepository` with call counters and argument recording
 
-**Phase 5: Metadata Tracking**
-- Unit: Play count increment logic (threshold-based counting)
-- Room: Metadata DAO (play counts, favorites toggle, history insertion and queries)
-- UI: Favorites toggle updates immediately
+**Phase 5: Metadata Tracking** ✅
+- Unit: `PlayerViewModel` SetRating event — routes to `SongRepository.setRating` with correct song ID and rating; no-ops when no song is playing
+- Unit: `LibraryViewModel` — favorites, mostPlayed, recentlyPlayed flow through to `LibraryUiState.Loaded`
+- UI: `NowPlayingScreenContent` favorite button — emits `SetRating(FAVORITE)` when unrated; emits `SetRating(NONE)` when already favorited
+- Fake: `FakeSongRepository` updated with stubs for all metadata methods
 
 **Phase 6: Sync**
 - Unit: Conflict resolution logic (last-write-wins, merge)
