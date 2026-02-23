@@ -46,6 +46,9 @@ class PlayerRepositoryImpl
 
         private var mediaController: MediaController? = null
 
+        private var currentSongStartPosition: Long = 0L
+        private var hasCountedCurrentSong: Boolean = false
+
         private val playerListener =
             object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -66,6 +69,8 @@ class PlayerRepositoryImpl
                     mediaItem: MediaItem?,
                     reason: Int,
                 ) {
+                    hasCountedCurrentSong = false
+                    currentSongStartPosition = 0L
                     _playbackState.update {
                         it.copy(
                             currentSong = mediaItem?.toSong(),
@@ -140,6 +145,22 @@ class PlayerRepositoryImpl
                                     duration =
                                         mediaController?.duration ?: 0L,
                                 )
+                            }
+                        }
+                        val position = mediaController?.currentPosition ?: 0L
+                        val duration = mediaController?.duration ?: 0L
+                        val threshold = minOf(150_000L, duration * 70 / 100)
+
+                        if (!hasCountedCurrentSong && threshold > 0 && position >= threshold) {
+                            hasCountedCurrentSong = true
+                            currentSongStartPosition = position
+
+                            val songId = mediaController?.currentMediaItem?.mediaId?.toLongOrNull()
+                            if (songId != null) {
+                                repositoryScope.launch {
+                                    songRepository.incrementPlayCount(songId)
+                                    songRepository.recordListeningEvent(songId)
+                                }
                             }
                         }
                     }

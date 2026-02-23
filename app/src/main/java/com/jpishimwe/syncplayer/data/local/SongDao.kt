@@ -51,4 +51,27 @@ interface SongDao {
 
     @Query("DELETE FROM songs")
     suspend fun deleteAll()
+
+    @Query("UPDATE songs SET playCount = playCount + 1, lastPlayed = :playedAt WHERE id = :songId")
+    suspend fun incrementPlayCount(
+        songId: Long,
+        playedAt: Long,
+    )
+
+    @Query("UPDATE songs SET rating = :rating WHERE id = :songId")
+    suspend fun setRating(
+        songId: Long,
+        rating: Int,
+    )
+
+    fun getFavoriteSongs(): Flow<List<Song>> = getSongsByMinRating()
+
+    @Query("SELECT * FROM songs WHERE rating >= :minRating ORDER BY rating DESC, title ASC")
+    fun getSongsByMinRating(minRating: Int = 4): Flow<List<Song>>
+
+    @Query("SELECT * FROM songs ORDER BY playCount DESC LIMIT :limit")
+    fun getMostPlayedSongs(limit: Int = 50): Flow<List<Song>>
+
+    @Query("SELECT rating FROM songs WHERE id = :songId")
+    fun getRating(songId: Long): Flow<Int>
 }

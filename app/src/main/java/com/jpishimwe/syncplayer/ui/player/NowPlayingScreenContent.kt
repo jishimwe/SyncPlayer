@@ -12,16 +12,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlaylistAddCircle
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOn
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.ShuffleOn
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -38,9 +43,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
-import com.google.common.collect.Queues
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.RepeatMode
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.components.PlayerControls
@@ -54,6 +59,7 @@ fun NowPlayingScreenContent(
     onEvent: (PlayerEvent) -> Unit,
     onNavigateBack: () -> Unit,
     formatTime: (Long) -> String,
+    rating: Rating,
 ) {
     var showQueue by remember { mutableStateOf(false) }
 
@@ -119,11 +125,26 @@ fun NowPlayingScreenContent(
                     isEnabled = uiState.isShuffleEnabled,
                     onClick = { onEvent(PlayerEvent.ToggleShuffle) },
                 )
+                FavoriteButton(
+                    rating = rating,
+                    onClick = {
+                        if (rating == Rating.NONE) {
+                            onEvent(PlayerEvent.SetRating(Rating.FAVORITE))
+                        } else {
+                            onEvent(PlayerEvent.SetRating(Rating.NONE))
+                        }
+                    },
+                )
                 RepeatButton(
                     mode = uiState.repeatMode,
                     onClick = { onEvent(PlayerEvent.ToggleRepeat) },
                 )
             }
+
+            StarRating(
+                rating = rating,
+                onSetRating = { stars -> onEvent(PlayerEvent.SetRating(stars)) },
+            )
 
             Spacer(Modifier.height(32.dp))
 
@@ -136,6 +157,44 @@ fun NowPlayingScreenContent(
 
             Spacer(Modifier.weight(1f))
         }
+    }
+}
+
+@Composable
+fun FavoriteButton(
+    rating: Rating,
+    onClick: () -> Unit,
+) {
+    val isFavorite = rating == Rating.FAVORITE
+    IconButton(onClick = onClick) {
+        Icon(
+            if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+            tint = if (isFavorite) MaterialTheme.colorScheme.error else LocalContentColor.current,
+        )
+    }
+}
+
+@Composable
+fun StarRating(
+    rating: Rating,
+    onSetRating: (stars: Rating) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Rating.entries
+            .filter {
+                it != Rating.NONE
+            }.forEach { star ->
+                IconButton(onClick = { onSetRating(if (rating == star) Rating.NONE else star) }) {
+                    Icon(
+                        if (star.value <= rating.value) Icons.Default.Star else Icons.Default.StarBorder,
+                        contentDescription = "${star.value} stars",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.ui.player
 
+import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 
 sealed interface PlayerEvent {
@@ -41,5 +42,9 @@ sealed interface PlayerEvent {
     data class ReorderQueue(
         val queueItemId: String,
         val newPosition: Int,
+    ) : PlayerEvent
+
+    data class SetRating(
+        val rating: Rating,
     ) : PlayerEvent
 }

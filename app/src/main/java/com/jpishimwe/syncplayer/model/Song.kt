@@ -5,6 +5,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
 
 @Entity(tableName = "songs")
 data class Song(
@@ -19,7 +20,34 @@ data class Song(
     val dateAdded: Long,
     val contentUri: String?,
     val albumArtUri: String?,
+    val playCount: Int = 0,
+    val rating: Int = 0,
+    val lastPlayed: Long = 0,
 )
+
+enum class Rating(
+    val value: Int,
+) {
+    NONE(0),
+    POOR(1),
+    FAIR(2),
+    GOOD(3),
+    GREAT(4),
+    FAVORITE(5),
+    ;
+
+    companion object {
+        fun fromInt(value: Int): Rating = entries.find { it.value == value } ?: NONE
+    }
+}
+
+class RatingConverter {
+    @TypeConverter
+    fun toInt(rating: Rating): Int = rating.value
+
+    @TypeConverter
+    fun fromInt(value: Int): Rating = Rating.fromInt(value)
+}
 
 fun Song.toMediaItem(): MediaItem =
     MediaItem

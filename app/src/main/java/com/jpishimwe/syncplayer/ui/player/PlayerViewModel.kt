@@ -3,11 +3,18 @@ package com.jpishimwe.syncplayer.ui.player
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jpishimwe.syncplayer.data.PlayerRepository
+import com.jpishimwe.syncplayer.data.SongRepository
 import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.model.Rating
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -18,6 +25,7 @@ class PlayerViewModel
     @Inject
     constructor(
         private val playerRepository: PlayerRepository,
+        private val songRepository: SongRepository,
     ) : ViewModel() {
         val uiState: StateFlow<PlayerUiState> =
             playerRepository.playbackState
@@ -90,8 +98,28 @@ class PlayerViewModel
                         playerRepository.reorderQueue(event.queueItemId, event.newPosition)
                     }
                 }
+
+                is PlayerEvent.SetRating -> {
+                    viewModelScope.launch {
+                        val songId = uiState.value.currentSong?.id ?: return@launch
+                        songRepository.setRating(songId, event.rating)
+                    }
+                }
             }
         }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        val currentSongRating: StateFlow<Rating> =
+            playerRepository.playbackState
+                .map { it.currentSong?.id }
+                .distinctUntilChanged()
+                .flatMapLatest { songId ->
+                    if (songId == null) {
+                        flowOf(Rating.NONE)
+                    } else {
+                        songRepository.getRating(songId)
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), Rating.NONE)
 
         private fun togglePlayback() {
             if (uiState.value.playbackState == PlaybackState.PLAYING) {

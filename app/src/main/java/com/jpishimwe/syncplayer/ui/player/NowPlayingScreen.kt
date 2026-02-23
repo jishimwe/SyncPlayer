@@ -12,11 +12,13 @@ fun NowPlayingScreen(
     onNavigateBack: () -> Unit,
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val rating = viewModel.currentSongRating.collectAsStateWithLifecycle()
 
     NowPlayingScreenContent(
         uiState = uiState.value,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,
         formatTime = viewModel::formatTime,
+        rating = rating.value,
     )
 }

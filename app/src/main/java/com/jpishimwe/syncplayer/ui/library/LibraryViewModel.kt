@@ -17,7 +17,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class LibraryTab { SONGS, ALBUMS, ARTISTS }
+enum class LibraryTab(
+    val label: String,
+) {
+    SONGS("Songs"),
+    ALBUMS("Albums"),
+    ARTISTS("Artists"),
+    FAVORITES("Faves"),
+    MOST_PLAYED("Top Plays"),
+    RECENTLY_PLAYED("Recent"),
+}
 
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
@@ -26,6 +35,9 @@ sealed interface LibraryUiState {
         val songs: List<Song>,
         val albums: List<Album>,
         val artists: List<Artist>,
+        val favorites: List<Song>,
+        val mostPlayed: List<Song>,
+        val recentlyPlayed: List<Song>,
     ) : LibraryUiState
 
     data class Error(
@@ -47,17 +59,34 @@ class LibraryViewModel
         val selectedTab: StateFlow<LibraryTab> = _selectedTab.asStateFlow()
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+        val metadataFlows =
+            combine(
+                songRepository.getFavoriteSongs(),
+                songRepository.getMostPlayedSongs(),
+                songRepository.getRecentlyPlayed(),
+            ) { favorites, mostPlayed, recentlyPlayed ->
+                Triple(favorites, mostPlayed, recentlyPlayed)
+            }
+
         val uiState: StateFlow<LibraryUiState> =
             combine(
                 songRepository.getAllSongs(),
                 songRepository.getAllAlbums(),
                 songRepository.getAllArtists(),
                 refreshError,
-            ) { songs, albums, artists, error ->
+                metadataFlows,
+            ) { songs, albums, artists, error, (favorites, mostPlayed, recentlyPlayed) ->
                 if (error != null && songs.isEmpty()) {
                     return@combine LibraryUiState.Error(error)
                 } else {
-                    LibraryUiState.Loaded(songs, albums, artists)
+                    LibraryUiState.Loaded(
+                        songs,
+                        albums,
+                        artists,
+                        favorites = favorites,
+                        mostPlayed = mostPlayed,
+                        recentlyPlayed = recentlyPlayed,
+                    )
                 }
             }.stateIn(
                 scope = viewModelScope,

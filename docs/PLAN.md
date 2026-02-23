@@ -33,7 +33,8 @@ app/src/main/java/com/jpishimwe/syncplayer/
 │   ├── components/ # Reusable UI components
 │   ├── library/    # Library browsing (songs, albums, artists, detail screens)
 │   ├── player/     # Now Playing screen, player controls, MiniPlayer
-│   └── navigation/ # NavGraph, Screen routes
+│   ├── playlists/  # Playlist management (list, detail, song picker)
+│   └── navigation/ # NavGraph, Screen routes, bottom nav
 ├── data/           # Repositories, local DB
 │   └── local/      # Room database, DAOs, entities
 ├── model/          # Data classes (Song, Album, Artist, PlaybackState, PlayerUiState)
@@ -56,10 +57,10 @@ Current routes:
 | `now_playing` | NowPlayingScreen | Full-screen player with controls |
 | `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album |
 | `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist |
+| `playlists` | PlaylistsScreen | Playlist list with create/rename/delete |
+| `playlist_detail/{playlistId}/{playlistName}` | PlaylistDetailScreen | Songs in a playlist with reorder/add/remove |
 
-Future: Bottom navigation bar with Library, Playlists, and Settings top-level destinations.
-
-A persistent MiniPlayer sits above the bottom content when a song is playing (already implemented in Phase 2).
+Bottom navigation bar switches between Library and Playlists tabs. A persistent MiniPlayer sits above the bottom nav on top-level screens. Navigation uses `saveState`/`restoreState` for tab state preservation.
 
 ## Build Phases
 
@@ -131,17 +132,21 @@ Fixed bugs discovered during manual testing after Phases 2 and 3.
 **Plan doc**: [`docs/features/bugfixes-phase2/plan.md`](features/bugfixes-phase2/plan.md)
 **Design doc**: [`docs/features/bugfixes-phase2/design.md`](features/bugfixes-phase2/design.md)
 
-### Phase 4: Playlists ⬅️ Next
+### Phase 4: Playlists ✅
 
 Create, edit, and manage playlists stored locally.
 
-- Room entities for playlists and playlist-song associations
-- Create / rename / delete playlists
-- Add / remove / reorder songs in a playlist
-- Playlist detail screen
-- Bottom navigation wired up
+- ✅ Room entities for playlists (`PlaylistEntity`) and playlist-song associations (`PlaylistSongCrossRef`)
+- ✅ Create / rename / delete playlists (with dialogs)
+- ✅ Add / remove / reorder songs in a playlist (drag-to-reorder, song picker with diff-based sync)
+- ✅ Playlist detail screen (tap song to play playlist from that index)
+- ✅ Bottom navigation bar (Library | Playlists) with state preservation
+- ✅ MiniPlayer stacked below bottom nav on top-level screens
 
-### Phase 5: Metadata Tracking
+**Plan doc**: [`docs/features/playlists/plan.md`](features/playlists/plan.md)
+**Design doc**: [`docs/features/playlists/design.md`](features/playlists/design.md)
+
+### Phase 5: Metadata Tracking ⬅️ Next
 
 Track listening data locally in Room.
 
@@ -253,10 +258,9 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 - Unit: Shuffle/repeat/skip button events fire correct `PlayerEvent`
 - UI: NowPlayingScreenContent shuffle, repeat, skip previous buttons
 
-**Phase 4: Playlists**
-- Unit: `PlaylistViewModel` CRUD operations reflected in state
-- Room: Playlist DAO (create, rename, delete, add/remove/reorder songs)
-- UI: Create playlist flow, add song to playlist
+**Phase 4: Playlists** ✅
+- Unit: `PlaylistViewModel` state transitions, CRUD events, blank-name guards
+- Fake: `FakePlaylistRepository` with call counters and argument recording
 
 **Phase 5: Metadata Tracking**
 - Unit: Play count increment logic (threshold-based counting)

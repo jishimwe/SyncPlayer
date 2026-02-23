@@ -37,7 +37,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayer
 
 @Composable
 fun LibraryScreen(
@@ -119,7 +118,7 @@ fun LibraryScreenContent(
                     Tab(
                         selected = selectedTab == tab,
                         onClick = { onTabSelected(tab) },
-                        text = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                        text = { Text(tab.label) },
                     )
                 }
             }
@@ -153,6 +152,9 @@ fun LibraryScreenContent(
                         LibraryTab.SONGS -> SongsTab(uiState, onSongClick)
                         LibraryTab.ALBUMS -> AlbumsTab(uiState, onAlbumClick)
                         LibraryTab.ARTISTS -> ArtistsTab(uiState, onArtistClick)
+                        LibraryTab.FAVORITES -> FavoriteTab(uiState, onSongClick)
+                        LibraryTab.MOST_PLAYED -> MostPlayedTab(uiState, onSongClick)
+                        LibraryTab.RECENTLY_PLAYED -> RecentlyPlayedTab(uiState, onSongClick)
                     }
                 }
             }
@@ -215,6 +217,63 @@ private fun ArtistsTab(
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(state.artists, key = { it.name }) { artist ->
                 ArtistListItem(artist, onArtistClick = { onArtistClick(artist.name) })
+            }
+        }
+    }
+}
+
+@Composable
+fun FavoriteTab(
+    state: LibraryUiState.Loaded,
+    onSongClick: (songs: List<Song>, index: Int) -> Unit,
+) {
+    if (state.favorites.isEmpty()) {
+        EmptyState("No songs found")
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(state.favorites, key = { _, song -> song.id }) { index, song ->
+                SongListItem(
+                    song,
+                    onClick = { onSongClick(state.favorites, index) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MostPlayedTab(
+    state: LibraryUiState.Loaded,
+    onSongClick: (songs: List<Song>, index: Int) -> Unit,
+) {
+    if (state.mostPlayed.isEmpty()) {
+        EmptyState("No songs found")
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(state.mostPlayed, key = { _, song -> song.id }) { index, song ->
+                SongListItem(
+                    song,
+                    onClick = { onSongClick(state.mostPlayed, index) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecentlyPlayedTab(
+    state: LibraryUiState.Loaded,
+    onSongClick: (songs: List<Song>, index: Int) -> Unit,
+) {
+    if (state.recentlyPlayed.isEmpty()) {
+        EmptyState("No songs found")
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(state.recentlyPlayed, key = { _, song -> song.id }) { index, song ->
+                SongListItem(
+                    song,
+                    onClick = { onSongClick(state.recentlyPlayed, index) },
+                )
             }
         }
     }
