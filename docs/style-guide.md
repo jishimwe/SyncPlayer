@@ -395,6 +395,58 @@ fun loadSongs() {
 
 ## Compose Patterns
 
+### Callback Parameter Types
+
+Child composables should use the **simplest callback signature that fits**:
+
+```kotlin
+// Use () -> Unit when the child just signals an event — the parent has all context
+@Composable
+fun PlaylistListItem(
+    playlist: Playlist,
+    onRename: () -> Unit,    // parent captured `playlist` in scope
+    onDelete: () -> Unit,
+)
+
+// Use (T) -> Unit when the child generates new data the parent doesn't have
+@Composable
+fun RenamePlaylistDialog(
+    playlist: Playlist,
+    onRename: (newName: String) -> Unit,   // child produced the new name
+    onDismiss: () -> Unit,
+)
+```
+
+### Dialog Placement
+
+Always place dialogs **outside** `Scaffold` content blocks. Inside `when` or conditional expressions, early returns can prevent the dialog composable from ever being reached:
+
+```kotlin
+// ✅ Good — dialogs outside Scaffold
+Scaffold { ... }
+if (showRenameDialog) RenameDialog(...)
+if (showDeleteDialog) DeleteDialog(...)
+
+// ❌ Bad — dialog inside Scaffold content (can be skipped by early return in `when`)
+Scaffold { padding ->
+    when (state) {
+        is Loaded -> { ... }
+    }
+    if (showDialog) Dialog(...)  // may never compose if `when` returns early
+}
+```
+
+### ModalBottomSheet Layout
+
+When a `ModalBottomSheet` contains both a scrollable list and a button, use `weight(1f)` on the `LazyColumn` so the button stays pinned at the bottom:
+
+```kotlin
+Column {
+    LazyColumn(modifier = Modifier.weight(1f)) { ... }
+    Button(onClick = onConfirm) { Text("Confirm") }   // always visible
+}
+```
+
 ### State Hoisting
 
 Composables should be stateless and receive state via parameters:
@@ -767,6 +819,33 @@ Stay focused on the requested change. No "while I'm here" changes.
 - No `AsyncTask`
 - No `Handler` (use coroutines)
 - No `TabRow` (use `PrimaryTabRow`)
+- No `GoogleSignInClient` (use Android Credential Manager — `minSdk 34` makes it available unconditionally)
+
+### ❌ Don't Pass Context to ViewModels
+
+ViewModels should be context-free. When an operation requires a `Context` (e.g., CredentialManager, ActivityResultLauncher), keep it in the composable and pass the result to the ViewModel as an event:
+
+```kotlin
+// ✅ Good — composable owns Context, ViewModel owns logic
+@Composable
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    SettingsScreenContent(
+        onSignIn = {
+            scope.launch {
+                val result = credentialManager.getCredential(context, request)
+                viewModel.onEvent(SettingsEvent.SignInWithToken(result.idToken))
+            }
+        }
+    )
+}
+
+// ❌ Bad — ViewModel takes Context
+class SettingsViewModel(...) : ViewModel() {
+    fun signIn(context: Context) { ... }  // Don't do this
+}
+```
 
 ### ❌ Don't Hardcode Dependency Versions
 

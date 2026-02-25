@@ -35,31 +35,49 @@ SyncPlayer follows the MVVM (Model-View-ViewModel) architecture pattern with a s
 app/src/main/java/com/jpishimwe/syncplayer/
 ├── ui/
 │   ├── theme/              # Color, Theme, Type, Shape
-│   ├── components/         # Reusable UI components
-│   ├── library/            # Library feature
+│   ├── components/         # Reusable UI components (MiniPlayer, SongListItem, etc.)
+│   ├── library/            # Library tabs: Songs, Albums, Artists, Favs, Top Plays, Recent
 │   │   ├── LibraryScreen.kt
 │   │   ├── LibraryViewModel.kt
 │   │   ├── LibraryUiState.kt
 │   │   └── LibraryEvent.kt
-│   ├── player/             # Playback feature
-│   └── playlists/          # Playlist feature
+│   ├── player/             # Now Playing screen, PlayerViewModel, PlayerEvent
+│   ├── playlists/          # Playlist list + detail, SongPickerSheet
+│   ├── settings/           # Sign-in, sync status, manual sync trigger
+│   │   ├── SettingsScreen.kt
+│   │   ├── SettingsViewModel.kt
+│   │   ├── SettingsUiState.kt
+│   │   └── SettingsEvent.kt
+│   └── navigation/         # NavGraph, Screen routes, bottom nav
 ├── data/
-│   ├── repository/         # Repository implementations
-│   │   └── SongRepository.kt
-│   └── local/              # Room database
-│       ├── SyncPlayerDatabase.kt
-│       ├── dao/
-│       │   └── SongDao.kt
-│       └── entity/
-│           └── SongEntity.kt
-├── model/                  # Domain models
-│   ├── Song.kt
-│   ├── Album.kt
-│   └── Artist.kt
-├── di/                     # Dependency injection
-│   ├── AppModule.kt
-│   └── DatabaseModule.kt
-└── MainActivity.kt
+│   ├── local/              # Room database, DAOs, entities
+│   │   ├── SyncPlayerDatabase.kt
+│   │   ├── SongDao.kt
+│   │   ├── PlaylistDao.kt      # PlaylistEntity, PlaylistSongCrossRef
+│   │   ├── QueueDao.kt         # QueueEntity
+│   │   └── ListeningHistoryDao.kt
+│   ├── sync/               # Firebase sync layer
+│   │   ├── SongFingerprint.kt      # SHA-256 cross-device song key
+│   │   ├── FirestoreModels.kt      # Firestore document data classes
+│   │   ├── AuthRepository.kt       # AuthState, sign-in/out interface
+│   │   ├── AuthRepositoryImpl.kt
+│   │   ├── SyncRepository.kt       # Firestore push/pull interface
+│   │   ├── SyncRepositoryImpl.kt
+│   │   ├── ConflictResolver.kt     # Merge logic per data type
+│   │   └── SyncOrchestrator.kt     # Push+pull coordination, SyncStatus
+│   ├── SongRepository.kt       # Song + metadata CRUD interface
+│   ├── SongRepositoryImpl.kt
+│   ├── PlaylistRepository.kt
+│   ├── PlaylistRepositoryImpl.kt
+│   ├── PlayerRepository.kt     # Media3 playback control interface
+│   └── PlayerRepositoryImpl.kt
+├── model/                  # Domain models (Song, Album, Artist, Playlist, Rating, etc.)
+├── service/                # PlaybackService (Media3 MediaSessionService)
+├── di/                     # Hilt modules
+│   ├── AppModule.kt        # Repository bindings
+│   ├── DatabaseModule.kt   # Room + DAOs
+│   └── SyncModule.kt       # Firebase, AuthRepository, SyncRepository, @ApplicationScope
+└── MainActivity.kt         # Single activity; onResume triggers SyncOrchestrator
 ```
 
 ## Layer Responsibilities
@@ -498,17 +516,33 @@ class GetFilteredSongsUseCase @Inject constructor(
 
 ### Offline-First with Sync
 
-Future sync architecture:
+Implemented in Phase 6. Room is always the source of truth for reads. The `SyncOrchestrator` pushes local changes to Firestore and pulls remote changes on every app foreground.
+
 ```
-┌──────────────┐
-│  Repository  │
-└──────┬───────┘
-       │
-       ├─────────► Local DB (Room) ─────► UI
-       │               ▲
-       │               │
-       └─────────► Sync Service ────► Remote Server
+┌──────────────────┐
+│    Repository    │
+└────────┬─────────┘
+         │
+         ├──────────► Local DB (Room) ──────► UI (StateFlow)
+         │                  ▲
+         │                  │ applySyncDelta
+         │           SyncOrchestrator
+         │            push ↕ pull
+         └──────────► Cloud Firestore
+                       (offline persistence)
 ```
+
+**Conflict resolution per data type:**
+
+| Field | Strategy |
+|-------|----------|
+| `playCount` | max-wins (can only grow) |
+| `rating` | last-write-wins by `lastModified` |
+| `lastPlayed` | max-wins |
+| Playlist (name + songs) | last-write-wins per playlist |
+| Listening history | append-only union merge |
+
+**Song matching across devices:** Songs are identified by a SHA-256 fingerprint of `title + artist + album + duration-bucket`. MediaStore IDs are device-specific and are never synced.
 
 ### Multi-Module
 

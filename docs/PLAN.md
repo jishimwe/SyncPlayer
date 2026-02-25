@@ -162,16 +162,22 @@ Track listening data locally in Room.
 **Plan doc**: [`docs/features/metadata-tracking/plan.md`](features/metadata-tracking/plan.md)
 **Design doc**: [`docs/features/metadata-tracking/design.md`](features/metadata-tracking/design.md)
 
-### Phase 6: Sync ⬅️ Next
+### Phase 6: Sync 🔄 In Progress
 
 Sync metadata across devices using Firebase.
 
-- Firebase Auth with Google sign-in
-- Firestore data model for playlists, play counts, favorites, history
-- Sync service: upload local changes, pull remote changes
-- Conflict resolution (last-write-wins or merge strategy)
-- Offline support (Firestore offline persistence)
-- Sync status indicator in Settings
+- Firebase Auth with Google Sign-In (Android Credential Manager)
+- Firestore data model for playlists, play counts, ratings, listening history
+- Song fingerprinting (`title + artist + album + duration` → SHA-256) for cross-device song matching
+- Room migration 4→5: `lastModified` on Song + PlaylistEntity; `remoteId` on PlaylistEntity
+- `SyncOrchestrator`: push local changes, pull remote changes, per-entity conflict resolution
+- Conflict resolution: `playCount` = max-wins; `rating` = last-write-wins; playlists = LWW; history = union merge
+- Offline support via Firestore's built-in offline persistence
+- Settings screen with sign-in/out, sync status, manual sync trigger
+- Settings tab added to bottom navigation (Library | Playlists | Settings)
+- Sync triggered on every app foreground (`MainActivity.onResume`)
+
+**Plan doc**: [`docs/features/sync/plan.md`](features/sync/plan.md)
 
 ### Phase 7: Polish
 

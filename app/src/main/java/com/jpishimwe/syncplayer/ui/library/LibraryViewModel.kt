@@ -83,9 +83,9 @@ class LibraryViewModel
                         songs,
                         albums,
                         artists,
-                        favorites = favorites,
-                        mostPlayed = mostPlayed,
-                        recentlyPlayed = recentlyPlayed,
+                        favorites,
+                        mostPlayed,
+                        recentlyPlayed,
                     )
                 }
             }.stateIn(

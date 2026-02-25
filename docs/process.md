@@ -40,7 +40,8 @@ For any new feature or significant change:
    - Verify compatibility with AGP 9 / Kotlin 2.2.10
    - Check correct group/artifact names
    - For existing dependencies in `libs.versions.toml`, assume they're current
-4. **Present the plan** and **WAIT for explicit approval**
+4. **Note any required user actions** in Layer 1 if the feature needs external setup (e.g., Firebase project creation, `google-services.json`, API keys, string resources with placeholder values)
+5. **Present the plan** and **WAIT for explicit approval**
    - Approval signals: "approved", "proceed", "looks good", "go ahead"
    - If changes requested, revise the plan before proceeding
    - Do NOT start coding until explicitly approved
@@ -290,3 +291,5 @@ Before considering a feature complete, verify:
 - ❌ Adding features not in the approved plan
 - ❌ Ignoring build warnings
 - ❌ Committing code that doesn't compile
+- ❌ Using `fallbackToDestructiveMigration` — write explicit `Migration` objects (Phase 6+)
+- ❌ Putting Context-dependent code (CredentialManager, ActivityResultLauncher) in ViewModels — keep in composables, pass results via events

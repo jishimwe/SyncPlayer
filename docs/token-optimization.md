@@ -50,14 +50,17 @@ The `.claudeignore` file in the project root excludes files from Claude's contex
 
 Your current approach is optimal:
 ```
-Session 1: Plan (write plan.md)
-Session 2: Dependencies + Models → build
-Session 3: Repository + ViewModel → build  
-Session 4: UI composables → build
-Session 5: Tests → test
+Session 1: Plan (write plan.md) — read docs, explore code, write plan
+Session 2: Dependencies + DB migration → build
+Session 3: Data models + DAOs → build
+Session 4: Repository + sync/auth layer → build
+Session 5: ViewModel → build
+Session 6: UI composables + navigation → build
+Session 7: Tests → test
+Session 8: Design doc → done
 ```
 
-Each session focuses on a small piece, using minimal context.
+Each session focuses on one layer, using only the files relevant to that layer. For Phase 6-level complexity (11 layers), splitting into 2–3 sessions per group of layers is more practical than one session per layer.
 
 ### 4. Start Fresh Conversations
 
@@ -188,13 +191,19 @@ Figure out where to add this and implement it."
 ### Keep Docs Modular (Already Done!)
 
 Your current structure is optimal:
-- `CLAUDE.md` - Core essentials (~1,200 tokens)
+- `CLAUDE.md` - Core essentials (~2,000 tokens)
 - `process.md` - Read when implementing
 - `architecture.md` - Read when architecting
 - `dependencies.md` - Read when adding deps
 - `style-guide.md` - Read when coding
+- `token-optimization.md` - Read when planning session strategy
+- `docs/features/<feature>/plan.md` - Read only for the feature being worked on
 
-Claude only reads what's needed for each task.
+Claude only reads what's needed for each task. Feature plan docs are large but only loaded for the relevant feature — not on every conversation.
+
+### Auto Memory
+
+`~/.claude/projects/.../memory/MEMORY.md` persists cross-session learnings automatically. It's loaded into every conversation's system prompt. Keep it concise (under ~200 lines) — overflow is truncated. Put detailed notes in topic files (e.g., `debugging.md`) and link from `MEMORY.md`.
 
 ### In Feature Docs
 

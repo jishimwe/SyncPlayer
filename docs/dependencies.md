@@ -51,11 +51,27 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 |---------|---------|----------|-------|
 | KSP | 2.3.5 | com.google.devtools.ksp | **Must be 2.3.4+ for AGP 9** |
 
+### Firebase & Sync (Phase 6)
+
+| Library | Version | Group ID | Notes |
+|---------|---------|----------|-------|
+| Firebase BOM | latest stable | `com.google.firebase:firebase-bom` | Manages versions of all Firebase libs — no per-library versions needed |
+| Firebase Auth KTX | BOM | `com.google.firebase:firebase-auth-ktx` | Google Sign-In credential exchange |
+| Cloud Firestore KTX | BOM | `com.google.firebase:firebase-firestore-ktx` | Sync data store; offline persistence enabled |
+| Credential Manager | latest stable | `androidx.credentials:credentials` | Modern Google Sign-In API (replaces GoogleSignInClient) |
+| Credentials Play Services | same | `androidx.credentials:credentials-play-services-auth` | Play Services bridge for CredentialManager |
+| Google ID | latest stable | `com.google.android.libraries.identity.googleid:googleid` | `GoogleIdTokenCredential` type |
+| Coroutines Play Services | `1.10.1` | `org.jetbrains.kotlinx:kotlinx-coroutines-play-services` | `.await()` on Firebase `Task<T>` |
+
+> **Firebase BOM**: Declare as `platform(libs.firebase.bom)` and omit version refs on `firebase-auth` and `firebase-firestore` entries in the catalog.
+
+> **Requires `google-services.json`**: Download from Firebase Console → Project Settings → Your Apps and place in `app/`. **Never commit to version control** — store as a CI secret. See `docs/features/sync/plan.md` Layer 1 for full setup steps.
+
 ### Networking (Future)
 
 | Library | Version | Group ID | Notes |
 |---------|---------|----------|-------|
-| Retrofit | TBD | com.squareup.retrofit2 | For future sync feature |
+| Retrofit | TBD | com.squareup.retrofit2 | For YouTube Music / MusicBee integrations |
 | OkHttp | TBD | com.squareup.okhttp3 | |
 
 ### Image Loading
@@ -167,6 +183,41 @@ dependencies {
 }
 ```
 
+### Firebase BOM Usage
+
+Declare the BOM as a platform dependency. Individual Firebase artifacts then inherit their versions:
+
+```kotlin
+dependencies {
+    implementation(platform(libs.firebase.bom))  // BOM manages all Firebase versions
+    implementation(libs.firebase.auth)            // no version needed
+    implementation(libs.firebase.firestore)       // no version needed
+}
+```
+
+### google-services Plugin
+
+Apply in both project-level and app-level `build.gradle.kts`:
+
+```kotlin
+// build.gradle.kts (project-level)
+plugins {
+    alias(libs.plugins.google.services) apply false
+}
+
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.google.services)
+}
+```
+
+Requires `app/google-services.json` (download from Firebase Console). Without it:
+```
+File google-services.json is missing. The Google Services Plugin cannot function without it.
+```
+
+**Never commit `google-services.json`** — add to `.gitignore` and store as a CI secret (base64-encoded).
+
 ## Library-Specific Gotchas
 
 ### Coil 3.x
@@ -234,10 +285,30 @@ Set `exportSchema = false` unless you need schema versioning:
 @Database(
     entities = [SongEntity::class],
     version = 1,
-    exportSchema = false  // Set to false for now
+    exportSchema = false
 )
 abstract class SyncPlayerDatabase : RoomDatabase()
 ```
+
+**Migrations:**
+
+Phase 6 switched from `fallbackToDestructiveMigration` to explicit `Migration` objects. All future schema changes require a `Migration(from, to)`:
+
+```kotlin
+// In SyncPlayerDatabase.kt
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE songs ADD COLUMN lastModified INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+// In DatabaseModule.kt
+Room.databaseBuilder(context, SyncPlayerDatabase::class.java, "syncplayer.db")
+    .addMigrations(MIGRATION_4_5)
+    .build()
+```
+
+Do NOT use `.fallbackToDestructiveMigration()` — it wipes user data if any migration is missing.
 
 ## JUnit 5 Configuration
 
@@ -280,11 +351,17 @@ No tests found
 [versions]
 room = "2.7.1"
 coil = "3.1.0"
+firebase-bom = "<latest>"
 
 [libraries]
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+
+# Firebase: use platform BOM; no version.ref on individual artifacts
+firebase-bom  = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -292,6 +369,7 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version = "<latest>" }
 ```
 
 ### Using in build.gradle.kts
