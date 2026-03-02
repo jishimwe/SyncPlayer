@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -87,6 +88,19 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+
+    // Firebase (versions managed by BOM)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+
+    // Google Sign-In via Credential Manager
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services)
+    implementation(libs.googleid)
+
+    // Firebase Task → coroutine bridge
+    implementation(libs.kotlinx.coroutines.play)
 
     // Unit tests
     testImplementation(libs.junit)

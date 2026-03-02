@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Sync Player</string>
+    <string name="default_web_client_id" translatable="false">721103707838-9p1t18dosnak2pkoaj2es0dlndkacuog.apps.googleusercontent.com</string>
 </resources>
