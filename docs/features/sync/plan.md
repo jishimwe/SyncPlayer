@@ -56,7 +56,7 @@ fingerprint = SHA-256(lowercase(title) | lowercase(artist) | lowercase(album) | 
 | Data | Strategy | Rationale |
 |------|----------|-----------|
 | `playCount` | max-wins | You can't un-play a song. The device with the higher count has heard it more. |
-| `rating` | last-write-wins by `lastModified` | Rating is a deliberate user preference. The most recent change is most likely what the user intended. |
+| `rating` | last-write-wins by `lastModified` | Rating is a deliberate user preference. The most recent change is most likely what the user intended. On tie, local wins — avoids an unnecessary write. |
 | `lastPlayed` | max-wins | Most recent play is the ground truth. |
 | Playlist name + song list | last-write-wins per playlist by `lastModified` | Playlist is treated as a unit. Competing edits on two devices resolve to the most recently modified. Song-level merging is too complex for Phase 6. |
 | Listening history | append-only union | History is immutable. Any event on any device is valid. Union merge with local deduplication (same `songId` + `playedAt` timestamp). |
@@ -87,6 +87,16 @@ The last successful sync timestamp is stored in `SharedPreferences` under key `"
 
 Firestore offline persistence is **enabled by default** on Android. All reads and writes succeed offline; Firestore queues writes locally and flushes when connectivity resumes. No additional configuration is required beyond initializing the Firestore instance. We explicitly set `CACHE_SIZE_UNLIMITED` to avoid eviction for users with large libraries.
 
+Use the current settings DSL — `setPersistenceEnabled(true)` is deprecated:
+
+```kotlin
+db.firestoreSettings = firestoreSettings {
+    setLocalCacheSettings(persistentCacheSettings {
+        setSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+    })
+}
+```
+
 ### Settings screen
 
 A third tab in the bottom nav (alongside Library and Playlists). Shows:
@@ -112,22 +122,22 @@ Add to `gradle/libs.versions.toml`:
 
 ```toml
 [versions]
-firebase-bom          = "<latest_stable>"   # verify via web search before implementing
-credentials           = "<latest_stable>"   # androidx.credentials
-googleid              = "<latest_stable>"   # com.google.android.libraries.identity.googleid
+firebase-bom          = "34.10.0"
+credentials           = "1.5.0"
+googleid              = "1.1.1"
 coroutines-play       = "1.10.1"            # matches existing coroutines version
 
 [libraries]
 firebase-bom          = { group = "com.google.firebase",   name = "firebase-bom",                 version.ref = "firebase-bom" }
-firebase-auth         = { group = "com.google.firebase",   name = "firebase-auth-ktx" }
-firebase-firestore    = { group = "com.google.firebase",   name = "firebase-firestore-ktx" }
+firebase-auth         = { group = "com.google.firebase",   name = "firebase-auth" }
+firebase-firestore    = { group = "com.google.firebase",   name = "firebase-firestore" }
 credentials           = { group = "androidx.credentials",  name = "credentials",                  version.ref = "credentials" }
 credentials-play      = { group = "androidx.credentials",  name = "credentials-play-services-auth", version.ref = "credentials" }
 googleid              = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 coroutines-play       = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines-play" }
 
 [plugins]
-google-services       = { id = "com.google.gms.google-services", version = "<latest_stable>" }
+google-services       = { id = "com.google.gms.google-services", version = "4.4.3" }
 ```
 
 > Note: `firebase-auth` and `firebase-firestore` have **no** `version.ref` — they inherit version from the Firebase BOM at runtime via `platform(libs.firebase.bom)`.
@@ -164,13 +174,17 @@ Update `build.gradle.kts` (project-level) — add `google-services` plugin to `p
 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
 2. Add an Android app with package `com.jpishimwe.syncplayer`
 3. Enable **Google** as a sign-in provider in Authentication → Sign-in method
-4. Download `google-services.json` and place it in `app/`
-5. Copy the **Web client ID** from Authentication → Sign-in method → Google → Web SDK configuration → Web client ID
-6. Add to `app/src/main/res/values/strings.xml`:
+4. Add your debug SHA-1 fingerprint to the app — get it via `./gradlew signingReport`
+5. Download `google-services.json` and place it in `app/`
+
+> **Critical:** The `oauth_client` array in `google-services.json` must be non-empty for Google Sign-In to work. An empty array means no Web Client ID was generated. If it's empty, the SHA-1 step above was missed — add it in Firebase Console and re-download the file.
+
+6. Copy the **Web client ID** from Authentication → Sign-in method → Google → Web SDK configuration → Web client ID
+7. Add to `app/src/main/res/values/strings.xml`:
    ```xml
    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID</string>
    ```
-7. Ensure `app/google-services.json` is in `.gitignore` (it's sensitive; store as a CI secret for GitHub Actions)
+8. Ensure `app/google-services.json` is in `.gitignore` (it's sensitive; store as a CI secret for GitHub Actions)
 
 Run `assembleDebug` and fix any classpath conflicts before proceeding.
 
@@ -559,7 +573,7 @@ class AuthRepositoryImpl @Inject constructor(
 }
 ```
 
-> Note: `externalScope` is an application-level `CoroutineScope` bound to the app's lifetime — injected via Hilt (see Layer 7). This allows `authState` to survive ViewModel recreation and stay active as long as the app process lives.
+> Note: `@param:ApplicationScope` on the constructor parameter suppresses the Kotlin warning about annotation targets. `externalScope` is an application-level `CoroutineScope` bound to the app's lifetime — injected via Hilt (see Layer 7). This allows `authState` to survive ViewModel recreation and stay active as long as the app process lives.
 
 > Note: `kotlinx-coroutines-play-services` provides the `.await()` extension on Firebase `Task<T>`.
 
@@ -638,13 +652,11 @@ interface SyncRepository {
     /**
      * Push a playlist. Creates the Firestore document if [remoteId] is null (returns new remoteId).
      * Updates the document if [remoteId] is non-null (returns the same remoteId).
-     * [allSongs] is used to compute per-song fingerprints.
      */
     suspend fun pushPlaylist(
         userId: String,
         playlist: PlaylistEntity,
         songs: List<Song>,
-        allSongs: List<Song>,
     ): String
 
     /** Pull all playlist documents. Returns remoteId → playlist map. */
@@ -710,13 +722,11 @@ class SyncRepositoryImpl @Inject constructor(
         userId: String,
         playlist: PlaylistEntity,
         songs: List<Song>,
-        allSongs: List<Song>,
     ): String {
-        val fingerprintMap = allSongs.associateBy { it.id }
-        val firestoreSongs = songs.map { song ->
+        val firestoreSongs = songs.mapIndexed { index, song ->
             FirestorePlaylistSong(
                 fingerprint = SongFingerprint.compute(song.title, song.artist, song.album, song.duration),
-                position = songs.indexOf(song),
+                position = index,
             )
         }
         val data = FirestorePlaylist(
@@ -865,7 +875,7 @@ class SyncOrchestrator @Inject constructor(
         val allPlaylists = playlistDao.getAllPlaylistsList()
         for (playlist in allPlaylists.filter { it.lastModified > lastSync }) {
             val songs = playlistDao.getSongsForPlaylistList(playlist.id)
-            val remoteId = syncRepository.pushPlaylist(userId, playlist, songs, allSongs)
+            val remoteId = syncRepository.pushPlaylist(userId, playlist, songs)
             if (playlist.remoteId == null) {
                 // Store the Firestore-assigned remoteId locally so future pushes update, not create
                 playlistDao.updatePlaylist(playlist.copy(remoteId = remoteId))
@@ -975,6 +985,8 @@ package com.jpishimwe.syncplayer.di
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.firestoreSettings
+import com.google.firebase.firestore.persistentCacheSettings
 import com.jpishimwe.syncplayer.data.sync.AuthRepository
 import com.jpishimwe.syncplayer.data.sync.AuthRepositoryImpl
 import com.jpishimwe.syncplayer.data.sync.SyncRepository
@@ -1021,10 +1033,11 @@ abstract class SyncModule {
         @Singleton
         fun provideFirebaseFirestore(): FirebaseFirestore {
             val db = FirebaseFirestore.getInstance()
-            db.firestoreSettings = FirebaseFirestoreSettings.Builder()
-                .setPersistenceEnabled(true)
-                .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
-                .build()
+            db.firestoreSettings = firestoreSettings {
+                setLocalCacheSettings(persistentCacheSettings {
+                    setSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+                })
+            }
             return db
         }
     }
@@ -1040,7 +1053,7 @@ Inject `@ApplicationScope CoroutineScope` into `AuthRepositoryImpl` via the qual
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    @ApplicationScope private val externalScope: CoroutineScope,
+    @param:ApplicationScope private val externalScope: CoroutineScope,
 ) : AuthRepository
 ```
 
@@ -1160,6 +1173,8 @@ fun SettingsScreen(
 
     // CredentialManager instance survives recomposition
     val credentialManager = remember { CredentialManager.create(context) }
+    // Resolve before lambda — stringResource() cannot be called inside a non-composable lambda
+    val clientId = stringResource(R.string.default_web_client_id)
 
     SettingsScreenContent(
         uiState = uiState,
@@ -1170,7 +1185,7 @@ fun SettingsScreen(
                         .addCredentialOption(
                             GetGoogleIdOption.Builder()
                                 .setFilterByAuthorizedAccounts(false)
-                                .setServerClientId(context.getString(R.string.default_web_client_id))
+                                .setServerClientId(clientId)
                                 .build()
                         )
                         .build()
@@ -1416,7 +1431,6 @@ class FakeSyncRepository : SyncRepository {
         userId: String,
         playlist: PlaylistEntity,
         songs: List<Song>,
-        allSongs: List<Song>,
     ): String {
         pushPlaylistCallCount++
         return playlist.remoteId ?: nextRemoteId
@@ -1653,13 +1667,15 @@ class SettingsViewModelTest {
 
 ## Dependencies
 
-All new. Verify latest stable versions via web search before implementing, and confirm compatibility with AGP 9.0.0 + Kotlin 2.2.10.
+Versions verified March 2026. Confirmed compatible with AGP 9.0.0 + Kotlin 2.2.10.
+
+> **Note:** Do not use `-ktx` variants for Firebase — as of BOM 34.0.0 they were removed. KTX APIs now live in the main modules.
 
 | Library | Group ID | Notes |
 |---------|----------|-------|
 | Firebase BOM | `com.google.firebase:firebase-bom` | Manages versions of all Firebase libraries |
-| Firebase Auth KTX | `com.google.firebase:firebase-auth-ktx` | Version from BOM — no explicit version in catalog |
-| Cloud Firestore KTX | `com.google.firebase:firebase-firestore-ktx` | Version from BOM — no explicit version in catalog |
+| Firebase Auth | `com.google.firebase:firebase-auth` | Version from BOM — no explicit version in catalog |
+| Cloud Firestore | `com.google.firebase:firebase-firestore` | Version from BOM — no explicit version in catalog |
 | Credential Manager | `androidx.credentials:credentials` | Android Credential Manager API (Jetpack) |
 | Credentials Play Services Auth | `androidx.credentials:credentials-play-services-auth` | Google Play Services bridge for CredentialManager |
 | Google ID | `com.google.android.libraries.identity.googleid:googleid` | `GoogleIdTokenCredential` type |
@@ -1668,7 +1684,7 @@ All new. Verify latest stable versions via web search before implementing, and c
 
 > **Compatibility note:** Firebase Android SDK requires `google-services.json` to initialize. Without it, `FirebaseApp.initializeApp()` will throw at runtime. Verify `google-services.json` is present in `app/` before first build after adding the plugin.
 
-> **AGP 9 note:** The `google-services` Gradle plugin must be checked for AGP 9 compatibility. Verify the latest version supports AGP 9 before adding it.
+> **AGP 9 note:** `google-services` `4.4.3` is confirmed compatible with AGP 9.
 
 ---
 
@@ -1683,6 +1699,18 @@ All new. Verify latest stable versions via web search before implementing, and c
 4. **Web Client ID in source control**: The `default_web_client_id` string is not secret (it's a public OAuth2 client ID), but it's Firebase-project-specific. Committing it in `strings.xml` is fine. However, it will be different for every developer who creates their own Firebase project. **Decision needed**: Hard-code a placeholder in `strings.xml` and document setup steps, or use a `local.properties`-based approach?
 
 5. **`google-services.json` in CI**: GitHub Actions will need this file to build a release APK. It should be stored as a base64-encoded GitHub Secret and written to `app/google-services.json` in the workflow. This is standard practice (already noted in `docs/PLAN.md` under CI/CD). No blocking decision required — just needs to be done when setting up CI.
+
+---
+
+## Known bugs
+
+| # | Bug | Likely cause |
+|---|-----|-------------|
+| 1 | No sync button visible in Settings | Settings tab navigation not wired, or `SyncStatusCard` not rendering when signed in |
+| 2 | Metadata (play counts, ratings) not persisting across sessions | `lastModified` not being stamped on write — `setRating` or `incrementPlayCount` not passing timestamp to DAO, or migration not applied |
+| 3 | Top plays list showing wrong songs | `playCount` sort query incorrect, or `applySyncDelta` overwriting play counts with stale remote values |
+| 4 | Favourites not populating with starred songs | `rating` filter query not matching persisted values, or rating not surviving sync |
+| 5 | Lists resetting when navigating back | `SharingStarted.WhileSubscribed` stopping flow too aggressively, or ViewModel being recreated on navigation |
 
 ---
 

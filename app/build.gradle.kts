@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -109,6 +109,7 @@ dependencies {
     testRuntimeOnly(libs.junit5.launcher)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    testImplementation(libs.mockk)
 
     // Instrumented tests
     androidTestImplementation(libs.androidx.junit)

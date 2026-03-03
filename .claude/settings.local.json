@@ -5,7 +5,9 @@
       "WebSearch",
       "WebFetch(domain:mvnrepository.com)",
       "WebFetch(domain:blog.jetbrains.com)",
-      "Bash(./gradlew.bat test:*)"
+      "Bash(./gradlew.bat test:*)",
+      "Bash(xargs grep:*)",
+      "Bash(do grep:*)"
     ]
   }
 }
