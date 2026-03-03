@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.data.sync
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.jpishimwe.syncplayer.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +18,7 @@ class AuthRepositoryImpl
     @Inject
     constructor(
         private val firebaseAuth: FirebaseAuth,
-        private val externalScope: CoroutineScope,
+        @param:ApplicationScope private val externalScope: CoroutineScope,
     ) : AuthRepository {
         override val authState: StateFlow<AuthState> =
             callbackFlow {
