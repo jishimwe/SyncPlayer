@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -34,6 +35,7 @@ import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 import com.jpishimwe.syncplayer.ui.player.components.MiniPlayer
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistDetailScreen
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistsScreen
+import com.jpishimwe.syncplayer.ui.settings.SettingsScreen
 
 sealed class Screen(
     val route: String,
@@ -61,6 +63,8 @@ sealed class Screen(
             playlistName: String,
         ) = "playlist_detail/$playlistId/${Uri.encode(playlistName)}"
     }
+
+    data object Settings : Screen("settings")
 }
 
 private enum class BottomNavDestination(
@@ -70,6 +74,7 @@ private enum class BottomNavDestination(
 ) {
     LIBRARY(Screen.Library, "Library", Icons.Default.LibraryMusic),
     PLAYLISTS(Screen.Playlists, "Playlists", Icons.AutoMirrored.Filled.PlaylistPlay),
+    SETTINGS(Screen.Settings, "Settings", Icons.Default.Settings),
 }
 
 @Composable
@@ -94,7 +99,7 @@ fun NavGraph(
                     .value
                     ?.destination
                     ?.route
-            val showBottomNav = currentRoute in setOf(Screen.Library.route, Screen.Playlists.route)
+            val showBottomNav = currentRoute in setOf(Screen.Library.route, Screen.Playlists.route, Screen.Settings.route)
             Log.d("NavGraph", "showBottomNav: $showBottomNav $currentRoute")
 
             Column {
@@ -204,6 +209,10 @@ fun NavGraph(
                 NowPlayingScreen(
                     onNavigateBack = { navController.navigateUp() },
                 )
+            }
+
+            composable(Screen.Settings.route) {
+                SettingsScreen()
             }
         }
     }
