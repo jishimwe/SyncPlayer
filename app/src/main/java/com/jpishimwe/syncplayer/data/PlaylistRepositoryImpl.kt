@@ -27,20 +27,24 @@ class PlaylistRepositoryImpl
 
         override fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = playlistDao.getSongsForPlaylist(playlistId)
 
-        override suspend fun createPlaylist(name: String) =
-            playlistDao.insertPlaylist(
+        override suspend fun createPlaylist(name: String): Long {
+            val now = System.currentTimeMillis()
+            return playlistDao.insertPlaylist(
                 PlaylistEntity(
                     name = name,
-                    createdAt = System.currentTimeMillis(),
+                    createdAt = now,
+                    lastModified = now,
                 ),
             )
+        }
 
         override suspend fun renamePlaylist(
             playlistId: Long,
             newName: String,
         ) {
+            val now = System.currentTimeMillis()
             val entity = playlistDao.getPlaylistById(playlistId).first()
-            playlistDao.updatePlaylist(entity?.copy(name = newName) ?: return)
+            playlistDao.updatePlaylist(entity?.copy(name = newName, lastModified = now) ?: return)
         }
 
         override suspend fun deletePlaylist(playlistId: Long) {
@@ -60,12 +64,16 @@ class PlaylistRepositoryImpl
                     position = position,
                 ),
             )
+            playlistDao.touchPlaylist(playlistId, System.currentTimeMillis())
         }
 
         override suspend fun removeSongFromPlaylist(
             playlistId: Long,
             songId: Long,
-        ) = playlistDao.removeSongFromPlaylist(playlistId, songId)
+        ) {
+            playlistDao.removeSongFromPlaylist(playlistId, songId)
+            playlistDao.touchPlaylist(playlistId, System.currentTimeMillis())
+        }
 
         override suspend fun reorderSongs(
             playlistId: Long,
@@ -81,5 +89,6 @@ class PlaylistRepositoryImpl
                     )
                 },
             )
+            playlistDao.touchPlaylist(playlistId, System.currentTimeMillis())
         }
     }

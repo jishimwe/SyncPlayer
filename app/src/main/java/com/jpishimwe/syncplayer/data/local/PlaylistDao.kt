@@ -15,6 +15,8 @@ data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val createdAt: Long,
+    val remoteId: String? = null,
+    val lastModified: Long = 0,
 )
 
 @Entity(tableName = "playlist_songs")
@@ -72,4 +74,23 @@ interface PlaylistDao {
 
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     fun getPlaylistById(playlistId: Long): Flow<PlaylistEntity?>
+
+    @Query("UPDATE playlists SET lastModified = :modifiedAT WHERE id = :playlistId")
+    suspend fun touchPlaylist(
+        playlistId: Long,
+        modifiedAT: Long,
+    )
+
+    @Query("SELECT * FROM playlists")
+    suspend fun getAllPlaylistsList(): List<PlaylistEntity>
+
+    @Query(
+        """
+        SELECT songs.* FROM songs
+        INNER JOIN playlist_songs ON songs.id = playlist_songs.songId
+        WHERE playlist_songs.playlistId = :playlistId
+        ORDER BY playlist_songs.position ASC
+    """,
+    )
+    suspend fun getSongsForPlaylistList(playlistId: Long): List<Song>
 }

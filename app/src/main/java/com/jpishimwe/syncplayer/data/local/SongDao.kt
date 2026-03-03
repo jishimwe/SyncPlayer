@@ -20,6 +20,9 @@ interface SongDao {
     @Query("SELECT * FROM songs ORDER BY title ASC")
     fun getAllSongs(): Flow<List<Song>>
 
+    @Query("SELECT * FROM songs")
+    suspend fun getAllSongsList(): List<Song>
+
     @Query(
         """
         SELECT albumId AS id, album AS name, artist, COUNT(*) AS songCount, albumArtUri
@@ -52,16 +55,26 @@ interface SongDao {
     @Query("DELETE FROM songs")
     suspend fun deleteAll()
 
-    @Query("UPDATE songs SET playCount = playCount + 1, lastPlayed = :playedAt WHERE id = :songId")
+    @Query(
+        """
+        UPDATE songs SET 
+            playCount = playCount + 1, 
+            lastPlayed = :playedAt, 
+            lastModified = :modifiedAt 
+        WHERE id = :songId
+        """,
+    )
     suspend fun incrementPlayCount(
         songId: Long,
         playedAt: Long,
+        modifiedAt: Long = playedAt,
     )
 
-    @Query("UPDATE songs SET rating = :rating WHERE id = :songId")
+    @Query("UPDATE songs SET rating = :rating, lastModified = :modifiedAt WHERE id = :songId")
     suspend fun setRating(
         songId: Long,
         rating: Int,
+        modifiedAt: Long,
     )
 
     fun getFavoriteSongs(): Flow<List<Song>> = getSongsByMinRating()
@@ -74,4 +87,22 @@ interface SongDao {
 
     @Query("SELECT rating FROM songs WHERE id = :songId")
     fun getRating(songId: Long): Flow<Int>
+
+    @Query(
+        """
+        UPDATE songs SET
+            playCount = :playCount,
+            rating = :rating,
+            lastPlayed = :playedAt,
+            lastModified = :modifiedAt
+        WHERE id = :songId
+    """,
+    )
+    suspend fun applySyncDelta(
+        songId: Long,
+        playCount: Int,
+        rating: Int,
+        playedAt: Long,
+        modifiedAt: Long,
+    )
 }

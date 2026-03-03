@@ -33,4 +33,7 @@ interface ListeningHistoryDao {
 
     @Query("DELETE FROM listening_history")
     suspend fun clearAll()
+
+    @Query("SELECT * FROM listening_history WHERE playedAt > :since ORDER BY playedAt DESC")
+    suspend fun getHistorySince(since: Long): List<ListeningHistoryEntity>
 }

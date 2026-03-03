@@ -40,7 +40,8 @@ class SongRepositoryImpl
             songId: Long,
             rating: Rating,
         ) {
-            songDao.setRating(songId, rating.value)
+            val now = System.currentTimeMillis()
+            songDao.setRating(songId, rating.value, modifiedAt = now)
         }
 
         override fun getFavoriteSongs(): Flow<List<Song>> = songDao.getFavoriteSongs()

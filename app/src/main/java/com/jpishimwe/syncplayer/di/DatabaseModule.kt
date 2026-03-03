@@ -7,6 +7,7 @@ import com.jpishimwe.syncplayer.data.local.PlaylistDao
 import com.jpishimwe.syncplayer.data.local.QueueDao
 import com.jpishimwe.syncplayer.data.local.SongDao
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase
+import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_4_5
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,7 +28,7 @@ object DatabaseModule {
                 context,
                 SyncPlayerDatabase::class.java,
                 "syncplayer.db",
-            ).fallbackToDestructiveMigration(dropAllTables = true)
+            ).addMigrations(MIGRATION_4_5)
             .build()
 
     @Provides

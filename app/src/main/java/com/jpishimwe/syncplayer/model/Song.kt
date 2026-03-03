@@ -23,6 +23,7 @@ data class Song(
     val playCount: Int = 0,
     val rating: Int = 0,
     val lastPlayed: Long = 0,
+    val lastModified: Long = 0,
 )
 
 enum class Rating(
