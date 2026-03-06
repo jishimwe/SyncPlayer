@@ -391,7 +391,7 @@ class PlayerRepositoryImpl
             mediaController?.seekToDefaultPosition(0)
         }
 
-        private suspend fun clearQueue() {
+        override suspend fun clearQueue() {
             mediaController?.clearMediaItems()
             queueDao.clearQueue()
         }

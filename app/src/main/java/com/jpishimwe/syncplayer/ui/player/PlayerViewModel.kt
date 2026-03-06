@@ -105,6 +105,12 @@ class PlayerViewModel
                         songRepository.setRating(songId, event.rating)
                     }
                 }
+
+                is PlayerEvent.ClearQueue -> {
+                    viewModelScope.launch {
+                        playerRepository.clearQueue()
+                    }
+                }
             }
         }
 

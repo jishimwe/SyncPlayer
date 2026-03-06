@@ -41,4 +41,6 @@ interface PlayerRepository {
     )
 
     fun seekToQueueItem(index: Int)
+
+    suspend fun clearQueue()
 }

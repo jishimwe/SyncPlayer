@@ -1,10 +1,7 @@
 package com.jpishimwe.syncplayer.ui.player.components
 
-import android.widget.Button
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -46,6 +44,7 @@ fun QueueSheet(
     onSongClick: (index: Int) -> Unit,
     onRemove: (String) -> Unit,
     onReorder: (String, Int) -> Unit,
+    onClearQueue: () -> Unit,
     formatTime: (Long) -> String,
     modifier: Modifier = Modifier,
 ) {
@@ -67,10 +66,16 @@ fun QueueSheet(
                     .fillMaxSize()
                     .padding(16.dp),
         ) {
-            Text(
-                text = "Queue (${queue.size})",
-                style = MaterialTheme.typography.titleLarge,
-            )
+            Row {
+                Text(
+                    text = "Queue (${queue.size})",
+                    style = MaterialTheme.typography.titleLarge,
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                TextButton(content = { Text("Clear") }, onClick = onClearQueue, modifier = Modifier.align(Alignment.CenterVertically))
+            }
 
             Spacer(Modifier.height(16.dp))
 

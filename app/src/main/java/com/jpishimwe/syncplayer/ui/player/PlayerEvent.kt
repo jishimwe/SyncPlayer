@@ -22,6 +22,8 @@ sealed interface PlayerEvent {
 
     data object ToggleRepeat : PlayerEvent
 
+    data object ClearQueue : PlayerEvent
+
     data class PlaySongs(
         val songs: List<Song>,
         val startIndex: Int = 0,
