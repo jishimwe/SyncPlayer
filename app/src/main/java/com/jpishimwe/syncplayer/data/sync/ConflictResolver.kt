@@ -1,7 +1,6 @@
 package com.jpishimwe.syncplayer.data.sync
 
 import com.jpishimwe.syncplayer.data.local.ListeningHistoryEntity
-import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 
 /** Resolved values to apply to the local Song row after a pull. */
@@ -69,20 +68,10 @@ object ConflictResolver {
         remote: List<FirestoreHistoryEvent>,
         fingerPrintToSongId: Map<String, Long>,
     ): List<ListeningHistoryEntity> {
-//        val resolvedLastPlayed = maxOf(local.playedAt, remote.playedAt)
-//        val remoteId = fingerPrintToSongId[remote.fingerprint]!!
-//        val sameSong = remoteId == local.songId
-//
-//        return if (sameSong) {
-//            listOf(local.copy(playedAt = resolvedLastPlayed))
-//        } else {
-//            listOf(local, ListeningHistoryEntity(songId = remoteId, playedAt = resolvedLastPlayed))
-//        }
-
         val remoteHistoryEntity =
-            remote.map {
+            remote.mapNotNull {
                 ListeningHistoryEntity(
-                    songId = fingerPrintToSongId[it.fingerprint]!!,
+                    songId = fingerPrintToSongId[it.fingerprint] ?: return@mapNotNull null,
                     playedAt = it.playedAt,
                 )
             }

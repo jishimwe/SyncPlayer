@@ -68,6 +68,7 @@ class SyncRepositoryImpl
                     createdAt = playlist.createdAt,
                     lastModified = playlist.lastModified,
                     songs = firestoreSongs,
+                    deletedAt = playlist.deletedAt,
                 )
 
             val remoteId =

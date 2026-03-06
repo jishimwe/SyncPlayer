@@ -48,8 +48,7 @@ class PlaylistRepositoryImpl
         }
 
         override suspend fun deletePlaylist(playlistId: Long) {
-            playlistDao.clearPlaylistSongs(playlistId)
-            playlistDao.deletePlaylist(playlistId)
+            playlistDao.softDeletePlaylist(playlistId, System.currentTimeMillis())
         }
 
         override suspend fun addSongToPlaylist(

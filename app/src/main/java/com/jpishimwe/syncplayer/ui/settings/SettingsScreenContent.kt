@@ -10,9 +10,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import com.jpishimwe.syncplayer.data.sync.AuthState
 import com.jpishimwe.syncplayer.data.sync.SyncStatus
 
@@ -23,10 +28,20 @@ fun SettingsScreenContent(
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     onSyncNow: () -> Unit,
+    snackbarMessage: String?,
+    onSnackbarDismiss: () -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings") }) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
+        LaunchedEffect(snackbarMessage) {
+            snackbarMessage?.let {
+                snackbarHostState.showSnackbar(it)
+                onSnackbarDismiss()
+            }
+        }
         LazyColumn(contentPadding = padding) {
             item {
                 // Account section
@@ -85,10 +100,14 @@ private fun SyncStatusCard(
         },
         trailingContent = {
             val syncing = syncStatus is SyncStatus.Syncing
+            val syncError = syncStatus is SyncStatus.Error
             if (syncing) {
                 IconButton(onClick = onSyncNow) {
                     Icon(Icons.Default.Sync, contentDescription = "Sync now")
                 }
+            }
+            if (syncError) {
+                TextButton(onClick = onSyncNow) { Text("Retry") }
             }
         },
     )

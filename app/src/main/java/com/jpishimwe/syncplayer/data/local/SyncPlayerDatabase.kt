@@ -15,7 +15,7 @@ import com.jpishimwe.syncplayer.model.Song
         PlaylistSongCrossRef::class,
         ListeningHistoryEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 @TypeConverters(RatingConverter::class)
@@ -36,6 +36,14 @@ abstract class SyncPlayerDatabase : RoomDatabase() {
                     db.execSQL("ALTER TABLE songs ADD COLUMN lastModified INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("ALTER TABLE playlists ADD COLUMN lastModified INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("ALTER TABLE playlists ADD COLUMN remoteId TEXT")
+                }
+            }
+
+        val MIGRATION_5_6 =
+            object :
+                Migration(5, 6) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE playlists ADD COLUMN deletedAt INTEGER NOT NULL DEFAULT 0")
                 }
             }
     }

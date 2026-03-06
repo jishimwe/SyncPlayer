@@ -7,8 +7,10 @@ import com.jpishimwe.syncplayer.data.sync.SyncOrchestrator
 import com.jpishimwe.syncplayer.data.sync.SyncRepository
 import com.jpishimwe.syncplayer.data.sync.SyncStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,6 +23,9 @@ class SettingsViewModel
         private val authRepository: AuthRepository,
         private val syncOrchestrator: SyncOrchestrator,
     ) : ViewModel() {
+        private val _snackbarMessage = MutableStateFlow<String?>(null)
+        val snackbarMessage: StateFlow<String?> = _snackbarMessage.asStateFlow()
+
         val uiState: StateFlow<SettingsUiState> =
             combine(
                 authRepository.authState,
@@ -40,9 +45,7 @@ class SettingsViewModel
                 }
 
                 is SettingsEvent.SignInError -> {
-                    // Surface error as a SyncStatus.Error so the UI can show a message
-                    // (auth errors reuse the sync status slot for simplicity)
-                    // No-op for Phase 6 — sign-in errors are visible via Logcat; a snackbar can be added in Phase 7
+                    _snackbarMessage.value = event.message
                 }
 
                 SettingsEvent.SignOut -> {
@@ -51,6 +54,10 @@ class SettingsViewModel
 
                 SettingsEvent.SyncNow -> {
                     viewModelScope.launch { syncOrchestrator.sync() }
+                }
+
+                SettingsEvent.ClearSnackbar -> {
+                    _snackbarMessage.value = null
                 }
             }
         }

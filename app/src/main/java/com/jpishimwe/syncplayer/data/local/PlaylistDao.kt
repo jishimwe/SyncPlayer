@@ -17,6 +17,7 @@ data class PlaylistEntity(
     val createdAt: Long,
     val remoteId: String? = null,
     val lastModified: Long = 0,
+    val deletedAt: Long = 0,
 )
 
 @Entity(tableName = "playlist_songs")
@@ -40,7 +41,7 @@ interface PlaylistDao {
     @Query("DELETE FROM playlists WHERE id = :playlistId")
     suspend fun deletePlaylist(playlistId: Long)
 
-    @Query("SELECT * FROM playlists ORDER BY name ASC")
+    @Query("SELECT * FROM playlists WHERE deletedAt = 0 ORDER BY name ASC")
     fun getAllPlaylists(): Flow<List<PlaylistEntity>>
 
     // Song membership
@@ -93,4 +94,10 @@ interface PlaylistDao {
     """,
     )
     suspend fun getSongsForPlaylistList(playlistId: Long): List<Song>
+
+    @Query("UPDATE playlists SET deletedAt = :deletedAt, lastModified = :deletedAt WHERE id = :playlistId")
+    suspend fun softDeletePlaylist(
+        playlistId: Long,
+        deletedAt: Long,
+    )
 }

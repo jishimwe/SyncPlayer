@@ -18,6 +18,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -53,5 +55,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         },
         onSignOut = { viewModel.onEvent(SettingsEvent.SignOut) },
         onSyncNow = { viewModel.onEvent(SettingsEvent.SyncNow) },
+        snackbarMessage = snackbarMessage,
+        onSnackbarDismiss = { viewModel.onEvent(SettingsEvent.ClearSnackbar) },
     )
 }

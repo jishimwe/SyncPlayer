@@ -14,4 +14,6 @@ sealed interface SettingsEvent {
     data object SignOut : SettingsEvent
 
     data object SyncNow : SettingsEvent
+
+    data object ClearSnackbar : SettingsEvent
 }

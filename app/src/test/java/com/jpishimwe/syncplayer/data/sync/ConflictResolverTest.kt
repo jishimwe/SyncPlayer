@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class ConflictResolverTest {
-
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun testSong(
@@ -50,17 +49,20 @@ class ConflictResolverTest {
         lastModified = lastModified,
     )
 
-    private fun history(songId: Long, playedAt: Long) =
-        ListeningHistoryEntity(id = 0, songId = songId, playedAt = playedAt)
+    private fun history(
+        songId: Long,
+        playedAt: Long,
+    ) = ListeningHistoryEntity(id = 0, songId = songId, playedAt = playedAt)
 
-    private fun remoteEvent(fingerprint: String, playedAt: Long) =
-        FirestoreHistoryEvent(fingerprint = fingerprint, playedAt = playedAt)
+    private fun remoteEvent(
+        fingerprint: String,
+        playedAt: Long,
+    ) = FirestoreHistoryEvent(fingerprint = fingerprint, playedAt = playedAt)
 
     // ── resolveSongMetadata ───────────────────────────────────────────────────
 
     @Nested
     inner class ResolveSongMetadata {
-
         @Test
         fun `returns null when local is already up to date`() {
             val local = testSong(playCount = 5, rating = 3, lastPlayed = 1000L, lastModified = 500L)
@@ -132,7 +134,6 @@ class ConflictResolverTest {
 
     @Nested
     inner class RemotePlaylistWins {
-
         @Test
         fun `remote newer timestamp — remote wins`() {
             assertTrue(ConflictResolver.remotePlaylistWins(local = 100L, remote = 200L))
@@ -153,7 +154,6 @@ class ConflictResolverTest {
 
     @Nested
     inner class MergeHistoryEvent {
-
         @Test
         fun `empty inputs returns empty list`() {
             val result = ConflictResolver.mergeHistoryEvent(emptyList(), emptyList(), emptyMap())
@@ -202,6 +202,15 @@ class ConflictResolverTest {
             val remote = listOf(remoteEvent("fp-abc", 3000L))
             val result = ConflictResolver.mergeHistoryEvent(local, remote, fingerprintMap)
             assertEquals(3, result.size)
+        }
+
+        @Test
+        fun `unknown fingerprint in remote is silently dropped`() {
+            val local = emptyList<ListeningHistoryEntity>()
+            val fingerprintMap = mapOf("fp-abc" to 1L)
+            val remote = listOf(remoteEvent("unknown-fingerprint", 3000L))
+            val result = ConflictResolver.mergeHistoryEvent(local, remote, fingerprintMap)
+            assertTrue(result.isEmpty())
         }
     }
 }

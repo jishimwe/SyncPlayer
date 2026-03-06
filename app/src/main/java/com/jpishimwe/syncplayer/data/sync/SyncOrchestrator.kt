@@ -123,7 +123,7 @@ class SyncOrchestrator
 
             for ((remoteId, remote) in remotePlaylists) {
                 val local = remoteIdToLocal[remoteId]
-                if (local == null) {
+                if (local == null && (remote.deletedAt == null || remote.deletedAt == 0L)) {
                     // New playlist from remote — create locally
                     val newId =
                         playlistDao.insertPlaylist(
@@ -147,10 +147,11 @@ class SyncOrchestrator
                         }
 
                     playlistDao.replacePlaylistSongs(crossRefs)
-                } else if (ConflictResolver.remotePlaylistWins(local.lastModified, remote.lastModified)) {
+                } else if (local != null && ConflictResolver.remotePlaylistWins(local.lastModified, remote.lastModified)) {
                     // Remote wins — overwrite local name and song list
+                    val deletedAt = remote.deletedAt ?: 0
                     playlistDao.updatePlaylist(
-                        local.copy(name = remote.name, lastModified = remote.lastModified),
+                        local.copy(name = remote.name, lastModified = remote.lastModified, deletedAt = deletedAt),
                     )
 
                     val crossRefs =
@@ -163,9 +164,10 @@ class SyncOrchestrator
                                 )
                             }
                         }
-
-                    playlistDao.clearPlaylistSongs(local.id)
-                    playlistDao.replacePlaylistSongs(crossRefs)
+                    if (deletedAt == 0L) {
+                        playlistDao.clearPlaylistSongs(local.id)
+                        playlistDao.replacePlaylistSongs(crossRefs)
+                    }
                 }
                 // else: local wins → no change needed
             }
