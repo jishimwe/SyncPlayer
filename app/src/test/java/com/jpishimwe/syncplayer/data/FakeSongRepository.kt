@@ -28,7 +28,10 @@ class FakeSongRepository : SongRepository {
     var lastIncrementPlayCountSongId: Long? = null
     var recordListeningEventCallCount = 0
 
-    fun setRatingForSong(songId: Long, rating: Rating) {
+    fun setRatingForSong(
+        songId: Long,
+        rating: Rating,
+    ) {
         ratingsMap.value = ratingsMap.value + (songId to rating)
     }
 
@@ -78,4 +81,10 @@ class FakeSongRepository : SongRepository {
         refreshCallCount++
         refreshError?.let { throw it }
     }
+
+    override fun searchSongs(query: String): Flow<List<Song>> = songsFlow
+
+    override fun searchAlbums(query: String): Flow<List<Album>> = albumsFlow
+
+    override fun searchArtists(query: String): Flow<List<Artist>> = artistsFlow
 }

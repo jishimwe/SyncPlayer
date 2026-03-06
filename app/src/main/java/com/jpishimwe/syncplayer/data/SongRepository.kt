@@ -41,4 +41,10 @@ interface SongRepository {
     suspend fun recordListeningEvent(songId: Long)
 
     suspend fun refreshLibrary()
+
+    fun searchSongs(query: String): Flow<List<Song>>
+
+    fun searchAlbums(query: String): Flow<List<Album>>
+
+    fun searchArtists(query: String): Flow<List<Artist>>
 }

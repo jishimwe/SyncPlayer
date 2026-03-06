@@ -2,17 +2,21 @@ package com.jpishimwe.syncplayer.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.util.query
 import com.jpishimwe.syncplayer.data.SongRepository
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,6 +30,17 @@ enum class LibraryTab(
     FAVORITES("Faves"),
     MOST_PLAYED("Top Plays"),
     RECENTLY_PLAYED("Recent"),
+}
+
+enum class SortOrder(
+    val label: String,
+) {
+    BY_TITLE("Songs"),
+    BY_ARTIST("Artist"),
+    BY_ALBUM("Albums"),
+    BY_DURATION("Duration"),
+    BY_DATE_ADDED("Date"),
+    BY_PLAY_COUNT("Plays"),
 }
 
 sealed interface LibraryUiState {
@@ -53,11 +68,83 @@ class LibraryViewModel
     ) : ViewModel() {
         private val _selectedTab = MutableStateFlow(LibraryTab.SONGS)
         private val _isRefreshing = MutableStateFlow(false)
+        private val _searchQuery = MutableStateFlow("")
+        private val _sortOrder = MutableStateFlow(SortOrder.BY_TITLE)
         private val lastScanTimestamp = MutableStateFlow(0L)
         private val refreshError = MutableStateFlow<String?>(null)
 
         val selectedTab: StateFlow<LibraryTab> = _selectedTab.asStateFlow()
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+        val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+        val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val songsFlowOld =
+            _searchQuery.flatMapLatest { query ->
+                if (query.isBlank()) {
+                    songRepository.getAllSongs()
+                } else {
+                    songRepository.searchSongs(query)
+                }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val songsFlow =
+            combine(_searchQuery, _sortOrder) { query, sortOrder ->
+                Pair(query, sortOrder)
+            }.flatMapLatest { (query, sortOrder) ->
+                val flow =
+                    if (query.isBlank()) {
+                        songRepository.getAllSongs()
+                    } else {
+                        songRepository.searchSongs(query)
+                    }
+                flow.map { songs ->
+                    when (sortOrder) {
+                        SortOrder.BY_TITLE -> songs.sortedBy { it.title.lowercase() }
+                        SortOrder.BY_ARTIST -> songs.sortedBy { it.artist }
+                        SortOrder.BY_ALBUM -> songs.sortedBy { it.album }
+                        SortOrder.BY_DURATION -> songs.sortedBy { it.duration }
+                        SortOrder.BY_DATE_ADDED -> songs.sortedByDescending { it.dateAdded }
+                        SortOrder.BY_PLAY_COUNT -> songs.sortedByDescending { it.playCount }
+                    }
+                }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val albumsFlowOld =
+            _searchQuery.flatMapLatest { query ->
+                if (query.isBlank()) {
+                    songRepository.getAllAlbums()
+                } else {
+                    songRepository.searchAlbums(query)
+                }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val albumsFlow =
+            combine(_searchQuery, _sortOrder) { query, sortOrder ->
+                Pair(query, sortOrder)
+            }.flatMapLatest { (query, sortOrder) ->
+                val flow = if (query.isBlank()) songRepository.getAllAlbums() else songRepository.searchAlbums(query)
+                flow.map { albums ->
+                    when (sortOrder) {
+                        SortOrder.BY_ALBUM -> albums.sortedBy { it.name }
+                        SortOrder.BY_ARTIST -> albums.sortedBy { it.artist }
+                        else -> albums
+                    }
+                }
+            }
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val artistsFlow =
+            _searchQuery.flatMapLatest { query ->
+                if (query.isBlank()) {
+                    songRepository.getAllArtists()
+                } else {
+                    songRepository.searchArtists(query)
+                }
+            }
 
         val metadataFlows =
             combine(
@@ -70,17 +157,36 @@ class LibraryViewModel
 
         val uiState: StateFlow<LibraryUiState> =
             combine(
-                songRepository.getAllSongs(),
-                songRepository.getAllAlbums(),
-                songRepository.getAllArtists(),
+                songsFlow,
+                albumsFlow,
+                artistsFlow,
                 refreshError,
                 metadataFlows,
             ) { songs, albums, artists, error, (favorites, mostPlayed, recentlyPlayed) ->
                 if (error != null && songs.isEmpty()) {
                     return@combine LibraryUiState.Error(error)
                 } else {
+                    val sortOrder = _sortOrder.value
+                    val sortedSongs =
+                        when (sortOrder) {
+                            SortOrder.BY_TITLE -> {
+                                songs.sortedBy { it.title.lowercase() }
+                            }
+
+                            SortOrder.BY_DATE_ADDED -> {
+                                songs.sortedByDescending { it.dateAdded }
+                            }
+
+                            SortOrder.BY_PLAY_COUNT -> {
+                                songs.sortedByDescending { it.playCount }
+                            }
+
+                            else -> {
+                                songs
+                            }
+                        }
                     LibraryUiState.Loaded(
-                        songs,
+                        sortedSongs,
                         albums,
                         artists,
                         favorites,
@@ -125,4 +231,16 @@ class LibraryViewModel
         fun getSongsByAlbum(albumId: Long): Flow<List<Song>> = songRepository.getSongsByAlbum(albumId)
 
         fun getSongsByArtist(artist: String): Flow<List<Song>> = songRepository.getSongsByArtist(artist)
+
+        fun onSearchQueryChanged(query: String) {
+            _searchQuery.value = query
+        }
+
+        fun onClearSearchQuery() {
+            _searchQuery.value = ""
+        }
+
+        fun onSortOrder(order: SortOrder) {
+            _sortOrder.value = order
+        }
     }

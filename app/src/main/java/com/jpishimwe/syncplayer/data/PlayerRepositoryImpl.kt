@@ -48,6 +48,7 @@ class PlayerRepositoryImpl
 
         private var currentSongStartPosition: Long = 0L
         private var hasCountedCurrentSong: Boolean = false
+        private var currentSongJob: Job? = null
 
         private val playerListener =
             object : Player.Listener {
@@ -71,12 +72,33 @@ class PlayerRepositoryImpl
                 ) {
                     hasCountedCurrentSong = false
                     currentSongStartPosition = 0L
+                    // Set a placeholder immediately so the UI isn't blank.
                     _playbackState.update {
                         it.copy(
                             currentSong = mediaItem?.toSong(),
                             currentQueueIndex = mediaController?.currentMediaItemIndex ?: -1,
                         )
                     }
+                    // Replace the placeholder with the live Room row so that
+                    // playCount and rating are always up to date.
+                    currentSongJob?.cancel()
+                    val songId = mediaItem?.mediaId?.toLongOrNull()
+                    currentSongJob =
+                        if (songId != null) {
+                            repositoryScope.launch {
+                                songRepository.getSongById(songId).collect { song ->
+                                    _playbackState.update { state ->
+                                        if (state.currentSong?.id == songId) {
+                                            state.copy(currentSong = song)
+                                        } else {
+                                            state
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            null
+                        }
                     syncQueueState()
                 }
 

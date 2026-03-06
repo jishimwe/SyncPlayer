@@ -50,7 +50,7 @@ class SongRepositoryImpl
 
         override fun getRecentlyPlayed(): Flow<List<Song>> = listeningHistoryDao.getRecentlyPlayed()
 
-        override fun getRating(songId: Long): Flow<Rating> = songDao.getRating(songId).map { Rating.fromInt(it) }
+        override fun getRating(songId: Long): Flow<Rating> = songDao.getRating(songId).map { Rating.fromInt(it ?: 0) }
 
         override fun getSongsByMinRating(minRating: Rating): Flow<List<Song>> =
             songDao
@@ -62,7 +62,12 @@ class SongRepositoryImpl
 
         override suspend fun refreshLibrary() {
             val songs = mediaStoreScanner.scanSongs()
-            songDao.deleteAll()
-            songDao.insertAll(songs)
+            songDao.upsertSongs(songs)
         }
+
+        override fun searchSongs(query: String): Flow<List<Song>> = songDao.searchSongs(query)
+
+        override fun searchAlbums(query: String): Flow<List<Album>> = songDao.searchAlbums(query)
+
+        override fun searchArtists(query: String): Flow<List<Artist>> = songDao.searchArtists(query)
     }
