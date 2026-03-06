@@ -20,6 +20,8 @@ class FakePlaylistRepository : PlaylistRepository {
     var addSongCallCount = 0
     var removeSongCallCount = 0
     var reorderCallCount = 0
+    var lastReorderedIds: List<Long>? = null
+    var lastRemovedSongId: Long = 0
 
     private var nextId = 1L
 
@@ -64,6 +66,7 @@ class FakePlaylistRepository : PlaylistRepository {
         songId: Long,
     ) {
         removeSongCallCount++
+        lastRemovedSongId = songId
     }
 
     override suspend fun reorderSongs(
@@ -71,5 +74,6 @@ class FakePlaylistRepository : PlaylistRepository {
         orderedSongsId: List<Long>,
     ) {
         reorderCallCount++
+        lastReorderedIds = orderedSongsId
     }
 }

@@ -16,7 +16,7 @@ class PlaylistRepositoryImpl
         private val playlistDao: PlaylistDao,
     ) : PlaylistRepository {
         override fun getAllPlaylists(): Flow<List<Playlist>> =
-            playlistDao.getAllPlaylists().map { entities ->
+            playlistDao.getAllPlaylistsWithCount().map { entities ->
                 entities.map { Playlist(it.id, it.name, it.createdAt) }
             }
 

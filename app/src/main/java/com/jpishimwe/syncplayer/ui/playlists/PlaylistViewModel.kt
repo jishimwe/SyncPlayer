@@ -35,20 +35,20 @@ class PlaylistViewModel
             when (event) {
                 is PlaylistEvent.CreatePlaylist -> {
                     viewModelScope.launch {
-                        if (event.name.isNotBlank()) {
-                            playlistRepository.createPlaylist(
-                                event.name,
-                            )
+                        val trimmed = event.name.trim()
+                        if (trimmed.isNotBlank()) {
+                            playlistRepository.createPlaylist(trimmed)
                         }
                     }
                 }
 
                 is PlaylistEvent.RenamePlaylist -> {
                     viewModelScope.launch {
-                        if (event.newName.isNotBlank()) {
+                        val trimmed = event.newName.trim()
+                        if (trimmed.isNotBlank()) {
                             playlistRepository.renamePlaylist(
-                                event.playlistId,
-                                event.newName,
+                                playlistId = event.playlistId,
+                                newName = trimmed,
                             )
                         }
                     }

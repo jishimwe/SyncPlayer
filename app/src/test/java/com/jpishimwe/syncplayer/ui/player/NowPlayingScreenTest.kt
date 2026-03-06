@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.player
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -9,9 +9,7 @@ import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
-import com.jpishimwe.syncplayer.ui.player.NowPlayingScreenContent
-import com.jpishimwe.syncplayer.ui.player.PlayerEvent
-import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase
 import org.junit.Rule
 import org.junit.Test
 
@@ -65,7 +63,7 @@ class NowPlayingScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Play").performClick()
-        assertTrue(events.contains(PlayerEvent.PlayPause))
+        TestCase.assertTrue(events.contains(PlayerEvent.PlayPause))
     }
 
     @Test
@@ -83,7 +81,7 @@ class NowPlayingScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Pause").performClick()
-        assertTrue(events.contains(PlayerEvent.PlayPause))
+        TestCase.assertTrue(events.contains(PlayerEvent.PlayPause))
     }
 
     @Test
@@ -101,7 +99,7 @@ class NowPlayingScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Next").performClick()
-        assertTrue(events.contains(PlayerEvent.SkipToNext))
+        TestCase.assertTrue(events.contains(PlayerEvent.SkipToNext))
     }
 
     @Test
@@ -119,7 +117,7 @@ class NowPlayingScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Previous").performClick()
-        assertTrue(events.contains(PlayerEvent.SkipToPrevious))
+        TestCase.assertTrue(events.contains(PlayerEvent.SkipToPrevious))
     }
 
     @Test
@@ -137,7 +135,7 @@ class NowPlayingScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Shuffle off").performClick()
-        assertTrue(events.contains(PlayerEvent.ToggleShuffle))
+        TestCase.assertTrue(events.contains(PlayerEvent.ToggleShuffle))
     }
 
     @Test
@@ -155,6 +153,6 @@ class NowPlayingScreenTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Repeat off").performClick()
-        assertTrue(events.contains(PlayerEvent.ToggleRepeat))
+        TestCase.assertTrue(events.contains(PlayerEvent.ToggleRepeat))
     }
 }

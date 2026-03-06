@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
+import com.jpishimwe.syncplayer.model.Playlist
 import com.jpishimwe.syncplayer.model.Song
 import kotlinx.coroutines.flow.Flow
 
@@ -100,4 +101,16 @@ interface PlaylistDao {
         playlistId: Long,
         deletedAt: Long,
     )
+
+    @Query(
+        """
+        SELECT p.id, p.name, p.createdAt, COUNT(ps.songId) AS songCount
+        FROM playlists p
+        LEFT JOIN playlist_songs ps ON p.id = ps.playlistId
+        WHERE p.deletedAt = 0
+        GROUP BY p.id
+        ORDER BY p.name ASC
+    """,
+    )
+    fun getAllPlaylistsWithCount(): Flow<List<Playlist>>
 }

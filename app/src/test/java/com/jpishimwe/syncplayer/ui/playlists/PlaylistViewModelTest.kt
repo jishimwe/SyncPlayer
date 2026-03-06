@@ -110,11 +110,54 @@ class PlaylistViewModelTest {
             assertEquals(42L, playlistRepository.lastDeletedId)
         }
 
-    private fun testPlaylist(id: Long, name: String) =
-        Playlist(
-            id = id,
-            name = name,
-            createdAt = 1000L,
-            songCount = 0,
-        )
+    @Test
+    fun `AddSongsToPlaylist event calls addSongToPlaylist for each song id`() =
+        runTest {
+            val songIds = listOf(1L, 2L, 3L)
+            viewModel.onEvent(PlaylistEvent.AddSongsToPlaylist(playlistId = 1L, songIds = songIds))
+            advanceUntilIdle()
+
+            assertEquals(songIds.size, playlistRepository.addSongCallCount)
+        }
+
+    @Test
+    fun `RemoveSongFromPlaylist event calls removeSongFromPlaylist with correct ids`() =
+        runTest {
+            viewModel.onEvent(PlaylistEvent.RemoveSongFromPlaylist(playlistId = 1L, songId = 42L))
+            advanceUntilIdle()
+
+            assertEquals(1, playlistRepository.removeSongCallCount)
+            assertEquals(42L, playlistRepository.lastRemovedSongId)
+        }
+
+    @Test
+    fun `RemoveSongsFromPlaylist event calls removeSongFromPlaylist for each song`() =
+        runTest {
+            val songIds = listOf(1L, 2L, 3L)
+            viewModel.onEvent(PlaylistEvent.RemoveSongsFromPlaylist(playlistId = 1L, songIds = songIds))
+            advanceUntilIdle()
+
+            assertEquals(songIds.size, playlistRepository.removeSongCallCount)
+        }
+
+    @Test
+    fun `ReorderSongs event calls reorderSongs with correct playlistId and ordered list`() =
+        runTest {
+            val orderedIds = listOf(3L, 1L, 2L)
+            viewModel.onEvent(PlaylistEvent.ReorderSongs(playlistId = 1L, orderedSongIds = orderedIds))
+            advanceUntilIdle()
+
+            assertEquals(1, playlistRepository.reorderCallCount)
+            assertEquals(orderedIds, playlistRepository.lastReorderedIds)
+        }
+
+    private fun testPlaylist(
+        id: Long,
+        name: String,
+    ) = Playlist(
+        id = id,
+        name = name,
+        createdAt = 1000L,
+        songCount = 0,
+    )
 }

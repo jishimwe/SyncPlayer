@@ -1,5 +1,36 @@
 # Phase 7 — Plan
 
+## Implementation Progress
+
+### ✅ Task 1.1 — Null-safe `ConflictResolver.mergeHistoryEvent` — DONE
+- Replaced `map { ... !! }` with `mapNotNull { ... ?: return@mapNotNull null }`
+- Added test: `unknown fingerprint in remote is silently dropped` (uses `assertTrue(result.isEmpty())`)
+
+### ✅ Task 1.2 — Sign-in error snackbar — DONE
+- `SettingsEvent.kt` — added `data object ClearSnackbar`
+- `SettingsViewModel.kt` — added separate `_snackbarMessage: MutableStateFlow<String?>`, handles `SignInError` and `ClearSnackbar`
+- `SettingsScreenContent.kt` — added `snackbarMessage`/`onSnackbarDismiss` params, `SnackbarHost` in `Scaffold`, `LaunchedEffect` in content block
+- `SettingsScreen.kt` — collects `snackbarMessage` via `collectAsStateWithLifecycle()`, passes down with `onSnackbarDismiss = { onEvent(ClearSnackbar) }`
+- Tests added: `SignInError event sets snackbarMessage`, `ClearSnackbar clears snackbarMessage`
+
+### ✅ Task 1.3 — Sync Error state: "Retry" button — DONE
+- `SettingsScreenContent.kt` — Retry `TextButton` added to `trailingContent` of sync `ListItem` when `syncStatus is SyncStatus.Error`
+- No ViewModel changes, no new tests
+
+### 🔄 Task 1.4 — Playlist soft-delete sync — IN PROGRESS
+**Completed layers:**
+- Layer 1 (DB): `MIGRATION_5_6` adds `deletedAt INTEGER NOT NULL DEFAULT 0`; version bumped to 6; `DatabaseModule` registers migration
+- Layer 2 (Entity/DAO): `PlaylistEntity` has `deletedAt`; `getAllPlaylists()` and `getAllPlaylistsList()` filter `WHERE deletedAt = 0`; `softDeletePlaylist()` added
+  - **Note:** `getAllPlaylistsList()` reverted to `SELECT * FROM playlists` (no filter) — orchestrator needs deleted playlists to push them to Firestore
+- Layer 3 (Repository): `deletePlaylist()` calls `softDeletePlaylist(playlistId, System.currentTimeMillis())`
+  - **Open:** `softDeletePlaylist` should also update `lastModified` so the orchestrator's timestamp comparison picks it up
+
+**Remaining layers:**
+- Layer 4 (Orchestrator): push deleted playlists; on pull, soft-delete locally if remote has `deletedAt > 0`
+- Layer 5 (Firestore model): include `deletedAt` in `pushPlaylist()` serialization
+
+---
+
 ## Context
 
 Phases 1–6 are complete. The app plays music, manages playlists, tracks metadata, and syncs it across devices via Firebase. Phase 7 has four ordered sub-goals: close the Phase 6 sync gaps that affect correctness, fix the accumulated bugs from Phases 1–5, add search/sort/play-count UX to the library, and refactor `LibraryViewModel` before adding more flows.
