@@ -228,6 +228,14 @@ class PlayerViewModelTest {
         }
 
     @Test
+    fun `ClearQueue event calls playerRepository clearQueue`() =
+        runTest {
+            viewModel.onEvent(PlayerEvent.ClearQueue)
+            advanceUntilIdle()
+            assertEquals(1, repository.clearQueueCallCount)
+        }
+
+    @Test
     fun `SetRating does nothing when no song is playing`() =
         runTest {
             viewModel.uiState.test {

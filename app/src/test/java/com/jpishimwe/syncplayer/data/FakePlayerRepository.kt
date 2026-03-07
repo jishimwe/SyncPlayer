@@ -26,6 +26,7 @@ class FakePlayerRepository : PlayerRepository {
     var shuffleToggleCount = 0
     var repeatToggleCount = 0
     var lastSeekToQueueItemIndex: Int? = null
+    var clearQueueCallCount = 0
 
     override suspend fun initialize() {}
 
@@ -87,6 +88,10 @@ class FakePlayerRepository : PlayerRepository {
 
     override fun seekToQueueItem(index: Int) {
         lastSeekToQueueItemIndex = index
+    }
+
+    override suspend fun clearQueue() {
+        clearQueueCallCount++
     }
 
     // Test helpers

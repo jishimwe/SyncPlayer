@@ -50,9 +50,6 @@ sealed interface LibraryUiState {
         val songs: List<Song>,
         val albums: List<Album>,
         val artists: List<Artist>,
-        val favorites: List<Song>,
-        val mostPlayed: List<Song>,
-        val recentlyPlayed: List<Song>,
     ) : LibraryUiState
 
     data class Error(
@@ -146,23 +143,13 @@ class LibraryViewModel
                 }
             }
 
-        val metadataFlows =
-            combine(
-                songRepository.getFavoriteSongs(),
-                songRepository.getMostPlayedSongs(),
-                songRepository.getRecentlyPlayed(),
-            ) { favorites, mostPlayed, recentlyPlayed ->
-                Triple(favorites, mostPlayed, recentlyPlayed)
-            }
-
         val uiState: StateFlow<LibraryUiState> =
             combine(
                 songsFlow,
                 albumsFlow,
                 artistsFlow,
                 refreshError,
-                metadataFlows,
-            ) { songs, albums, artists, error, (favorites, mostPlayed, recentlyPlayed) ->
+            ) { songs, albums, artists, error ->
                 if (error != null && songs.isEmpty()) {
                     return@combine LibraryUiState.Error(error)
                 } else {
@@ -189,9 +176,6 @@ class LibraryViewModel
                         sortedSongs,
                         albums,
                         artists,
-                        favorites,
-                        mostPlayed,
-                        recentlyPlayed,
                     )
                 }
             }.stateIn(

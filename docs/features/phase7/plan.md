@@ -1,33 +1,79 @@
 # Phase 7 — Plan
 
-## Implementation Progress
+## Implementation Progress — Phase 7 COMPLETE ✅
 
-### ✅ Task 1.1 — Null-safe `ConflictResolver.mergeHistoryEvent` — DONE
+### ✅ Task 1.1 — Null-safe `ConflictResolver.mergeHistoryEvent`
 - Replaced `map { ... !! }` with `mapNotNull { ... ?: return@mapNotNull null }`
-- Added test: `unknown fingerprint in remote is silently dropped` (uses `assertTrue(result.isEmpty())`)
+- Test: `unknown fingerprint in remote is silently dropped`
 
-### ✅ Task 1.2 — Sign-in error snackbar — DONE
+### ✅ Task 1.2 — Sign-in error snackbar
 - `SettingsEvent.kt` — added `data object ClearSnackbar`
-- `SettingsViewModel.kt` — added separate `_snackbarMessage: MutableStateFlow<String?>`, handles `SignInError` and `ClearSnackbar`
-- `SettingsScreenContent.kt` — added `snackbarMessage`/`onSnackbarDismiss` params, `SnackbarHost` in `Scaffold`, `LaunchedEffect` in content block
-- `SettingsScreen.kt` — collects `snackbarMessage` via `collectAsStateWithLifecycle()`, passes down with `onSnackbarDismiss = { onEvent(ClearSnackbar) }`
-- Tests added: `SignInError event sets snackbarMessage`, `ClearSnackbar clears snackbarMessage`
+- `SettingsViewModel.kt` — separate `_snackbarMessage: MutableStateFlow<String?>`, handles `SignInError` and `ClearSnackbar`
+- `SettingsScreenContent.kt` — `SnackbarHost` in `Scaffold`, `LaunchedEffect` in content block
+- `SettingsScreen.kt` — collects `snackbarMessage`, passes `onSnackbarDismiss = { onEvent(ClearSnackbar) }`
+- Tests: `SignInError event sets snackbarMessage`, `ClearSnackbar clears snackbarMessage`
 
-### ✅ Task 1.3 — Sync Error state: "Retry" button — DONE
-- `SettingsScreenContent.kt` — Retry `TextButton` added to `trailingContent` of sync `ListItem` when `syncStatus is SyncStatus.Error`
-- No ViewModel changes, no new tests
+### ✅ Task 1.3 — Sync Error state: "Retry" button
+- `SettingsScreenContent.kt` — Retry `TextButton` in `trailingContent` when `syncStatus is SyncStatus.Error`
 
-### 🔄 Task 1.4 — Playlist soft-delete sync — IN PROGRESS
-**Completed layers:**
-- Layer 1 (DB): `MIGRATION_5_6` adds `deletedAt INTEGER NOT NULL DEFAULT 0`; version bumped to 6; `DatabaseModule` registers migration
-- Layer 2 (Entity/DAO): `PlaylistEntity` has `deletedAt`; `getAllPlaylists()` and `getAllPlaylistsList()` filter `WHERE deletedAt = 0`; `softDeletePlaylist()` added
-  - **Note:** `getAllPlaylistsList()` reverted to `SELECT * FROM playlists` (no filter) — orchestrator needs deleted playlists to push them to Firestore
-- Layer 3 (Repository): `deletePlaylist()` calls `softDeletePlaylist(playlistId, System.currentTimeMillis())`
-  - **Open:** `softDeletePlaylist` should also update `lastModified` so the orchestrator's timestamp comparison picks it up
+### ✅ Task 1.4 — Playlist soft-delete sync
+- `MIGRATION_5_6` adds `deletedAt INTEGER NOT NULL DEFAULT 0`; version bumped to 6
+- `getAllPlaylistsList()` returns all rows (no filter) — orchestrator needs deleted playlists to push
+- `getAllPlaylists()` filters `WHERE deletedAt = 0` — UI never sees deleted playlists
+- `deletePlaylist()` calls `softDeletePlaylist(playlistId, System.currentTimeMillis())`
+- `pushPlaylist()` serializes `deletedAt` to Firestore
+- Pull logic: skips creating playlists where `remote.deletedAt != null && remote.deletedAt > 0` and `local == null`; propagates `deletedAt` to local when remote wins
+- Song replacement skipped for deleted playlists in remote-wins branch
 
-**Remaining layers:**
-- Layer 4 (Orchestrator): push deleted playlists; on pull, soft-delete locally if remote has `deletedAt > 0`
-- Layer 5 (Firestore model): include `deletedAt` in `pushPlaylist()` serialization
+### ✅ Task 2.1 — Bug 3: Loading state spinner
+- `PlaylistsScreenContent.kt` — `CircularProgressIndicator` replaces `Error` icon in `Loading` state
+
+### ✅ Task 2.2 — Bug 5: Empty state copy
+- "No playlists found" → "No playlists yet"
+
+### ✅ Task 2.3 — Defensive trim in `PlaylistViewModel`
+- Both `CreatePlaylist` and `RenamePlaylist` handlers trim and reject blank names
+- Existing tests confirmed coverage; no new tests needed
+
+### ✅ Task 2.4 — Bug 1: songCount always 0
+- `getAllPlaylistsWithCount()` DAO query joins `playlist_songs` and counts
+- `PlaylistRepositoryImpl.getAllPlaylists()` delegates to new query
+- `PlaylistListItem` updated with proper pluralization
+
+### ✅ Task 2.5 — Bug 7: Move `NowPlayingScreenTest.kt`
+- Moved from `ui.library` to `ui.player` package
+
+### ✅ Task 2.6 — Bug 8: Missing playlist event tests
+- `FakePlaylistRepository` — added `lastRemovedSongId: Long?` and `lastReorderedIds: List<Long>?`
+- 4 tests added with `runTest` + `advanceUntilIdle()`: `AddSongsToPlaylist`, `RemoveSongFromPlaylist`, `RemoveSongsFromPlaylist`, `ReorderSongs`
+
+### ✅ Task 3.1 — Search
+- DAO: `searchSongs`, `searchAlbums`, `searchArtists` with `LIKE` queries
+- Repository + interface updated
+- `LibraryViewModel`: `_searchQuery` + `flatMapLatest` switching between full-list and search flows
+- UI: `DockedSearchBar` (Material 3 1.4.0 API) replaces `TopAppBar` when active; clears on close
+
+### ✅ Task 3.2 — Sort (Songs + Albums tabs)
+- `SortOrder` enum: `BY_TITLE`, `BY_ARTIST`, `BY_ALBUM`, `BY_DURATION`, `BY_DATE_ADDED`, `BY_PLAY_COUNT`
+- `combine(_searchQuery, _sortOrder).flatMapLatest` — sort reacts to both query and order changes
+- UI: `FilterChip` + `DropdownMenu` in `SongsTab` and `AlbumsTab` (extended beyond plan scope)
+
+### ✅ Task 3.3 — Play count badge on `SongListItem`
+- `trailingContent` shows `Column` with play count (when `> 0`) above duration
+
+### ✅ Task 4.1 — Expose `clearQueue()` on `PlayerRepository`
+- `PlayerRepository` + `PlayerRepositoryImpl`: `clearQueue()` calls `mediaController?.clearMediaItems()` + `queueDao.clearQueue()`
+- `PlayerEvent.ClearQueue` added
+- `PlayerViewModel` handles `ClearQueue`
+- `QueueSheet`: "Clear" `TextButton` in header, `onClearQueue` parameter
+- Test: `ClearQueue event calls playerRepository.clearQueue`
+
+### ✅ Task 4.2 — Split `LibraryViewModel` into `LibraryViewModel` + `MetadataViewModel`
+- `MetadataViewModel`: owns `getFavoriteSongs`, `getMostPlayedSongs`, `getRecentlyPlayed`; exposes `MetadataUiState`
+- `LibraryUiState.Loaded`: removed `favorites`, `mostPlayed`, `recentlyPlayed`
+- `LibraryViewModel`: removed `metadataFlows`, dead `songsFlowOld`/`albumsFlowOld` flows, duplicate sort in `combine` lambda
+- `LibraryScreen`: collects both ViewModels separately; metadata tabs receive `metadataState`, library tabs receive `uiState`
+- `when { uiState is Loaded && metadataState is Loaded }` pattern for combined rendering
 
 ---
 

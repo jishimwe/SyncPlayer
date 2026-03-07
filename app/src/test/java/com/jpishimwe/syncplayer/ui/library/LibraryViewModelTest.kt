@@ -108,6 +108,63 @@ class LibraryViewModelTest {
             assertEquals(1, repository.refreshCallCount)
         }
 
+    @Test
+    fun `search query does not break Loaded state`() =
+        runTest {
+            repository.songsFlow.value = listOf(testSong(1), testSong(2))
+            viewModel.onSearchQueryChanged("Song 1")
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertTrue(state is LibraryUiState.Loaded)
+                assertEquals(2, (state as LibraryUiState.Loaded).songs.size)
+            }
+        }
+
+    @Test
+    fun `clearing search query restores full list`() =
+        runTest {
+            repository.songsFlow.value = listOf(testSong(1), testSong(2), testSong(3))
+            viewModel.onSearchQueryChanged("something")
+            viewModel.onClearSearchQuery()
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertTrue(state is LibraryUiState.Loaded)
+                assertEquals(3, (state as LibraryUiState.Loaded).songs.size)
+            }
+        }
+
+    @Test
+    fun `sort by play count orders songs descending`() =
+        runTest {
+            repository.songsFlow.value =
+                listOf(
+                    testSong(1).copy(playCount = 1),
+                    testSong(2).copy(playCount = 5),
+                    testSong(3).copy(playCount = 3),
+                )
+            viewModel.onSortOrder(SortOrder.BY_PLAY_COUNT)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf(5, 3, 1), state.songs.map { it.playCount })
+            }
+        }
+
+    @Test
+    fun `sort by date added orders songs descending`() =
+        runTest {
+            repository.songsFlow.value =
+                listOf(
+                    testSong(1).copy(dateAdded = 1000L),
+                    testSong(2).copy(dateAdded = 3000L),
+                    testSong(3).copy(dateAdded = 2000L),
+                )
+            viewModel.onSortOrder(SortOrder.BY_DATE_ADDED)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf(3000L, 2000L, 1000L), state.songs.map { it.dateAdded })
+            }
+        }
+
     private fun testSong(id: Long) =
         Song(
             id = id,

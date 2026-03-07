@@ -61,10 +61,12 @@ fun LibraryScreen(
     onNavigateToArtistDetail: (artistName: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
+    metadataViewModel: MetadataViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
 ) {
     PermissionHandler {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val metadataState by metadataViewModel.uiState.collectAsStateWithLifecycle()
         val playerState by playerViewModel.uiState.collectAsStateWithLifecycle()
         val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
 
@@ -90,6 +92,7 @@ fun LibraryScreen(
         Column(modifier = Modifier.padding(8.dp)) {
             LibraryScreenContent(
                 uiState = uiState,
+                metadataState = metadataState,
                 selectedTab = selectedTab,
                 onTabSelected = viewModel::selectTab,
                 onRetry = viewModel::refreshLibrary,
@@ -117,6 +120,7 @@ fun LibraryScreen(
 @Composable
 fun LibraryScreenContent(
     uiState: LibraryUiState,
+    metadataState: MetadataUiState,
     selectedTab: LibraryTab,
     onTabSelected: (LibraryTab) -> Unit,
     onRetry: () -> Unit,
@@ -189,8 +193,8 @@ fun LibraryScreenContent(
                 }
             }
 
-            when (uiState) {
-                is LibraryUiState.Loading -> {
+            when {
+                uiState is LibraryUiState.Loading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
@@ -199,7 +203,7 @@ fun LibraryScreenContent(
                     }
                 }
 
-                is LibraryUiState.Error -> {
+                uiState is LibraryUiState.Error -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
@@ -213,14 +217,14 @@ fun LibraryScreenContent(
                     }
                 }
 
-                is LibraryUiState.Loaded -> {
+                uiState is LibraryUiState.Loaded && metadataState is MetadataUiState.Loaded -> {
                     when (selectedTab) {
                         LibraryTab.SONGS -> SongsTab(uiState, onSongClick, onSortOrderChanged)
                         LibraryTab.ALBUMS -> AlbumsTab(uiState, onAlbumClick, onSortOrderChanged)
                         LibraryTab.ARTISTS -> ArtistsTab(uiState, onArtistClick)
-                        LibraryTab.FAVORITES -> FavoriteTab(uiState, onSongClick)
-                        LibraryTab.MOST_PLAYED -> MostPlayedTab(uiState, onSongClick)
-                        LibraryTab.RECENTLY_PLAYED -> RecentlyPlayedTab(uiState, onSongClick)
+                        LibraryTab.FAVORITES -> FavoriteTab(metadataState, onSongClick)
+                        LibraryTab.MOST_PLAYED -> MostPlayedTab(metadataState, onSongClick)
+                        LibraryTab.RECENTLY_PLAYED -> RecentlyPlayedTab(metadataState, onSongClick)
                     }
                 }
             }
@@ -357,7 +361,7 @@ private fun ArtistsTab(
 
 @Composable
 fun FavoriteTab(
-    state: LibraryUiState.Loaded,
+    state: MetadataUiState.Loaded,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
 ) {
     if (state.favorites.isEmpty()) {
@@ -376,7 +380,7 @@ fun FavoriteTab(
 
 @Composable
 fun MostPlayedTab(
-    state: LibraryUiState.Loaded,
+    state: MetadataUiState.Loaded,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
 ) {
     if (state.mostPlayed.isEmpty()) {
@@ -395,7 +399,7 @@ fun MostPlayedTab(
 
 @Composable
 fun RecentlyPlayedTab(
-    state: LibraryUiState.Loaded,
+    state: MetadataUiState.Loaded,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
 ) {
     if (state.recentlyPlayed.isEmpty()) {

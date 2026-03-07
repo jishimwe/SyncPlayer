@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class LibraryViewModelMetadataTest {
+class MetadataViewModelTest {
     companion object {
         @JvmField
         @RegisterExtension
@@ -21,12 +21,12 @@ class LibraryViewModelMetadataTest {
     }
 
     private lateinit var repository: FakeSongRepository
-    private lateinit var viewModel: LibraryViewModel
+    private lateinit var viewModel: MetadataViewModel
 
     @BeforeEach
     fun setup() {
         repository = FakeSongRepository()
-        viewModel = LibraryViewModel(repository)
+        viewModel = MetadataViewModel(repository)
     }
 
     @Test
@@ -37,8 +37,8 @@ class LibraryViewModelMetadataTest {
 
             viewModel.uiState.test {
                 val state = awaitItem()
-                assertTrue(state is LibraryUiState.Loaded)
-                assertEquals(listOf(favSong), (state as LibraryUiState.Loaded).favorites)
+                assertTrue(state is MetadataUiState.Loaded)
+                assertEquals(listOf(favSong), (state as MetadataUiState.Loaded).favorites)
             }
         }
 
@@ -50,8 +50,8 @@ class LibraryViewModelMetadataTest {
 
             viewModel.uiState.test {
                 val state = awaitItem()
-                assertTrue(state is LibraryUiState.Loaded)
-                assertEquals(listOf(topSong), (state as LibraryUiState.Loaded).mostPlayed)
+                assertTrue(state is MetadataUiState.Loaded)
+                assertEquals(listOf(topSong), (state as MetadataUiState.Loaded).mostPlayed)
             }
         }
 
@@ -63,8 +63,8 @@ class LibraryViewModelMetadataTest {
 
             viewModel.uiState.test {
                 val state = awaitItem()
-                assertTrue(state is LibraryUiState.Loaded)
-                assertEquals(listOf(recentSong), (state as LibraryUiState.Loaded).recentlyPlayed)
+                assertTrue(state is MetadataUiState.Loaded)
+                assertEquals(listOf(recentSong), (state as MetadataUiState.Loaded).recentlyPlayed)
             }
         }
 
