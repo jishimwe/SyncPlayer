@@ -249,21 +249,15 @@ class SyncOrchestratorTest {
     // ── status transitions ────────────────────────────────────────────────────
 
     @Test
-    fun `sync transitions from Idle to Syncing to Success`() = runTest {
+    fun `sync transitions from Idle to Success on clean run`() = runTest {
         authRepository.emitSignedIn()
 
-        val statuses = mutableListOf<SyncStatus>()
-        // Capture status before sync starts
-        statuses.add(orchestrator.syncStatus.value)
+        assertTrue(orchestrator.syncStatus.value is SyncStatus.Idle)
 
         orchestrator.sync()
-        // Note: with UnconfinedTestDispatcher the sync completes synchronously
-        // so we check the final state here
         advanceUntilIdle()
-        statuses.add(orchestrator.syncStatus.value)
 
-        assertTrue(statuses.first() is SyncStatus.Idle)
-        assertTrue(statuses.last() is SyncStatus.Success)
+        assertTrue(orchestrator.syncStatus.value is SyncStatus.Success)
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

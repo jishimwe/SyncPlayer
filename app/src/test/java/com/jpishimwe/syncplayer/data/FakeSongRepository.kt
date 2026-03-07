@@ -4,6 +4,7 @@ import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -24,6 +25,7 @@ class FakeSongRepository : SongRepository {
 
     var refreshError: Exception? = null
     var refreshCallCount = 0
+    var refreshGate: CompletableDeferred<Unit>? = null
     var setRatingCallCount = 0
     var lastSetRatingSongId: Long? = null
     var lastSetRating: Rating? = null
@@ -85,6 +87,7 @@ class FakeSongRepository : SongRepository {
 
     override suspend fun refreshLibrary() {
         refreshCallCount++
+        refreshGate?.await()
         refreshError?.let { throw it }
     }
 

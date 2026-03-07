@@ -21,6 +21,8 @@ After Phase 7 shipped, a dedicated testing pass audited every existing test, ide
 
 - **`app/src/test/.../data/FakeSongRepository.kt`** — added `getAllSongsCallCount` and `searchSongsCallCount` integer counters, incremented in `getAllSongs()` and `searchSongs()` respectively, so tests can assert which code path the ViewModel uses.
 
+- **`app/src/test/.../data/FakeSongRepository.kt`** — added `refreshGate: CompletableDeferred<Unit>?` field; if non-null, `refreshLibrary()` suspends on it before returning. Enables tests to observe intermediate `isRefreshing = true` state without polling or mocking time.
+
 - **`app/src/test/.../ui/player/PlayerViewModelTest.kt`** *(new, correct package)* — 26 tests total. New tests added:
   - `AddToQueue event calls playerRepository addToQueue with correct song`
   - `PlayNext event calls playerRepository playNext with correct song`
@@ -34,6 +36,7 @@ After Phase 7 shipped, a dedicated testing pass audited every existing test, ide
   - 3 search routing tests (`blank query uses getAllSongs`, `non-blank uses searchSongs`, `clearing switches back`) — assert on call counters, not just state shape.
   - 6 sort order tests: `BY_TITLE`, `BY_ARTIST`, `BY_ALBUM`, `BY_DURATION`, `BY_PLAY_COUNT`, `BY_DATE_ADDED`.
   - 2 `onAppResumed` tests: triggers refresh when `lastScanTimestamp == 0`; skips refresh when called immediately after a refresh.
+  - Fixed `isRefreshing is true during refresh and false after`: added `CompletableDeferred` gate to `FakeSongRepository` so `refreshLibrary()` actually suspends; test uses Turbine to capture all three states (`false → true → false`).
 
 - **`app/src/test/.../data/FakePlayerRepository.kt`** — added `clearQueueCallCount` and `clearQueue()` to support the `ClearQueue` test.
 - **`app/.../ui/player/components/PlayerControls.kt`** — added content descriptions (`"Play"`/`"Pause"` toggled on playback state, `"Skip next"`, `"Skip previous"`) to the three icon buttons. These were `null` before, which also made them inaccessible to screen readers. Required to support the Compose UI tests and correct accessibility.
@@ -89,7 +92,7 @@ All files live in `app/src/androidTest/java/com/jpishimwe/syncplayer/ui/`.
 
 - **`player/NowPlayingScreenContentTest.kt`** — 7 tests:
   - Displays current song title and artist from `PlayerUiState`
-  - Shows no crash when `currentSong == null`
+  - Asserts `"Now Playing"` toolbar title is displayed when `currentSong == null` (renamed from `showsNothingPlayingWhenNoCurrentSong` which had no assertion)
   - Play button fires `PlayerEvent.PlayPause` when paused
   - Pause button fires `PlayerEvent.PlayPause` when playing
   - Skip-next button fires `PlayerEvent.SkipToNext`
@@ -134,7 +137,7 @@ All files live in `app/src/androidTest/java/com/jpishimwe/syncplayer/ui/`.
   - Push phase: pushes modified songs (lastModified > lastSync); skips unmodified songs; pushes modified playlists; pushes listening history
   - Pull phase: applies `ConflictResolver` result via `applySyncDelta`; skips unknown fingerprints; creates new local playlist from remote; skips remotely-deleted playlists; applies remote playlist win via `updatePlaylist`; inserts remote history events
   - Error handling: sets `SyncStatus.Error` with correct message on exception
-  - Status transitions: `Idle` → `Success` on clean sync
+  - Status transitions: `Idle` → `Success` on clean sync (renamed from `Idle → Syncing → Success`: `Syncing` is set and immediately overwritten before any observer can see it with `UnconfinedTestDispatcher`; the test now only claims what it actually observes)
 
 ---
 

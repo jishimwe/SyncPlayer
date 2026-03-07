@@ -37,7 +37,7 @@ class NowPlayingScreenContentTest {
     }
 
     @Test
-    fun showsNothingPlayingWhenNoCurrentSong() {
+    fun showsNowPlayingTitleWhenNoCurrentSong() {
         composeTestRule.setContent {
             NowPlayingScreenContent(
                 uiState = PlayerUiState(currentSong = null),
@@ -48,8 +48,7 @@ class NowPlayingScreenContentTest {
             )
         }
 
-        // Should not crash and UI should render
-        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Now Playing").assertIsDisplayed()
     }
 
     // ── play / pause ──────────────────────────────────────────────────────────

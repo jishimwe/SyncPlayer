@@ -6,6 +6,7 @@ import com.jpishimwe.syncplayer.data.FakeSongRepository
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Song
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -99,15 +100,17 @@ class LibraryViewModelTest {
     @Test
     fun `isRefreshing is true during refresh and false after`() =
         runTest {
-            repository.refreshCallCount = 0
+            val gate = CompletableDeferred<Unit>()
+            repository.refreshGate = gate
 
-            assertEquals(false, viewModel.isRefreshing.value)
-
-            viewModel.refreshLibrary()
-            advanceUntilIdle()
-
-            assertEquals(false, viewModel.isRefreshing.value)
-            assertEquals(1, repository.refreshCallCount)
+            viewModel.isRefreshing.test {
+                assertEquals(false, awaitItem())   // initial state
+                viewModel.refreshLibrary()          // launch fires; sets true, then suspends on gate
+                assertEquals(true, awaitItem())    // true while refresh is in-flight
+                gate.complete(Unit)                // unblock refresh
+                assertEquals(false, awaitItem())   // false after completion
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     // ── Search ────────────────────────────────────────────────────────────────
