@@ -2,15 +2,17 @@
 
 ## Context
 
-Phases 1–5 are complete. Several improvements were explicitly descoped during implementation to maintain focus. This document collects them alongside architectural observations that have accumulated. Items here are *intentional deferrals* — features or refactors that would improve the app but were not required to ship the current phase.
+Phases 1–7 are complete. Several improvements were explicitly descoped during implementation to maintain focus. This document collects them alongside architectural observations that have accumulated. Items here are *intentional deferrals* — features or refactors that would improve the app but were not required to ship the current phase.
 
 This is a backlog, not an implementation plan. Items should be extracted into their own feature plans before implementation.
+
+**Completed in Phase 7:** Items 1, 5, 6, 8, 10 — see [`docs/features/phase7/plan.md`](../phase7/plan.md).
 
 ---
 
 ## Improvement Areas
 
-### 1. Play Count Display on `SongListItem`
+### 1. Play Count Display on `SongListItem` ✅ Done in Phase 7 (Task 3.3)
 
 **Source:** `metadata-tracking/design.md` → Known gaps
 **Priority:** Medium
@@ -82,7 +84,7 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ---
 
-### 5. `LibraryViewModel` 7-Flow Refactor
+### 5. `LibraryViewModel` 7-Flow Refactor ✅ Done in Phase 7 (Task 4.2)
 
 **Source:** `metadata-tracking/design.md` → Known gaps
 **Priority:** Medium
@@ -111,7 +113,7 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ---
 
-### 6. Test Coverage for Detail Screens
+### 6. Test Coverage for Detail Screens ✅ Done in Phase 7 testing pass
 
 **Source:** `library-playback-nav/design.md` → Known gaps
 **Priority:** Medium
@@ -146,7 +148,7 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ---
 
-### 8. Expose `clearQueue` on `PlayerRepository` Interface
+### 8. Expose `clearQueue` on `PlayerRepository` Interface ✅ Done in Phase 7 (Task 4.1)
 
 **Source:** `playback/design.md` → Known gaps
 **Priority:** Low
@@ -179,7 +181,7 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ---
 
-### 10. Phase 6 — Cross-Device Sync
+### 10. Phase 6 — Cross-Device Sync ✅ Done in Phase 6
 
 **Source:** `sync/plan.md` (existing, detailed plan already written)
 **Priority:** High (next major phase)
@@ -203,29 +205,30 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ## Priority Summary
 
-| # | Improvement | Priority | Effort | Prerequisite |
-|---|------------|----------|--------|--------------|
-| 1 | Play count on `SongListItem` | Medium | Small | — |
-| 2 | History detail screen | Low | Medium | — |
-| 3 | Slide gesture for rating | Low | Medium | Bug 6 fixed |
-| 4 | Consolidate favorite/star rating | Low | Small | 2+ weeks dogfooding |
-| 5 | `LibraryViewModel` 7-flow refactor | Medium | Large | Phase 6 stable |
-| 6 | Detail screen tests | Medium | Small | — |
-| 7 | Audio focus edge case testing | Medium | Medium | Device access |
-| 8 | Expose `clearQueue` on interface | Low | Trivial | — |
-| 9 | Custom notification layout | Low | Medium | — |
-| 10 | Phase 6 Sync | High | Large | Open bugs resolved |
+| # | Improvement | Priority | Effort | Status |
+|---|------------|----------|--------|--------|
+| 1 | Play count on `SongListItem` | Medium | Small | ✅ Done (Phase 7) |
+| 2 | History detail screen | Low | Medium | Open |
+| 3 | Slide gesture for rating | Low | Medium | Open |
+| 4 | Consolidate favorite/star rating | Low | Small | Open (needs dogfooding) |
+| 5 | `LibraryViewModel` 7-flow refactor | Medium | Large | ✅ Done (Phase 7) |
+| 6 | Detail screen tests | Medium | Small | ✅ Done (Phase 7) |
+| 7 | Audio focus edge case testing | Medium | Medium | Open |
+| 8 | Expose `clearQueue` on interface | Low | Trivial | ✅ Done (Phase 7) |
+| 9 | Custom notification layout | Low | Medium | Open |
+| 10 | Phase 6 Sync | High | Large | ✅ Done (Phase 6) |
 
 ---
 
 ## Recommended Order
 
-1. Resolve all **open bugs** first (`open-bugs/plan.md`)
-2. **Play count display** (#1) — small win, makes Phase 5 feel complete
-3. **Detail screen tests** (#6) — low-risk, improves confidence
-4. **Phase 6 Sync** (#10) — next major phase, has its own plan
-5. **LibraryViewModel refactor** (#5) — after Phase 6 adds more flows
-6. Remaining items in any order
+Items 1, 5, 6, 8, 10 are done. Open bugs are fully resolved. Remaining open items:
+
+1. **Audio focus edge case testing** (#7) — manual, device-only; do before any public release
+2. **History detail screen** (#2) — medium effort, clear user value
+3. **Custom notification layout** (#9) — polish; Media3 default is functional but plain
+4. **Slide gesture for rating** (#3) — after sufficient dogfooding on the tap-only UX
+5. **Consolidate favorite/star rating** (#4) — decide after 2+ weeks of use data
 
 ---
 

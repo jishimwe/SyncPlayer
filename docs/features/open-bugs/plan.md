@@ -1,8 +1,14 @@
 # Open Bugs — Plan
 
+**Status: All 8 bugs resolved as of Phase 7 ✅**
+
+See `docs/features/phase7/plan.md` for implementation details.
+
 ## Context
 
-Phases 1–5 are complete. During implementation, each phase's design doc recorded known gaps that were deferred to keep scope focused. This document collects all confirmed bugs — behavior that is definitively wrong — across playlists, metadata tracking, playback, and test infrastructure.
+Phases 1–7 are complete. During implementation, each phase's design doc recorded known gaps that were deferred to keep scope focused. This document collected all confirmed bugs — behavior that was definitively wrong — across playlists, metadata tracking, playback, and test infrastructure.
+
+A pre-flight audit at the start of Phase 7 revealed that Bugs 2, 4, and 6 had already been fixed during prior implementation. The remaining five bugs (1, 3, 5, 7, 8) were resolved in Phase 7.
 
 Bugs are distinct from feature gaps: a bug is something that was intended to work but doesn't (wrong data, wrong icon, missing wiring), not a feature that was explicitly descoped.
 
@@ -40,7 +46,7 @@ All fixes are isolated and low-risk. No new dependencies are needed. Each bug is
 
 ## Tasks
 
-### Bug 1 — Playlist `songCount` always 0
+### Bug 1 — Playlist `songCount` always 0 ✅ Fixed in Phase 7 (Task 2.4)
 
 **Source:** `playlists/design.md` → Known gaps
 
@@ -85,7 +91,7 @@ This requires a new `PlaylistWithCount` projection data class and `@Query` on `P
 
 ---
 
-### Bug 2 — Playlist `createdAt` displays raw milliseconds
+### Bug 2 — Playlist `createdAt` displays raw milliseconds ✅ Pre-flight confirmed already fixed
 
 **Source:** `playlists/design.md` → Known gaps
 
@@ -114,7 +120,7 @@ No new dependencies needed — `java.time` is available from API 26+ (min SDK is
 
 ---
 
-### Bug 3 — Playlist `Loading` state shows Error icon
+### Bug 3 — Playlist `Loading` state shows Error icon ✅ Fixed in Phase 7 (Task 2.1)
 
 **Source:** `playlists/design.md` → Known gaps
 
@@ -138,7 +144,7 @@ is PlaylistUiState.Loading -> {
 
 ---
 
-### Bug 4 — Playlist names not trimmed
+### Bug 4 — Playlist names not trimmed ✅ Pre-flight confirmed already fixed in dialogs; VM-level hardening added in Phase 7 (Task 2.3)
 
 **Source:** `playlists/design.md` → Known gaps
 
@@ -167,7 +173,7 @@ PlaylistEvent.RenamePlaylist(id, name) -> {
 
 ---
 
-### Bug 5 — Empty state copy mismatch
+### Bug 5 — Empty state copy mismatch ✅ Fixed in Phase 7 (Task 2.2)
 
 **Source:** `playlists/design.md` → Known gaps
 
@@ -184,7 +190,7 @@ PlaylistEvent.RenamePlaylist(id, name) -> {
 
 ---
 
-### Bug 6 — Rating downgrade requires two taps
+### Bug 6 — Rating downgrade requires two taps ✅ Pre-flight confirmed already fixed
 
 **Source:** `metadata-tracking/design.md` → Known gaps
 
@@ -222,7 +228,7 @@ onClick = { if (currentRating == starRating) onRatingChange(Rating.NONE) else on
 
 ---
 
-### Bug 7 — `NowPlayingScreenTest.kt` in wrong package
+### Bug 7 — `NowPlayingScreenTest.kt` in wrong package ✅ Fixed in Phase 7 (Task 2.5)
 
 **Source:** `metadata-tracking/design.md` → Known gaps
 
@@ -245,7 +251,7 @@ Update the `package` declaration in the file.
 
 ---
 
-### Bug 8 — No tests for playlist add/remove/reorder events
+### Bug 8 — No tests for playlist add/remove/reorder events ✅ Fixed in Phase 7 (Task 2.6)
 
 **Source:** `playlists/design.md` → Known gaps
 
@@ -279,11 +285,11 @@ None. All fixes use existing libraries.
 
 ### Manual verification checklist
 
-- [ ] Bug 1: Playlist list shows correct song count
-- [ ] Bug 2: Playlist list shows human-readable date (not raw number)
-- [ ] Bug 3: Playlist screen loading state shows spinner
-- [ ] Bug 4: Whitespace-padded playlist name is trimmed on save
-- [ ] Bug 5: Empty playlist list shows "No playlists yet"
-- [ ] Bug 6: Tapping a lower star directly sets that rating without clearing first
-- [ ] Bug 7: `gradlew.bat test` — NowPlaying tests appear in `ui.player` package
-- [ ] Bug 8: `gradlew.bat test` — 4 new playlist event tests pass
+- [x] Bug 1: Playlist list shows correct song count
+- [x] Bug 2: Playlist list shows human-readable date (not raw number)
+- [x] Bug 3: Playlist screen loading state shows spinner
+- [x] Bug 4: Whitespace-padded playlist name is trimmed on save
+- [x] Bug 5: Empty playlist list shows "No playlists yet"
+- [x] Bug 6: Tapping a lower star directly sets that rating without clearing first
+- [x] Bug 7: `gradlew.bat test` — NowPlaying tests appear in `ui.player` package
+- [x] Bug 8: `gradlew.bat test` — 4 new playlist event tests pass
