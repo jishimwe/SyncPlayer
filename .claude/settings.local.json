@@ -8,7 +8,10 @@
       "Bash(./gradlew.bat test:*)",
       "Bash(xargs grep:*)",
       "Bash(do grep:*)",
-      "Bash(./gradlew.bat assembleDebug:*)"
+      "Bash(./gradlew.bat assembleDebug:*)",
+      "Bash(./gradlew.bat compileDebugAndroidTestKotlin:*)",
+      "Bash(grep:*)",
+      "Bash(./gradlew.bat compileDebugUnitTestKotlin:*)"
     ]
   }
 }
