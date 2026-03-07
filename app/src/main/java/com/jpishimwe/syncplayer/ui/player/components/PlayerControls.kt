@@ -33,7 +33,7 @@ fun PlayerControls(
         IconButton(onClick = onSkipToPrevious) {
             Icon(
                 imageVector = Icons.Default.SkipPrevious,
-                contentDescription = null,
+                contentDescription = "Skip previous",
                 modifier = Modifier.size(48.dp),
             )
         }
@@ -41,13 +41,13 @@ fun PlayerControls(
         IconButton(onClick = onPlayPause) {
             Icon(
                 imageVector = if (playbackState == PlaybackState.PLAYING) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = null,
+                contentDescription = if (playbackState == PlaybackState.PLAYING) "Pause" else "Play",
                 Modifier.size(48.dp),
             )
         }
 
         IconButton(onClick = onSkipToNext) {
-            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null, modifier = Modifier.size(48.dp))
+            Icon(imageVector = Icons.Default.SkipNext, contentDescription = "Skip next", modifier = Modifier.size(48.dp))
         }
     }
 }

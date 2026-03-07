@@ -86,12 +86,14 @@ class LibraryViewModelTest {
     fun `refreshLibrary handles error gracefully`() =
         runTest {
             repository.refreshError = RuntimeException("scan failed")
-            viewModel.refreshLibrary()
-            advanceUntilIdle()
-            assertEquals(1, repository.refreshCallCount)
-
-//            val state = viewModel.uiState.value
-//            assertTrue(state is LibraryUiState.Error)
+            viewModel.uiState.test {
+                awaitItem() // initial Loaded (empty lists)
+                viewModel.refreshLibrary()
+                advanceUntilIdle()
+                assertEquals(1, repository.refreshCallCount)
+                assertTrue(awaitItem() is LibraryUiState.Error)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -108,28 +110,108 @@ class LibraryViewModelTest {
             assertEquals(1, repository.refreshCallCount)
         }
 
+    // ── Search ────────────────────────────────────────────────────────────────
+
     @Test
-    fun `search query does not break Loaded state`() =
+    fun `blank search query uses getAllSongs`() =
         runTest {
-            repository.songsFlow.value = listOf(testSong(1), testSong(2))
-            viewModel.onSearchQueryChanged("Song 1")
             viewModel.uiState.test {
-                val state = awaitItem()
-                assertTrue(state is LibraryUiState.Loaded)
-                assertEquals(2, (state as LibraryUiState.Loaded).songs.size)
+                awaitItem() // triggers subscription → getAllSongs called
+                assertTrue(repository.getAllSongsCallCount > 0)
+                assertEquals(0, repository.searchSongsCallCount)
+                cancelAndIgnoreRemainingEvents()
             }
         }
 
     @Test
-    fun `clearing search query restores full list`() =
+    fun `non-blank search query uses searchSongs`() =
         runTest {
-            repository.songsFlow.value = listOf(testSong(1), testSong(2), testSong(3))
-            viewModel.onSearchQueryChanged("something")
-            viewModel.onClearSearchQuery()
+            viewModel.onSearchQueryChanged("Beatles")
             viewModel.uiState.test {
-                val state = awaitItem()
-                assertTrue(state is LibraryUiState.Loaded)
-                assertEquals(3, (state as LibraryUiState.Loaded).songs.size)
+                awaitItem() // non-blank query → searchSongs called
+                assertTrue(repository.searchSongsCallCount > 0)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `clearing search switches back to getAllSongs`() =
+        runTest {
+            viewModel.onSearchQueryChanged("Beatles")
+            viewModel.onClearSearchQuery()
+            val searchCountSnapshot = repository.searchSongsCallCount
+            viewModel.uiState.test {
+                awaitItem() // blank query again → getAllSongs
+                assertTrue(repository.getAllSongsCallCount > 0)
+                // searchSongs should not be called again after clear
+                assertEquals(searchCountSnapshot, repository.searchSongsCallCount)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    // ── Sort ──────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `sort by title orders songs alphabetically`() =
+        runTest {
+            repository.songsFlow.value =
+                listOf(
+                    testSong(1).copy(title = "Zebra"),
+                    testSong(2).copy(title = "Apple"),
+                    testSong(3).copy(title = "Mango"),
+                )
+            viewModel.onSortOrder(SortOrder.BY_TITLE)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf("Apple", "Mango", "Zebra"), state.songs.map { it.title })
+            }
+        }
+
+    @Test
+    fun `sort by artist orders songs by artist name`() =
+        runTest {
+            repository.songsFlow.value =
+                listOf(
+                    testSong(1).copy(artist = "ZZ Top"),
+                    testSong(2).copy(artist = "ABBA"),
+                    testSong(3).copy(artist = "Migos"),
+                )
+            viewModel.onSortOrder(SortOrder.BY_ARTIST)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf("ABBA", "Migos", "ZZ Top"), state.songs.map { it.artist })
+            }
+        }
+
+    @Test
+    fun `sort by album orders songs by album name`() =
+        runTest {
+            repository.songsFlow.value =
+                listOf(
+                    testSong(1).copy(album = "Thriller"),
+                    testSong(2).copy(album = "Abbey Road"),
+                    testSong(3).copy(album = "Kind of Blue"),
+                )
+            viewModel.onSortOrder(SortOrder.BY_ALBUM)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf("Abbey Road", "Kind of Blue", "Thriller"), state.songs.map { it.album })
+            }
+        }
+
+    @Test
+    fun `sort by duration orders songs ascending`() =
+        runTest {
+            repository.songsFlow.value =
+                listOf(
+                    testSong(1).copy(duration = 300_000L),
+                    testSong(2).copy(duration = 100_000L),
+                    testSong(3).copy(duration = 200_000L),
+                )
+            viewModel.onSortOrder(SortOrder.BY_DURATION)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf(100_000L, 200_000L, 300_000L), state.songs.map { it.duration })
             }
         }
 
@@ -163,6 +245,29 @@ class LibraryViewModelTest {
                 val state = awaitItem() as LibraryUiState.Loaded
                 assertEquals(listOf(3000L, 2000L, 1000L), state.songs.map { it.dateAdded })
             }
+        }
+
+    // ── onAppResumed ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `onAppResumed triggers refresh when never scanned before`() =
+        runTest {
+            // lastScanTimestamp starts at 0 — 24-hour window always elapsed
+            viewModel.onAppResumed()
+            advanceUntilIdle()
+            assertEquals(1, repository.refreshCallCount)
+        }
+
+    @Test
+    fun `onAppResumed does not trigger refresh when recently scanned`() =
+        runTest {
+            viewModel.refreshLibrary()
+            advanceUntilIdle()
+            val countAfterFirstRefresh = repository.refreshCallCount
+
+            viewModel.onAppResumed() // immediately after — window not elapsed
+            advanceUntilIdle()
+            assertEquals(countAfterFirstRefresh, repository.refreshCallCount)
         }
 
     private fun testSong(id: Long) =

@@ -94,7 +94,7 @@ class PlaylistViewModelTest {
     @Test
     fun `RenamePlaylist with blank name does NOT call repository`() =
         runTest {
-            viewModel.onEvent(PlaylistEvent.RenamePlaylist(playlistId = 1L, newName = ""))
+            viewModel.onEvent(PlaylistEvent.RenamePlaylist(playlistId = 1L, newName = "   "))
             advanceUntilIdle()
 
             assertEquals(0, playlistRepository.renameCallCount)

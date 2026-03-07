@@ -19,6 +19,9 @@ class FakeSongRepository : SongRepository {
     val recentlyPlayedFlow = MutableStateFlow<List<Song>>(emptyList())
     private val ratingsMap = MutableStateFlow<Map<Long, Rating>>(emptyMap())
 
+    var getAllSongsCallCount = 0
+    var searchSongsCallCount = 0
+
     var refreshError: Exception? = null
     var refreshCallCount = 0
     var setRatingCallCount = 0
@@ -39,7 +42,10 @@ class FakeSongRepository : SongRepository {
 
     override fun getSongById(id: Long): Flow<Song?> = songById
 
-    override fun getAllSongs(): Flow<List<Song>> = songsFlow
+    override fun getAllSongs(): Flow<List<Song>> {
+        getAllSongsCallCount++
+        return songsFlow
+    }
 
     override fun getAllAlbums(): Flow<List<Album>> = albumsFlow
 
@@ -82,7 +88,10 @@ class FakeSongRepository : SongRepository {
         refreshError?.let { throw it }
     }
 
-    override fun searchSongs(query: String): Flow<List<Song>> = songsFlow
+    override fun searchSongs(query: String): Flow<List<Song>> {
+        searchSongsCallCount++
+        return songsFlow
+    }
 
     override fun searchAlbums(query: String): Flow<List<Album>> = albumsFlow
 

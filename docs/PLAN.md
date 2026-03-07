@@ -20,7 +20,7 @@ SyncPlayer plays audio from on-device storage and syncs listening data — not t
 | Auth | Firebase Auth (Google sign-in) |
 | Sync | Cloud Firestore |
 | Build | AGP 9.0.0, Gradle 9.1.0, Kotlin DSL, version catalog |
-| Tests | JUnit 5 5.11.4, Turbine 1.2.1, Compose UI Test |
+| Tests | JUnit 5 5.11.4, Turbine 1.2.1, MockK 1.14.9, Compose UI Test |
 
 ## Architecture
 
@@ -34,9 +34,11 @@ app/src/main/java/com/jpishimwe/syncplayer/
 │   ├── library/    # Library browsing (songs, albums, artists, detail screens)
 │   ├── player/     # Now Playing screen, player controls, MiniPlayer
 │   ├── playlists/  # Playlist management (list, detail, song picker)
+│   ├── settings/   # Sign-in, sync status, manual trigger
 │   └── navigation/ # NavGraph, Screen routes, bottom nav
 ├── data/           # Repositories, local DB
-│   └── local/      # Room database, DAOs, entities
+│   ├── local/      # Room database, DAOs, entities
+│   └── sync/       # Firebase Auth, Firestore, conflict resolution, orchestrator
 ├── model/          # Data classes (Song, Album, Artist, PlaybackState, PlayerUiState)
 ├── service/        # PlaybackService, AudioFocusHandler
 └── di/             # Hilt modules
@@ -46,6 +48,7 @@ app/src/main/java/com/jpishimwe/syncplayer/
 - **ViewModel**: Holds UI state, calls into repositories
 - **Repository**: Single source of truth, coordinates local DB and sync
 - **Local DB**: Room for songs, playlists, play counts, metadata
+- **Sync layer**: `SyncOrchestrator` pushes/pulls via `SyncRepository` (Firestore); conflict resolution in `ConflictResolver`
 
 ## Navigation
 
@@ -53,18 +56,20 @@ Current routes:
 
 | Route | Screen | Description |
 |-------|--------|-------------|
-| `library` | LibraryScreen | Songs/Albums/Artists tabs with MiniPlayer |
-| `now_playing` | NowPlayingScreen | Full-screen player with controls |
+| `library` | LibraryScreen | Songs/Albums/Artists/Faves/Top Plays/Recent tabs with MiniPlayer |
+| `now_playing` | NowPlayingScreen | Full-screen player with controls and queue sheet |
 | `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album |
 | `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist |
 | `playlists` | PlaylistsScreen | Playlist list with create/rename/delete |
 | `playlist_detail/{playlistId}/{playlistName}` | PlaylistDetailScreen | Songs in a playlist with reorder/add/remove |
 
-Bottom navigation bar switches between Library and Playlists tabs. A persistent MiniPlayer sits above the bottom nav on top-level screens. Navigation uses `saveState`/`restoreState` for tab state preservation.
+Bottom navigation bar switches between Library, Playlists, and Settings tabs. A persistent MiniPlayer sits above the bottom nav on top-level screens. Navigation uses `saveState`/`restoreState` for tab state preservation.
 
 ## Build Phases
 
 Phases are ordered from simple to complex. Each phase builds on the previous one.
+
+---
 
 ### Phase 1: Library ✅
 
@@ -80,6 +85,8 @@ Scan the device for audio files and display them in a browsable list.
 
 **Plan doc**: [`docs/features/library-browsing/plan.md`](features/library-browsing/plan.md)
 **Design doc**: [`docs/features/library-browsing/design.md`](features/library-browsing/design.md)
+
+---
 
 ### Phase 2: Playback ✅
 
@@ -102,6 +109,8 @@ Play audio using Media3 with full media session support.
 **Plan doc**: [`docs/features/playback/plan.md`](features/playback/plan.md)
 **Design doc**: [`docs/features/playback/design.md`](features/playback/design.md)
 
+---
+
 ### Phase 3: Library → Playback Navigation ✅
 
 Connect the library browsing UI to the playback system.
@@ -114,6 +123,8 @@ Connect the library browsing UI to the playback system.
 
 **Plan doc**: [`docs/features/library-playback-nav/plan.md`](features/library-playback-nav/plan.md)
 **Design doc**: [`docs/features/library-playback-nav/design.md`](features/library-playback-nav/design.md)
+
+---
 
 ### Phase 3.1: Post-Phase 2 Bug Fixes ✅
 
@@ -132,6 +143,8 @@ Fixed bugs discovered during manual testing after Phases 2 and 3.
 **Plan doc**: [`docs/features/bugfixes-phase2/plan.md`](features/bugfixes-phase2/plan.md)
 **Design doc**: [`docs/features/bugfixes-phase2/design.md`](features/bugfixes-phase2/design.md)
 
+---
+
 ### Phase 4: Playlists ✅
 
 Create, edit, and manage playlists stored locally.
@@ -145,6 +158,8 @@ Create, edit, and manage playlists stored locally.
 
 **Plan doc**: [`docs/features/playlists/plan.md`](features/playlists/plan.md)
 **Design doc**: [`docs/features/playlists/design.md`](features/playlists/design.md)
+
+---
 
 ### Phase 5: Metadata Tracking ✅
 
@@ -162,6 +177,8 @@ Track listening data locally in Room.
 **Plan doc**: [`docs/features/metadata-tracking/plan.md`](features/metadata-tracking/plan.md)
 **Design doc**: [`docs/features/metadata-tracking/design.md`](features/metadata-tracking/design.md)
 
+---
+
 ### Phase 6: Sync ✅
 
 Sync metadata across devices using Firebase.
@@ -177,76 +194,87 @@ Sync metadata across devices using Firebase.
 - ✅ Settings tab added to bottom navigation (Library | Playlists | Settings)
 - ✅ Sync triggered on every app foreground (`MainActivity.onResume`)
 
-**Known gaps (Phase 7 candidates):**
-- Playlist deletion is not synced (`deletedAt` field exists but never written/acted on)
-- Sign-in errors are Logcat-only — no snackbar
-- No retry on sync failure — user must tap "Sync Now" manually
-- `ConflictResolver.mergeHistoryEvent` uses `!!` — unknown fingerprints crash; callers must pre-filter
-- Playlist sync drops songs not present on the pulling device
-
 **Plan doc**: [`docs/features/sync/plan.md`](features/sync/plan.md)
 **Design doc**: [`docs/features/sync/design.md`](features/sync/design.md)
 
-### Phase 7: Polish
+---
 
-Ordered by impact and risk. Work through sections top-to-bottom; each section unblocks the next.
+### Phase 7: Polish ✅
 
-#### 7.1 — Sync gap closure
+Four sub-goals, each shipped independently. See [`docs/features/phase7/design.md`](features/phase7/design.md) for full design notes.
 
-Phase 6 gaps that affect correctness before the sync feature is considered shippable:
+**Plan doc**: [`docs/features/phase7/plan.md`](features/phase7/plan.md)
+**Design doc**: [`docs/features/phase7/design.md`](features/phase7/design.md)
 
-- Playlist deletion sync — write `deletedAt` on delete; honour it during pull to remove locally
-- Sign-in error snackbar — add `snackbarMessage: String?` to `SettingsUiState`; `SignInError` event sets it
-- Sync retry — one-shot auto-retry in `SyncOrchestrator` on next `onResume` after `Error`, or simple exponential back-off
-- Safe history merge — replace `!!` in `ConflictResolver.mergeHistoryEvent` with null-check + `filterNotNull()`
+#### 7.1 — Sync gap closure ✅
 
-**Plan doc**: (to be created at `docs/features/sync-polish/plan.md`)
+- ✅ `ConflictResolver.mergeHistoryEvent` — replaced `map { !! }` with `mapNotNull`; unknown fingerprints silently dropped
+- ✅ Sign-in error snackbar — separate `snackbarMessage: StateFlow<String?>` on `SettingsViewModel`; `SignInError` and `ClearSnackbar` events; `SnackbarHost` in `SettingsScreenContent`
+- ✅ Sync retry button — "Retry" `TextButton` rendered in the sync-status card when `SyncStatus.Error`; fires existing `SyncNow` event
+- ✅ Playlist soft-delete sync — Room migration 5→6 adds `deletedAt INTEGER NOT NULL DEFAULT 0`; `deletePlaylist()` writes `deletedAt = now()`; orchestrator push/pull respect it; UI queries filter `WHERE deletedAt = 0`
 
-#### 7.2 — Open bug fixes
+#### 7.2 — Bug fixes ✅
 
-All bugs from `docs/features/open-bugs/plan.md`; all small and low-risk:
+- ✅ Bug 1 (songCount always 0): `getAllPlaylistsWithCount()` DAO query joins `playlist_songs` and `COUNT`s; `PlaylistRepositoryImpl` delegates to it
+- ✅ Bug 2 (raw timestamp): confirmed pre-fixed — `PlaylistListItem` already used `DateTimeFormatter`
+- ✅ Bug 3 (Loading shows error icon): replaced `Icons.Default.Error` with `CircularProgressIndicator` in `PlaylistsScreenContent`
+- ✅ Bug 4 (no trim): confirmed pre-fixed — dialogs already called `.trim()`; hardened `PlaylistViewModel` to also trim and reject blanks
+- ✅ Bug 5 (empty copy): "No playlists found" → "No playlists yet"
+- ✅ Bug 6 (rating downgrade): confirmed pre-fixed — `StarRating` already used `if (rating == star) NONE else star`
+- ✅ Bug 7 (`NowPlayingScreenTest` package): moved from `ui.library` to `ui.player`
+- ✅ Bug 8 (missing playlist event tests): 4 tests added; `FakePlaylistRepository` extended with `lastRemovedSongId`, `lastReorderedIds`, `reorderCallCount`
 
-- Playlist `songCount` always 0 — join + `GROUP BY` query in `PlaylistDao`
-- Playlist `createdAt` shows raw milliseconds — `java.time` formatting in `PlaylistsScreenContent`
-- Playlist loading state shows Error icon — replace with `CircularProgressIndicator`
-- Playlist names not trimmed — `.trim()` before blank-name guard in `PlaylistViewModel`
-- Empty state copy: "No playlists found" → "No playlists yet"
-- Rating downgrade requires two taps — fix tap logic in `StarRating` composable
-- `NowPlayingScreenTest.kt` in wrong package (`ui.library` → `ui.player`)
-- Missing tests for playlist add/remove/reorder events (4 tests in `PlaylistViewModelTest`)
+#### 7.3 — Library UX ✅
 
-**Plan doc**: `docs/features/open-bugs/plan.md`
+- ✅ Full-text search — `searchSongs` / `searchAlbums` / `searchArtists` DAO queries with `LIKE` predicates; `LibraryViewModel` switches via `flatMapLatest` on `_searchQuery`; `DockedSearchBar` in `LibraryScreen`
+- ✅ Sort — `SortOrder` enum (`BY_TITLE`, `BY_ARTIST`, `BY_ALBUM`, `BY_DURATION`, `BY_DATE_ADDED`, `BY_PLAY_COUNT`); combined `flatMapLatest` on `_searchQuery + _sortOrder`; in-memory sort applied in `map`; `FilterChip` + `DropdownMenu` in Songs and Albums tabs
+- ✅ Play count badge — `SongListItem` shows `"${playCount}×"` in muted color when `playCount > 0`
 
-#### 7.3 — Library UX
+#### 7.4 — Architecture refactor ✅
 
-Most visible user-facing additions after bugs are cleared:
+- ✅ `clearQueue()` — exposed on `PlayerRepository` interface; `PlayerEvent.ClearQueue` added; "Clear" button in `QueueSheet`
+- ✅ `LibraryViewModel` split — `MetadataViewModel` owns favorites/mostPlayed/recentlyPlayed and `MetadataUiState`; `LibraryUiState.Loaded` now carries only `songs`, `albums`, `artists`; `LibraryScreen` collects both ViewModels
 
-- Search across songs, albums, artists — `LIKE` query in Room + `searchQuery` state in `LibraryViewModel`
-- Sorting and filtering — by name, date added, play count; dropdown or chips in `LibraryScreen`
-- Play count display on `SongListItem` — show when > 0, or only in Top Plays tab (decide at plan time)
+#### 7.5 — Playback polish (deferred) ⏭️
 
-**Plan doc**: (to be created at `docs/features/library-ux/plan.md`)
-
-#### 7.4 — Architecture refactor
-
-Do this before adding more flows to `LibraryViewModel`:
-
-- `LibraryViewModel` 7-flow refactor — split into `LibraryViewModel` (songs/albums/artists + permission) and `MetadataViewModel` (favorites/top plays/recently played), both activity-scoped
-- Expose `clearQueue()` on `PlayerRepository` interface + `ClearQueue` event + button in `QueueSheet`
-
-**Plan doc**: (to be created at `docs/features/library-refactor/plan.md`)
-
-#### 7.5 — Playback polish (low priority, anytime)
-
-- Custom notification layout — implement `PlaybackNotificationManager` with album art and themed background
+Explicitly out of scope for Phase 7. Carries to Phase 8 backlog:
+- Custom notification layout (`PlaybackNotificationManager` is still a stub)
 - Slide/drag gesture for star rating
-- History detail screen — full chronological log with relative timestamps
+- Listening history detail screen
 
-### Phase 8: External Integrations
+#### Known gaps from Phase 7
 
-SyncPlayer doesn't exist in isolation — it syncs metadata with other music players the user already uses. The integration layer is designed to be pluggable so new players can be added over time.
+- **Dead code**: `songsFlowOld` and `albumsFlowOld` in `LibraryViewModel` — unused private flows left from an intermediate refactor; no behavioral impact, cleanup deferred
+- **Sort for Artists tab**: not implemented — sort dropdown shown only on Songs and Albums tabs
+- **Search test fidelity**: `FakeSongRepository.searchSongs` returns `songsFlow` unfiltered; search filtering is a DAO concern and requires an in-memory Room database to test at that level
 
-**Prerequisite:** Phase 7 complete and stable. Requires designing a `SyncProvider` plugin interface before any implementation starts.
+---
+
+### Phase 8: External Integrations (Planned)
+
+**Prerequisite:** Phase 7 complete and stable. ✅ Requires designing a `SyncProvider` plugin interface before any implementation starts.
+
+Before implementing integrations, the following Phase 7 deferred items and backlog should be reviewed:
+
+**Backlog (prioritized for pre-Phase 8 cleanup):**
+
+| Item | Priority | Effort | Source |
+|------|----------|--------|--------|
+| Listening history detail screen | Low | Medium | `improvements/plan.md` #2 |
+| Slide/drag gesture for star rating | Low | Medium | `improvements/plan.md` #3 |
+| Consolidate favorite/star rating | Low | Small | `improvements/plan.md` #4 — defer to dogfooding |
+| Audio focus edge case testing (manual) | Medium | Medium | `improvements/plan.md` #7 |
+| Custom notification layout | Low | Medium | `improvements/plan.md` #9 |
+| Dead code cleanup in `LibraryViewModel` | Low | Trivial | Phase 7 design doc |
+| Sort for Artists tab | Low | Small | Phase 7 design doc |
+| Seek bar and star rating Compose UI tests | Low | Small | Testing design doc — deferred pending `semantics` tags |
+| `LibraryScreenContent` search/sort UI tests | Low | Small | Testing design doc — deferred pending Material 3 API stability |
+
+**Recommended order before starting integrations:**
+1. Audio focus manual verification (#7) — find real bugs before complexity grows
+2. Listening history screen (#2) — visible gap users will notice
+3. Notification layout (#9) — polish users see every session
+4. Rating gesture (#3) — quality-of-life, after dogfooding decides #4
 
 #### MusicBee (Desktop)
 
@@ -254,7 +282,7 @@ Sync metadata with [MusicBee](https://getmusicbee.com/), a popular desktop music
 
 - Import/export play counts, ratings, playlists, and favorites
 - MusicBee stores its library in an XML database — read and write to this format
-- Sync via a shared backend (Firestore) or direct file-based sync (e.g., local network, shared cloud folder)
+- Sync via shared Firestore backend or direct file-based sync (local network, shared cloud folder)
 - Match songs between SyncPlayer and MusicBee by fingerprint or metadata (title + artist + album + duration)
 - Handle mismatches gracefully (songs on one device but not the other)
 
@@ -264,18 +292,20 @@ Sync metadata with YouTube Music so listening activity stays consistent across p
 
 - Pull liked songs, playlists, and play history from YouTube Music
 - Push SyncPlayer favorites and playlists to YouTube Music
-- Use YouTube Music's available APIs or unofficial libraries for data access
+- Use YouTube Music APIs or unofficial libraries for data access
 - Match songs between local library and YouTube Music catalog
 - Periodic or on-demand sync with conflict resolution
 
-#### Plugin Architecture (Future)
+#### Plugin Architecture
 
 The integration layer should follow a provider pattern so additional players can be added without modifying core sync logic.
 
 - Define a common `SyncProvider` interface (connect, pull metadata, push metadata, match songs)
 - Each integration (MusicBee, YouTube Music, future players) implements this interface
 - Users enable/disable providers in Settings
-- Potential future providers: Spotify, Last.fm, Jellyfin, Navidrome, Plex, local desktop players (foobar2000, Winamp, etc.)
+- Potential future providers: Spotify, Last.fm, Jellyfin, Navidrome, Plex, foobar2000, Winamp
+
+---
 
 ## Testing Strategy
 
@@ -333,7 +363,7 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 
 **Phase 5: Metadata Tracking** ✅
 - Unit: `PlayerViewModel` SetRating event — routes to `SongRepository.setRating` with correct song ID and rating; no-ops when no song is playing
-- Unit: `LibraryViewModel` — favorites, mostPlayed, recentlyPlayed flow through to `LibraryUiState.Loaded`
+- Unit: `LibraryViewModel` — favorites, mostPlayed, recentlyPlayed flow through to `LibraryUiState.Loaded` (now covered by `MetadataViewModelTest` after Phase 7 split)
 - UI: `NowPlayingScreenContent` favorite button — emits `SetRating(FAVORITE)` when unrated; emits `SetRating(NONE)` when already favorited
 - Fake: `FakeSongRepository` updated with stubs for all metadata methods
 
@@ -343,24 +373,43 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 - Unit: `SettingsViewModelTest` — 10 tests (all `SettingsEvent` types, all `SyncStatus` transitions, `lastSyncTime` derivation)
 - Fake: `FakeAuthRepository` implements `AuthRepository` interface with observable call counts
 
-**Phase 7: Polish**
-- UI: Search returns correct results, sorting changes list order
+**Phase 7: Polish** ✅
+- Unit: `ConflictResolverTest` — 1 new test: `unknown fingerprint in remote is silently dropped`
+- Unit: `SettingsViewModelTest` — 2 new tests: `SignInError event sets snackbarMessage`, `ClearSnackbar clears snackbarMessage`
+- Unit: `PlaylistViewModelTest` — 4 new tests: `AddSongsToPlaylist`, `RemoveSongFromPlaylist`, `RemoveSongsFromPlaylist`, `ReorderSongs`; `FakePlaylistRepository` extended with `lastRemovedSongId`, `lastReorderedIds`, `reorderCallCount`
+- Unit: `PlayerViewModelTest` — 1 new test: `ClearQueue event calls playerRepository.clearQueue`; `FakePlayerRepository` extended with `clearQueueCallCount`
+- Unit: `LibraryViewModelTest` — 4 new tests: search-active state, search-cleared state, sort by play count descending, sort by date added descending
+- Unit: `MetadataViewModelTest` (new, replaces `LibraryViewModelMetadataTest`) — 3 tests covering favorites, mostPlayed, recentlyPlayed flows in `MetadataViewModel`
+
+**Testing pass — Post-Phase 7** ✅ (see [`docs/features/testing/design.md`](features/testing/design.md))
+
+A dedicated audit and implementation pass closed all coverage gaps identified after Phase 7. Work was delivered in five tiers:
+
+- **Tier 1 (infrastructure)**: Deleted empty `PlayerRepositoryTest.kt`; relocated `PlayerViewModelTest.kt` to correct `ui.player` package; sharpened blank-name test; restored commented-out error assertion via Turbine.
+- **Tier 2 (unit test gaps)**: Added `getAllSongsCallCount`/`searchSongsCallCount` to `FakeSongRepository`; 4 new `PlayerViewModel` event tests (`AddToQueue`, `PlayNext`, `RemoveFromQueue`, `ReorderQueue`) + 3 `currentSongRating` tests; 3 search-routing tests and 6 sort-order tests in `LibraryViewModelTest`; 2 `onAppResumed` tests.
+- **Tier 3 (Room DAO)**: `SongDaoTest` — 27 tests (all queries, search `LIKE` predicates, `upsertSongs` conflict behaviour, `getFavoriteSongs`, `getMostPlayedSongs`, `applySyncDelta`). `PlaylistDaoTest` — 19 tests (soft-delete filter, `getAllPlaylistsWithCount` JOIN, position ordering, clear/replace). Fixed `LibraryScreenTest` broken by Phase 7 signature changes.
+- **Tier 4 (Compose UI)**: `NowPlayingScreenContentTest` expanded to 7 tests (play/pause, skip, back navigation, rating display); new `PlaylistsScreenContentTest` (4), `SettingsScreenContentTest` (8), `AlbumDetailScreenContentTest` (4), `ArtistDetailScreenContentTest` (4).
+- **Tier 5 (integration)**: `FakeSyncRepository` created; `SyncOrchestratorTest` — 14 tests covering the signed-out guard, push delta detection, pull conflict application, remote playlist creation/skip-if-deleted, history merge, error status, and status transitions.
+
+**Final test counts**: 110 JVM unit tests (`./gradlew test`); 78 instrumented tests (`./gradlew connectedAndroidTest`); 188 total. Instrumented tests compile cleanly and assertions have been audited against production source; execution requires a connected device or emulator.
 
 ### Test libraries
 
-| Library | Purpose |
-|---------|---------|
-| JUnit 5 | Test runner and assertions |
-| Turbine | Testing Kotlin Flows (`StateFlow` assertions) |
-| kotlinx-coroutines-test | Deterministic coroutine execution in tests |
-| MockK 1.14.9 | Mocking concrete classes (e.g. `SyncOrchestrator`) when fakes aren't feasible |
-| Compose UI Test | `composeTestRule` for UI assertions |
-| Hilt Testing | `@HiltAndroidTest`, test modules for DI |
-| Room Testing | In-memory database for DAO tests |
+| Library | Purpose | Scope |
+|---------|---------|-------|
+| JUnit 5 | Test runner and assertions | `testImplementation` |
+| Turbine | Testing Kotlin Flows (`StateFlow` assertions) | `testImplementation` |
+| kotlinx-coroutines-test | Deterministic coroutine execution | `testImplementation` + `androidTestImplementation` |
+| MockK 1.14.9 | Mocking concrete classes with Android dependencies (e.g. `SyncOrchestrator` + `Context`) | `testImplementation` |
+| Compose UI Test (junit4) | `createAndroidComposeRule` for screen-level UI assertions | `androidTestImplementation` |
+| Room Testing | `Room.inMemoryDatabaseBuilder` for DAO tests | `androidTestImplementation` |
+| AndroidX Test (JUnit4 runner) | `@RunWith(AndroidJUnit4::class)` for instrumented tests | `androidTestImplementation` |
+
+---
 
 ## CI/CD
 
-GitHub Actions pipeline for automated builds, tests, and releases.
+GitHub Actions pipeline for automated builds, tests, and releases. **Not yet implemented** — all verification is manual with local Gradle commands.
 
 ### On every push / PR
 
@@ -388,6 +437,8 @@ GitHub Actions pipeline for automated builds, tests, and releases.
 - Firebase config (`google-services.json`) stored as a secret, written at build time
 - Never commit signing keys or service account credentials to the repo
 
+---
+
 ## Key Libraries by Phase
 
 | Phase | Libraries |
@@ -398,10 +449,11 @@ GitHub Actions pipeline for automated builds, tests, and releases.
 | 4 — Playlists | (Room — already added) |
 | 5 — Metadata | (Room — already added) |
 | 6 — Sync | Firebase Auth, Cloud Firestore, Google Play Services Auth, MockK (tests) |
-| 7 — Polish | (no new major libraries expected) |
-| External — MusicBee | XML parsing (kotlinx.serialization or built-in), file I/O |
-| External — YouTube Music | YouTube Music API / unofficial client libraries, Retrofit |
+| 7 — Polish | (no new libraries) |
+| 8 — External Integrations | XML parsing (kotlinx.serialization or built-in), Retrofit (YouTube Music API) |
 | Testing (all phases) | JUnit 5, Turbine, kotlinx-coroutines-test, Compose UI Test, Hilt Testing |
+
+---
 
 ## Future Improvements
 
