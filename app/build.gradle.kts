@@ -102,6 +102,9 @@ dependencies {
     // Firebase Task → coroutine bridge
     implementation(libs.kotlinx.coroutines.play)
 
+    // Palette
+    implementation(libs.palette)
+
     // Unit tests
     testImplementation(libs.junit)
     testImplementation(libs.junit5.api)

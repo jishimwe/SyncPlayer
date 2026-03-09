@@ -1,63 +1,88 @@
 package com.jpishimwe.syncplayer.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import com.jpishimwe.syncplayer.R
 
 val provider: GoogleFont.Provider =
     GoogleFont.Provider(
-        providerAuthority = "com.google.android.gms.fonts",
+        providerAuthority = "com.google.android.gms.font",
         providerPackage = "com.google.android.gms",
         certificates = R.array.com_google_android_gms_fonts_certs,
     )
 
-val bodyFontFamily: FontFamily =
-    FontFamily(
-        Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
-        ),
-    )
-
-val displayFontFamily: FontFamily =
-    FontFamily(
-        Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
-        ),
-    )
-
+@OptIn(ExperimentalTextApi::class)
 val fontFamily: FontFamily =
     FontFamily(
         Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
+            R.font.nunito_sans,
+            weight = FontWeight.Thin,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(100),
+                ),
+        ),
+        Font(
+            R.font.nunito_sans,
+            weight = FontWeight.ExtraLight,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(200),
+                ),
+        ),
+        Font(
+            R.font.nunito_sans,
+            weight = FontWeight.Light,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(300),
+                ),
+        ),
+        Font(
+            R.font.nunito_sans,
             weight = FontWeight.Normal,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(400),
+                ),
         ),
         Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
+            R.font.nunito_sans,
             weight = FontWeight.Medium,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(500),
+                ),
         ),
         Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
+            R.font.nunito_sans,
             weight = FontWeight.SemiBold,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(600),
+                ),
         ),
         Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
+            R.font.nunito_sans,
             weight = FontWeight.Bold,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(700),
+                ),
         ),
         Font(
-            googleFont = GoogleFont("Nunito Sans"),
-            fontProvider = provider,
+            R.font.nunito_sans,
             weight = FontWeight.ExtraBold,
+            variationSettings =
+                FontVariation.Settings(
+                    FontVariation.weight(800),
+                ),
         ),
     )
 
@@ -93,7 +118,7 @@ val AppTypography =
         titleMedium =
             baseline.titleMedium.copy(
                 fontFamily = fontFamily,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Thin,
             ),
         titleSmall = baseline.titleSmall.copy(fontFamily = fontFamily),
         bodyLarge = baseline.bodyLarge.copy(fontFamily = fontFamily),

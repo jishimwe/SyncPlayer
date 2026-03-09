@@ -293,3 +293,7 @@ Before considering a feature complete, verify:
 - ❌ Committing code that doesn't compile
 - ❌ Using `fallbackToDestructiveMigration` — write explicit `Migration` objects (Phase 6+)
 - ❌ Putting Context-dependent code (CredentialManager, ActivityResultLauncher) in ViewModels — keep in composables, pass results via events
+- ❌ Removing debug logs (`Log.e`, `Log.d`, etc.) — they are runtime evidence, not noise; never remove them without asking
+- ❌ Removing commented-out code — it was left intentionally; ask what it means before touching it
+- ❌ Cleaning code that isn't working yet — clean only after it builds, passes tests, and is confirmed correct; don't tidy the crime scene mid-investigation
+- ❌ Rewriting a file without stating line by line what changed and why — always declare changes explicitly before writing so the user can catch overcleaning before it happens

@@ -40,7 +40,7 @@ fun MiniPlayer(
         tonalElevation = 4.dp,
     ) {
         Row(
-            modifier = Modifier.padding(8.dp).height(64.dp),
+            modifier = Modifier.padding(8.dp).height(72.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AsyncImage(

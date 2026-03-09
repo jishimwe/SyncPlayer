@@ -219,12 +219,28 @@ fun LibraryScreenContent(
 
                 uiState is LibraryUiState.Loaded && metadataState is MetadataUiState.Loaded -> {
                     when (selectedTab) {
-                        LibraryTab.SONGS -> SongsTab(uiState, onSongClick, onSortOrderChanged)
-                        LibraryTab.ALBUMS -> AlbumsTab(uiState, onAlbumClick, onSortOrderChanged)
-                        LibraryTab.ARTISTS -> ArtistsTab(uiState, onArtistClick)
-                        LibraryTab.FAVORITES -> FavoriteTab(metadataState, onSongClick)
-                        LibraryTab.MOST_PLAYED -> MostPlayedTab(metadataState, onSongClick)
-                        LibraryTab.RECENTLY_PLAYED -> RecentlyPlayedTab(metadataState, onSongClick)
+                        LibraryTab.SONGS -> {
+                            SongsTab(uiState, onSongClick, onSortOrderChanged)
+                        }
+
+                        LibraryTab.ALBUMS -> {
+                            AlbumsTab(uiState, onAlbumClick, onSortOrderChanged)
+                        }
+
+                        LibraryTab.ARTISTS -> {
+                            ArtistsTab(uiState, onArtistClick)
+                        }
+
+                        LibraryTab.FAVORITES -> {
+                            FavoriteTab(metadataState, onSongClick)
+                        }
+
+                        //                        LibraryTab.MOST_PLAYED -> MostPlayedTab(metadataState, onSongClick)
+//                        LibraryTab.RECENTLY_PLAYED -> {
+//                            RecentlyPlayedTab(metadataState, onSongClick)
+//                        }
+
+                        else -> {}
                     }
                 }
             }

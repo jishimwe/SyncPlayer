@@ -28,8 +28,8 @@ enum class LibraryTab(
     ALBUMS("Albums"),
     ARTISTS("Artists"),
     FAVORITES("Faves"),
-    MOST_PLAYED("Top Plays"),
-    RECENTLY_PLAYED("Recent"),
+    PLAYLISTS("Playlists"),
+    HISTORY("History"),
 }
 
 enum class SortOrder(

@@ -25,12 +25,13 @@ reorderable = "3.0.0"
 uiTestJunit4 = "1.10.2"
 roomExternalAntlr = "2.8.4"
 lifecycleRuntimeCompose = "2.10.0"
-uiTextGoogleFonts = "1.10.3"
+uiTextGoogleFonts   = "1.10.3"
 firebase-bom        = "34.10.0"
 credentials         = "1.5.0"
 googleid            = "1.1.1"
 google-services     = "4.4.3"
 mockk               = "1.14.9"
+palette             = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -88,6 +89,8 @@ credentials-play-services     = { group = "androidx.credentials", name = "creden
 googleid                      = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 kotlinx-coroutines-play       = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
+# Palette
+palette                       = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette"}
 
 # Testing
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
