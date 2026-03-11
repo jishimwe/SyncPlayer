@@ -41,12 +41,12 @@ import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 fun FrostedGlassPill(
     modifier: Modifier = Modifier,
     active: Boolean = false,
+    shape: RoundedCornerShape = RoundedCornerShape(percent = 50),
     content: @Composable RowScope.() -> Unit,
 ) {
-    val pillShape = RoundedCornerShape(percent = 50)
 
     Box(
-        modifier = modifier.clip(pillShape),
+        modifier = modifier.clip(shape),
     ) {
         // Blurred background layer — frostedGlass only affects this Box, not the content
         Box(
