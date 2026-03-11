@@ -19,7 +19,7 @@ fun Modifier.frostedGlass(
 
 fun Modifier.frostedGlassRendered(
     color: Color = myFrostedGlassSurface,
-    alpha: Float = 0.55f,
+    alpha: Float = 0.75f,
     blurRadius: Dp = 20.dp,
 ): Modifier =
     this

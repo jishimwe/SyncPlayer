@@ -36,7 +36,8 @@ interface SongDao {
 
     @Query(
         """
-        SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount
+        SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
+               (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
         FROM songs
         GROUP BY artist
         ORDER BY artist ASC
@@ -191,7 +192,8 @@ interface SongDao {
 
     @Query(
         """
-            SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount
+            SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
+                   (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
             FROM songs
             WHERE artist LIKE '%' || :query || '%'
             GROUP BY artist

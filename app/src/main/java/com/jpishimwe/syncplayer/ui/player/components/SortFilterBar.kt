@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.ui.player.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,12 +31,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
+import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 
 /**
@@ -51,89 +54,104 @@ fun SortFilterBar(
     onShuffle: () -> Unit,
     onPlayAll: () -> Unit,
     modifier: Modifier = Modifier,
+    sortOptions: List<String> = emptyList(),
 ) {
     val borderBrush =
         Brush.linearGradient(
             colors = listOf(myAccentColor.copy(alpha = 0.24f), myAccentColor.copy(alpha = 0.75f), myAccentColor.copy(alpha = 0.24f)),
         )
     val barShape = RoundedCornerShape(8.dp)
-    Row(
+
+    Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .wrapContentWidth()
                 .padding(horizontal = 12.dp, vertical = 4.dp)
                 .border(BorderStroke(1.dp, borderBrush), barShape)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
+                .clip(barShape),
     ) {
-        var expanded by remember { mutableStateOf(false) }
-        var selectedSortOrder by remember { mutableStateOf(SortOrder.BY_TITLE) }
-        // Sort label — TextButton keeps touch target large, no ripple bleed
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-        ) {
-            FilterChip(
-                selected = true,
-                onClick = { expanded = !expanded },
-                label = { Text(selectedSortOrder.label) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Sort,
-                        contentDescription = "Sort",
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-                colors =
-                    FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.Transparent,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                border = null,
-                modifier =
-                    Modifier
-                        .widthIn(min = 24.dp)
-                        .menuAnchor(),
-            )
+        Box(
+            modifier = Modifier.matchParentSize().frostedGlassRendered(),
+        )
 
-            ExposedDropdownMenu(
+        Row(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth()
+                    .padding(horizontal = 0.dp, vertical = 0.dp)
+                    .border(BorderStroke(1.dp, borderBrush), barShape)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            var expanded by remember { mutableStateOf(false) }
+            var selectedSortOrder by remember { mutableStateOf(SortOrder.BY_TITLE) }
+            // Sort label — TextButton keeps touch target large, no ripple bleed
+            ExposedDropdownMenuBox(
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
+                onExpandedChange = { expanded = it },
             ) {
-                SortOrder.entries.forEach { order ->
-                    DropdownMenuItem(
-                        text = { Text(order.label) },
-                        onClick = {
-                            onSortClick(order)
-                            expanded = false
-                        },
-                    )
+                FilterChip(
+                    selected = true,
+                    onClick = { expanded = !expanded },
+                    label = { Text(selectedSortOrder.label) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Sort,
+                            contentDescription = "Sort",
+                            modifier = Modifier.size(16.dp),
+                        )
+                    },
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.Transparent,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    border = null,
+                    modifier =
+                        Modifier
+                            .widthIn(min = 24.dp)
+                            .menuAnchor(),
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    SortOrder.entries.forEach { order ->
+                        DropdownMenuItem(
+                            text = { Text(order.label) },
+                            onClick = {
+                                onSortClick(order)
+                                expanded = false
+                            },
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
 
-        // Shuffle button
-        IconButton(onClick = onShuffle) {
-            Icon(
-                imageVector = Icons.Default.Shuffle,
-                contentDescription = "Shuffle",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+            // Shuffle button
+            IconButton(onClick = onShuffle) {
+                Icon(
+                    imageVector = Icons.Default.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
 
-        // Play all button
-        IconButton(onClick = onPlayAll) {
-            Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = "Play all",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(24.dp),
-            )
+            // Play all button
+            IconButton(onClick = onPlayAll) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play all",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
     }
 }

@@ -23,6 +23,7 @@ fun AlbumGridItem(
     album: Album,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
+    isPlaying: Boolean = false,
 ) {
     Card(
         modifier = modifier,

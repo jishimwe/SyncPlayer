@@ -172,14 +172,49 @@ fun HomeScreenContent(
             }
 
             libraryUiState is LibraryUiState.Loaded && metadataUiState is MetadataUiState.Loaded -> {
+                val currentSongId = playerUiState.currentSong?.id
+                val currentAlbumId = playerUiState.currentSong?.albumId
+                val currentArtistName = playerUiState.currentSong?.artist
+
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                     when (tab[page]) {
-                        LibraryTab.SONGS -> SongsTabScreen(libraryUiState, metadataUiState)
-                        LibraryTab.ALBUMS -> AlbumsTabScreen(libraryUiState, metadataUiState)
-                        LibraryTab.ARTISTS -> ArtistsTabScreen(libraryUiState, metadataUiState)
-                        LibraryTab.FAVORITES -> FavoriteTabScreen(metadataUiState)
-                        LibraryTab.PLAYLISTS -> PlaylistsTabScreen(metadataUiState)
-                        LibraryTab.HISTORY -> HistoryTabScreen(metadataUiState)
+                        LibraryTab.SONGS -> {
+                            SongsTabScreen(
+                                libraryUiState = libraryUiState,
+                                currentSongId = currentSongId,
+                                onSongClick = onSongClick,
+                                onNavigateToArtist = onArtistClick,
+                                onNavigateToAlbum = onAlbumClick,
+                            )
+                        }
+
+                        LibraryTab.ALBUMS -> {
+                            AlbumsTabScreen(
+                                libraryUiState = libraryUiState,
+                                currentAlbumId = currentAlbumId,
+                                onAlbumClick = onAlbumClick,
+                            )
+                        }
+
+                        LibraryTab.ARTISTS -> {
+                            ArtistsTabScreen(
+                                libraryUiState = libraryUiState,
+                                currentArtistName = currentArtistName,
+                                onArtistClick = onArtistClick,
+                            )
+                        }
+
+                        LibraryTab.FAVORITES -> {
+                            FavoriteTabScreen(metadataUiState)
+                        }
+
+                        LibraryTab.PLAYLISTS -> {
+                            PlaylistsTabScreen(metadataUiState)
+                        }
+
+                        LibraryTab.HISTORY -> {
+                            HistoryTabScreen(metadataUiState)
+                        }
                     }
                 }
             }
