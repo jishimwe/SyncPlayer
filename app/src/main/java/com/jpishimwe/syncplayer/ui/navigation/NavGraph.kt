@@ -392,7 +392,7 @@ fun CustomTabRow(
         LibraryTab.entries.forEach { tab ->
             val fontSize by animateFloatAsState(
                 targetValue = if (selectedTab == tab) activeFontSize.value else inactiveFontSize.value,
-                animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
                 label = "tabFontSize",
             )
             Text(

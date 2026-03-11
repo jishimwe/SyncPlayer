@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.androidx.room.external.antlr)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.compose.ui.text.google.fonts)
+    implementation(libs.androidx.ui.graphics)
     ksp(libs.androidx.room.compiler)
 
     // Hilt

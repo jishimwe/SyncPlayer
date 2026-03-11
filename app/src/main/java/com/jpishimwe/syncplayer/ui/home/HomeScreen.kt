@@ -129,7 +129,7 @@ fun HomeScreenContent(
     // currentPage fires → selectedTab overwritten to ARTISTS.
     // settledPage only fires once the pager has fully come to rest.
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }.collect { page ->
+        snapshotFlow { pagerState.targetPage }.collect { page ->
             onSelectedTabChanged(tab[page])
         }
     }
