@@ -101,14 +101,14 @@ fun Modifier.frostedGlass(alpha: Float = 0.65f, blurRadius: Dp = 10.dp): Modifie
 - Used for album art color extraction on Now Playing screen
 
 ### Files
-| File | Action |
-|------|--------|
-| `ui/theme/Color.kt` | Add AccentColor (#FF1D58), BackgroundDark (#111113), FrostedGlassSurface |
-| `ui/theme/Theme.kt` | Add LocalAccentColor CompositionLocal, override background, disable dynamic color |
-| `ui/theme/Type.kt` | Add weight variants (ExtraBold, Bold, SemiBold) per spec |
-| `ui/theme/GlassEffect.kt` | Create — frosted glass modifier |
-| `gradle/libs.versions.toml` | Add palette-ktx |
-| `app/build.gradle.kts` | Add palette-ktx dependency |
+| File                        | Action                                                                            |
+|-----------------------------|-----------------------------------------------------------------------------------|
+| `ui/theme/Color.kt`         | Add AccentColor (#FF1D58), BackgroundDark (#111113), FrostedGlassSurface          |
+| `ui/theme/Theme.kt`         | Add LocalAccentColor CompositionLocal, override background, disable dynamic color |
+| `ui/theme/Type.kt`          | Add weight variants (ExtraBold, Bold, SemiBold) per spec                          |
+| `ui/theme/GlassEffect.kt`   | Create — frosted glass modifier                                                   |
+| `gradle/libs.versions.toml` | Add palette-ktx                                                                   |
+| `app/build.gradle.kts`      | Add palette-ktx dependency                                                        |
 
 ### Verify
 - `assembleDebug` passes
@@ -172,10 +172,10 @@ Scaffold(
 - Add `Screen.Home` for the tab host
 
 ### Files
-| File | Action |
-|------|--------|
-| `ui/navigation/NavGraph.kt` | Major rewrite |
-| `ui/library/LibraryScreen.kt` | Decompose tabs out |
+| File                             | Action                       |
+|----------------------------------|------------------------------|
+| `ui/navigation/NavGraph.kt`      | Major rewrite                |
+| `ui/library/LibraryScreen.kt`    | Decompose tabs out           |
 | `ui/library/LibraryViewModel.kt` | Update enum, remove old tabs |
 
 ### Implementation Notes
@@ -199,7 +199,7 @@ Scaffold(
 
 ---
 
-## Phase 2: New Reusable Components
+## Phase 2: New Reusable Components ✅
 
 **Goal**: Build shared UI components used across multiple screens.
 
@@ -254,25 +254,32 @@ Scaffold(
 - Used on: Artist grid item name pill, MiniPlayer, Now Playing controls
 
 ### Files
-| File | Action |
-|------|--------|
-| `ui/components/SortFilterBar.kt` | Create |
+| File                                        | Action |
+|---------------------------------------------|--------|
+| `ui/components/SortFilterBar.kt`            | Create |
 | `ui/components/AlphabeticalIndexSidebar.kt` | Create |
-| `ui/components/CollapsibleSection.kt` | Create |
-| `ui/components/SongItem.kt` | Create |
-| `ui/components/SongOverflowMenu.kt` | Create |
-| `ui/components/CircularArtistImage.kt` | Create |
-| `ui/components/FrostedGlassPill.kt` | Create |
+| `ui/components/CollapsibleSection.kt`       | Create |
+| `ui/components/SongItem.kt`                 | Create |
+| `ui/components/SongOverflowMenu.kt`         | Create |
+| `ui/components/CircularArtistImage.kt`      | Create |
+| `ui/components/FrostedGlassPill.kt`         | Create |
 
-### Verify
+### Verify ✅
 - `assembleDebug` passes
 - SongItem renders at 72dp with 56x56 album art
 - Playing state shows accent color correctly
 - Frosted glass pill renders with blur effect
 
+### Implementation Notes (deviations from plan)
+- `ArtistItem.kt` built in `ui/components/` — supersedes the planned `ArtistGridItem.kt` in `ui/library/`. Do NOT create `ArtistGridItem.kt`.
+- `FrostedGlassPill` uses a two-layer `Box` (clip → `matchParentSize` blur layer + unblurred content `Row` on top). `BlurEffect` blurs the layer output, not just the background — single-layer approach blurs content too.
+- `SortFilterBar` made fully generic: accepts `sortLabel: String` + `sortOptions: List<String>` instead of a `SortOrder` enum, so it has no dependency on `ui.library`. Callers own the enum/state.
+- `CollapsibleSectionHeader` is header-only (no content slot) to avoid nested lazy layout issues. Callers gate item visibility as siblings in the parent lazy layout using `if (isExpanded) { items(...) }`.
+- `frostedGlassRendered` modifier does not render in Android Studio preview — requires device/emulator.
+
 ---
 
-## Phase 3: Tab Screens — Songs, Albums, Artists
+## Phase 3: Tab Screens — Songs, Albums, Artists ✅
 
 **Goal**: Rebuild the three core library tabs to match Figma + spec.
 
@@ -326,24 +333,31 @@ SELECT artist AS name, COUNT(*) AS songCount,
 FROM songs GROUP BY artist ORDER BY artist ASC
 ```
 
-### Files
-| File | Action |
-|------|--------|
-| `ui/library/SongsTabContent.kt` | Create |
-| `ui/library/AlbumsTabContent.kt` | Create |
-| `ui/library/ArtistsTabContent.kt` | Create |
-| `ui/library/ArtistGridItem.kt` | Create |
-| `ui/library/AlbumGridItem.kt` | Update (corner radius, playing border, play overlay) |
-| `model/Artist.kt` | Add `artUri` field |
-| `data/local/SongDao.kt` | Update `getAllArtists()` query |
-| `ui/library/LibraryScreen.kt` | Update to use new tab content composables |
+### Files ✅
+| File                                | Action                                                                  |
+|-------------------------------------|-------------------------------------------------------------------------|
+| `ui/home/tabs/SongsTabScreen.kt`    | Created (was `ui/library/SongsTabContent.kt`)                           |
+| `ui/home/tabs/AlbumsTabScreen.kt`   | Created (was `ui/library/AlbumsTabContent.kt`)                          |
+| `ui/home/tabs/ArtistsTabScreen.kt`  | Created (was `ui/library/ArtistsTabContent.kt`)                         |
+| `ui/library/ArtistGridItem.kt`      | NOT created — `ArtistItem.kt` in `ui/components/` used directly         |
+| `ui/player/components/AlbumItem.kt` | Created (replaces `ui/library/AlbumGridItem.kt`)                        |
+| `model/Artist.kt`                   | Updated — `artUri: String? = null` added                                |
+| `data/local/SongDao.kt`             | Updated — `getAllArtists()` + `searchArtists()` include artUri subquery |
+| `ui/home/HomeScreen.kt`             | Updated — wires `playerUiState` to tab screens                          |
 
-### Verify
+### Verify ✅
 - `assembleDebug` passes
-- Songs tab: sort bar + song list (72dp items with 56x56 art) + alpha sidebar
-- Albums tab: 2-col grid with 4dp rounded art + alpha sidebar
+- Songs tab: sort bar + song list + alpha sidebar
+- Albums tab: 2-col grid with playing state + alpha sidebar
 - Artists tab: circular images with frosted glass name pills + alpha sidebar
-- Currently playing song highlighted with accent color
+- Currently playing song/album/artist highlighted with accent color
+
+### Implementation Notes (deviations from plan)
+- Tab screen files live in `ui/home/tabs/` not `ui/library/` — they are wired through `HomeScreen` via `HorizontalPager`, not `LibraryScreen`.
+- `ArtistGridItem.kt` was never created. `ArtistItem.kt` (Phase 2, `ui/components/`) handles both grid display and playback state and is used directly in `ArtistsTabScreen`.
+- `AlbumGridItem.kt` replaced by `AlbumItem.kt` in `ui/player/components/`. Uses a plain clipped `Box` instead of `Card` — `Card` was fighting with the custom border overlay. `AlbumPlaybackState` (Default/Playing/Paused) replaces the `isPlaying: Boolean` flag. Active border is rendered as the last child with `matchParentSize()` so it draws on top of content. `onPlayClick` and `onMenuClick` added as separate params — play icon bottom-left, menu icon top-right, both in semi-transparent dark circles.
+- `SortFilterBar` in grid tabs (`AlbumsTabScreen`, `ArtistsTabScreen`) cannot use `stickyHeader` — `LazyVerticalGrid` doesn't support it. Instead the bar is overlaid on top of the full-height grid: `onSizeChanged` measures the bar's pixel height, converts to dp, and passes it as `contentPadding(top = barHeightDp + 8.dp)` so items start visible but scroll behind the frosted bar.
+- `SongDao` artUri subquery improved beyond the plan: `AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1` — skips null-art rows entirely and picks the most recently added album art. Artist image priority chain: portrait URI (Phase 7 fetch) → most recent non-null album art (DAO) → Person icon placeholder (Coil error slot).
 
 ---
 
@@ -419,18 +433,18 @@ WHERE p.deletedAt = 0 GROUP BY p.id ORDER BY p.name ASC
 - Falls back to music note icon if fewer than 4
 
 ### Files
-| File | Action |
-|------|--------|
-| `ui/library/HistoryTabContent.kt` | Create |
-| `ui/library/FavesTabContent.kt` | Create |
-| `ui/playlists/PlaylistsTabContent.kt` | Create |
-| `ui/components/PlaylistCollage.kt` | Create |
-| `data/local/ListeningHistoryDao.kt` | Add album/artist queries |
-| `data/local/PlaylistDao.kt` | Update query for duration |
-| `data/SongRepository.kt` | Add new methods |
-| `data/SongRepositoryImpl.kt` | Implement new methods |
-| `ui/library/MetadataViewModel.kt` | Update state class |
-| `model/Playlist.kt` | Add `totalDuration` field |
+| File                                  | Action                    |
+|---------------------------------------|---------------------------|
+| `ui/library/HistoryTabContent.kt`     | Create                    |
+| `ui/library/FavesTabContent.kt`       | Create                    |
+| `ui/playlists/PlaylistsTabContent.kt` | Create                    |
+| `ui/components/PlaylistCollage.kt`    | Create                    |
+| `data/local/ListeningHistoryDao.kt`   | Add album/artist queries  |
+| `data/local/PlaylistDao.kt`           | Update query for duration |
+| `data/SongRepository.kt`              | Add new methods           |
+| `data/SongRepositoryImpl.kt`          | Implement new methods     |
+| `ui/library/MetadataViewModel.kt`     | Update state class        |
+| `model/Playlist.kt`                   | Add `totalDuration` field |
 
 ### Verify
 - `assembleDebug` passes
@@ -506,14 +520,14 @@ Per spec layout:
 - Move "add songs" to header action or overflow (remove FAB)
 
 ### Files
-| File | Action |
-|------|--------|
-| `ui/library/ArtistDetailScreen.kt` | Major rewrite (hero + frosted glass + sub-tabs) |
-| `ui/library/AlbumDetailScreen.kt` | Moderate rewrite (hero + frosted glass) |
-| `ui/playlists/PlaylistDetailScreen.kt` | Moderate rewrite (header + SongItem) |
-| `data/local/SongDao.kt` | Add `getAlbumsByArtist()` |
-| `data/SongRepository.kt` | Add `getAlbumsByArtist()` |
-| `data/SongRepositoryImpl.kt` | Implement |
+| File                                   | Action                                          |
+|----------------------------------------|-------------------------------------------------|
+| `ui/library/ArtistDetailScreen.kt`     | Major rewrite (hero + frosted glass + sub-tabs) |
+| `ui/library/AlbumDetailScreen.kt`      | Moderate rewrite (hero + frosted glass)         |
+| `ui/playlists/PlaylistDetailScreen.kt` | Moderate rewrite (header + SongItem)            |
+| `data/local/SongDao.kt`                | Add `getAlbumsByArtist()`                       |
+| `data/SongRepository.kt`               | Add `getAlbumsByArtist()`                       |
+| `data/SongRepositoryImpl.kt`           | Implement                                       |
 
 ### Verify
 - `assembleDebug` passes
@@ -582,13 +596,13 @@ Key changes:
 - First item accent-highlighted per spec
 
 ### Files
-| File | Action |
-|------|--------|
-| `ui/player/NowPlayingScreenContent.kt` | Major rewrite |
-| `ui/player/components/PlayerControls.kt` | Add repeat/shuffle, frosted pill, larger play |
-| `ui/player/components/MiniPlayer.kt` | Major rewrite (pill, frosted glass, 3 controls) |
-| `ui/player/components/QueueSheet.kt` | Redesign (frosted glass, SongItem Reorderable) |
-| `ui/navigation/NavGraph.kt` | [GUESS] Remove NowPlaying route, add AnimatedContent |
+| File                                     | Action                                               |
+|------------------------------------------|------------------------------------------------------|
+| `ui/player/NowPlayingScreenContent.kt`   | Major rewrite                                        |
+| `ui/player/components/PlayerControls.kt` | Add repeat/shuffle, frosted pill, larger play        |
+| `ui/player/components/MiniPlayer.kt`     | Major rewrite (pill, frosted glass, 3 controls)      |
+| `ui/player/components/QueueSheet.kt`     | Redesign (frosted glass, SongItem Reorderable)       |
+| `ui/navigation/NavGraph.kt`              | [GUESS] Remove NowPlaying route, add AnimatedContent |
 
 ### Verify
 - `assembleDebug` passes
@@ -654,17 +668,17 @@ If Compose version doesn't support this, defer to a future update.
 - Tab labels, sort options, section headers, content descriptions
 
 ### Files
-| File | Action |
-|------|--------|
-| `data/remote/ArtistImageService.kt` | Create |
-| `model/ArtistImage.kt` | Create |
-| `data/local/ArtistImageDao.kt` | Create |
-| `data/local/SyncPlayerDatabase.kt` | Add entity + migration |
-| `di/AppModule.kt` | Bind service |
-| `ui/library/ArtistListItem.kt` | Delete |
-| `ui/playlists/PlaylistsScreen.kt` | Delete |
-| `ui/playlists/PlaylistsScreenContent.kt` | Delete |
-| All test files | Update assertions |
+| File                                     | Action                 |
+|------------------------------------------|------------------------|
+| `data/remote/ArtistImageService.kt`      | Create                 |
+| `model/ArtistImage.kt`                   | Create                 |
+| `data/local/ArtistImageDao.kt`           | Create                 |
+| `data/local/SyncPlayerDatabase.kt`       | Add entity + migration |
+| `di/AppModule.kt`                        | Bind service           |
+| `ui/library/ArtistListItem.kt`           | Delete                 |
+| `ui/playlists/PlaylistsScreen.kt`        | Delete                 |
+| `ui/playlists/PlaylistsScreenContent.kt` | Delete                 |
+| All test files                           | Update assertions      |
 
 ### Verify
 - `assembleDebug` passes
@@ -677,27 +691,27 @@ If Compose version doesn't support this, defer to a future update.
 
 ## Summary: All New Files
 
-| File | Phase |
-|------|-------|
-| `ui/theme/GlassEffect.kt` | 0 |
-| `ui/components/SortFilterBar.kt` | 2 |
-| `ui/components/AlphabeticalIndexSidebar.kt` | 2 |
-| `ui/components/CollapsibleSection.kt` | 2 |
-| `ui/components/SongItem.kt` | 2 |
-| `ui/components/SongOverflowMenu.kt` | 2 |
-| `ui/components/CircularArtistImage.kt` | 2 |
-| `ui/components/FrostedGlassPill.kt` | 2 |
-| `ui/library/SongsTabContent.kt` | 3 |
-| `ui/library/AlbumsTabContent.kt` | 3 |
-| `ui/library/ArtistsTabContent.kt` | 3 |
-| `ui/library/ArtistGridItem.kt` | 3 |
-| `ui/library/HistoryTabContent.kt` | 4 |
-| `ui/library/FavesTabContent.kt` | 4 |
-| `ui/playlists/PlaylistsTabContent.kt` | 4 |
-| `ui/components/PlaylistCollage.kt` | 4 |
-| `data/remote/ArtistImageService.kt` | 7 |
-| `model/ArtistImage.kt` | 7 |
-| `data/local/ArtistImageDao.kt` | 7 |
+| File                                        | Phase |
+|---------------------------------------------|-------|
+| `ui/theme/GlassEffect.kt`                   | 0     |
+| `ui/components/SortFilterBar.kt`            | 2     |
+| `ui/components/AlphabeticalIndexSidebar.kt` | 2     |
+| `ui/components/CollapsibleSection.kt`       | 2     |
+| `ui/components/SongItem.kt`                 | 2     |
+| `ui/components/SongOverflowMenu.kt`         | 2     |
+| `ui/components/CircularArtistImage.kt`      | 2     |
+| `ui/components/FrostedGlassPill.kt`         | 2     |
+| `ui/library/SongsTabContent.kt`             | 3     |
+| `ui/library/AlbumsTabContent.kt`            | 3     |
+| `ui/library/ArtistsTabContent.kt`           | 3     |
+| `ui/library/ArtistGridItem.kt`              | 3     |
+| `ui/library/HistoryTabContent.kt`           | 4     |
+| `ui/library/FavesTabContent.kt`             | 4     |
+| `ui/playlists/PlaylistsTabContent.kt`       | 4     |
+| `ui/components/PlaylistCollage.kt`          | 4     |
+| `data/remote/ArtistImageService.kt`         | 7     |
+| `model/ArtistImage.kt`                      | 7     |
+| `data/local/ArtistImageDao.kt`              | 7     |
 
 ## Summary: All Modified Files
 

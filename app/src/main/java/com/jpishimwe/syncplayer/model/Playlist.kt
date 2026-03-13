@@ -5,4 +5,5 @@ data class Playlist(
     val name: String,
     val createdAt: Long,
     val songCount: Int = 0,
+    val totalDuration: Long = 0L,
 )

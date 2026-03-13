@@ -3,6 +3,8 @@ package com.jpishimwe.syncplayer.ui.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jpishimwe.syncplayer.data.SongRepository
+import com.jpishimwe.syncplayer.model.Album
+import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,9 +24,21 @@ class MetadataViewModel
                 songRepository.getFavoriteSongs(),
                 songRepository.getMostPlayedSongs(),
                 songRepository.getRecentlyPlayed(),
-            ) { favorites, mostPlayed, recentlyPlayed ->
-                MetadataUiState.Loaded(favorites, mostPlayed, recentlyPlayed)
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MetadataUiState.Loading)
+                songRepository.getRecentlyPlayedAlbums(),
+                songRepository.getRecentlyPlayedArtists(),
+            ) { favorites, mostPlayed, recentlyPlayed, recentlyPlayedAlbums, recentlyPlayedArtists ->
+                MetadataUiState.Loaded(
+                    favorites,
+                    mostPlayed,
+                    recentlyPlayed,
+                    recentlyPlayedAlbums,
+                    recentlyPlayedArtists,
+                )
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                MetadataUiState.Loading,
+            )
     }
 
 sealed interface MetadataUiState {
@@ -34,5 +48,7 @@ sealed interface MetadataUiState {
         val favorites: List<Song>,
         val mostPlayed: List<Song>,
         val recentlyPlayed: List<Song>,
+        val recentlyPlayedAlbums: List<Album>,
+        val recentlyPlayedArtists: List<Artist>,
     ) : MetadataUiState
 }

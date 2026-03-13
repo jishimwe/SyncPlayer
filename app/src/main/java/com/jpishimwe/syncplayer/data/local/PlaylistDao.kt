@@ -104,9 +104,12 @@ interface PlaylistDao {
 
     @Query(
         """
-        SELECT p.id, p.name, p.createdAt, COUNT(ps.songId) AS songCount
+        SELECT p.id, p.name, p.createdAt, 
+               COUNT(ps.songId) AS songCount,
+               COALESCE(SUM(s.duration), 0) AS totalDuration
         FROM playlists p
         LEFT JOIN playlist_songs ps ON p.id = ps.playlistId
+        LEFT JOIN songs s ON ps.songId = s.id
         WHERE p.deletedAt = 0
         GROUP BY p.id
         ORDER BY p.name ASC

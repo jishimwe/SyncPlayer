@@ -122,6 +122,7 @@ fun AlbumGridItem(
                     )
                 }
 
+                // Menu — top-right, always visible
                 Box(
                     modifier =
                         Modifier

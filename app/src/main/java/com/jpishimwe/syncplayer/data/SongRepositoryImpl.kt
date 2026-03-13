@@ -70,4 +70,8 @@ class SongRepositoryImpl
         override fun searchAlbums(query: String): Flow<List<Album>> = songDao.searchAlbums(query)
 
         override fun searchArtists(query: String): Flow<List<Artist>> = songDao.searchArtists(query)
+
+        override fun getRecentlyPlayedAlbums(): Flow<List<Album>> = listeningHistoryDao.getRecentlyPlayedAlbums()
+
+        override fun getRecentlyPlayedArtists(): Flow<List<Artist>> = listeningHistoryDao.getRecentlyPlayedArtists()
     }

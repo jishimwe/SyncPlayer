@@ -47,4 +47,8 @@ interface SongRepository {
     fun searchAlbums(query: String): Flow<List<Album>>
 
     fun searchArtists(query: String): Flow<List<Artist>>
+
+    fun getRecentlyPlayedAlbums(): Flow<List<Album>>
+
+    fun getRecentlyPlayedArtists(): Flow<List<Artist>>
 }
