@@ -28,6 +28,11 @@ import com.jpishimwe.syncplayer.model.PlaybackState
 import com.jpishimwe.syncplayer.model.PlayerUiState
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 
+// ui/components/MiniPlayer.kt (or a shared Dimens.kt)
+val MiniPlayerHeight = 92.dp // whatever your pill height is
+val MiniPlayerBottomMargin = 8.dp // the floating margin
+val MiniPlayerPeek = MiniPlayerHeight + MiniPlayerBottomMargin
+
 @Composable
 fun MiniPlayer(
     uiState: PlayerUiState,

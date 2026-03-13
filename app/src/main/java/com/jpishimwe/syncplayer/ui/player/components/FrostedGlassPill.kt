@@ -1,7 +1,8 @@
 package com.jpishimwe.syncplayer.ui.player.components
 
-import android.R
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +43,7 @@ fun FrostedGlassPill(
     modifier: Modifier = Modifier,
     active: Boolean = false,
     shape: RoundedCornerShape = RoundedCornerShape(percent = 50),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     content: @Composable RowScope.() -> Unit,
 ) {
 
@@ -58,8 +60,9 @@ fun FrostedGlassPill(
 
         // Content layer — unblurred
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
             content = content,
         )
     }

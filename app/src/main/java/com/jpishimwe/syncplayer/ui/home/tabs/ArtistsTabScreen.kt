@@ -28,8 +28,8 @@ import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.player.components.AlphabeticalIndexSidebar
 import com.jpishimwe.syncplayer.ui.player.components.ArtistItem
 import com.jpishimwe.syncplayer.ui.player.components.ArtistPlaybackState
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
 import kotlinx.coroutines.launch
 
 private val artistSortOptions = listOf(SortOrder.BY_ARTIST.label)
@@ -72,7 +72,7 @@ fun ArtistsTabScreen(
                     start = 8.dp,
                     end = 8.dp,
                     top = barHeightDp + 8.dp,
-                    bottom = 8.dp,
+                    bottom = MiniPlayerPeek,
                 ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

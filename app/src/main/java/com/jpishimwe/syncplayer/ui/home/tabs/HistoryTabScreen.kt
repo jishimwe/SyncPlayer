@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.ui.home.tabs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,7 @@ import com.jpishimwe.syncplayer.ui.player.components.AlbumPlaybackState
 import com.jpishimwe.syncplayer.ui.player.components.ArtistItem
 import com.jpishimwe.syncplayer.ui.player.components.ArtistPlaybackState
 import com.jpishimwe.syncplayer.ui.player.components.CollapsibleSectionHeader
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.SongItem
 import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
 
@@ -58,7 +60,7 @@ fun HistoryTabScreen(
     var albumsExpanded by rememberSaveable { mutableStateOf(true) }
     var artistsExpanded by rememberSaveable { mutableStateOf(true) }
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
+    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = MiniPlayerPeek)) {
         // ── Songs ──────────────────────────────────────────────────────────
         if (recentSongs.isNotEmpty()) {
             stickyHeader(key = "header_songs") {

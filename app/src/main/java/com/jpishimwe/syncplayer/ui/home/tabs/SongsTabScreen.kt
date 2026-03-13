@@ -1,6 +1,7 @@
 package com.jpishimwe.syncplayer.ui.home.tabs
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,11 +20,11 @@ import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.player.components.AlphabeticalIndexSidebar
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.SongItem
 import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
 import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
 import kotlinx.coroutines.launch
 
 private val songSortOptions = SortOrder.entries.map { it.label }
@@ -60,6 +61,7 @@ fun SongsTabScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = MiniPlayerPeek),
         ) {
             // Sticky sort bar
             stickyHeader {

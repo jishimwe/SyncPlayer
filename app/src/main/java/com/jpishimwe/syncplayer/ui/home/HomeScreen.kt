@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -39,6 +40,7 @@ import com.jpishimwe.syncplayer.ui.library.PermissionHandler
 import com.jpishimwe.syncplayer.ui.navigation.LibraryTab
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
+import com.jpishimwe.syncplayer.ui.player.components.ScreenshotHolder
 
 @Composable
 fun HomeScreen(
@@ -71,6 +73,7 @@ fun HomeScreen(
             lifeCycleOwner.lifecycle.addObserver(observer)
             onDispose { lifeCycleOwner.lifecycle.removeObserver(observer) }
         }
+        val view = LocalView.current
 
         Column {
             HomeScreenContent(
@@ -81,16 +84,20 @@ fun HomeScreen(
                 playerUiState = playerUiState,
                 onRetry = libraryViewModel::refreshLibrary,
                 onSongClick = { songs, index ->
+                    ScreenshotHolder.capture(view)
                     playerViewModel.onEvent(PlayerEvent.PlaySongs(songs, index))
                     onNavigateToNowPlaying()
                 },
                 onAlbumClick = { albumId, albumName ->
+                    ScreenshotHolder.capture(view)
                     onNavigateToAlbumDetail(albumId, albumName)
                 },
                 onArtistClick = { artistName ->
+                    ScreenshotHolder.capture(view)
                     onNavigateToArtistDetail(artistName)
                 },
                 onPlaylistClick = { playlistId, playlistName ->
+                    ScreenshotHolder.capture(view)
                     onNavigateToPlaylistDetail(playlistId, playlistName)
                 },
                 modifier = modifier,

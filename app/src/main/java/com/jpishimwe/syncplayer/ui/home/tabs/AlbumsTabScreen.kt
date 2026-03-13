@@ -27,6 +27,7 @@ import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.player.components.AlbumGridItem
 import com.jpishimwe.syncplayer.ui.player.components.AlbumPlaybackState
 import com.jpishimwe.syncplayer.ui.player.components.AlphabeticalIndexSidebar
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
 import kotlinx.coroutines.launch
 
@@ -65,7 +66,7 @@ fun AlbumsTabScreen(
             columns = GridCells.Fixed(2),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = barHeightDp + 8.dp, bottom = 8.dp),
+            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = barHeightDp + 8.dp, bottom = MiniPlayerPeek),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {

@@ -2,11 +2,11 @@ package com.jpishimwe.syncplayer.ui.home.tabs
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.PlaylistItem
 import com.jpishimwe.syncplayer.ui.player.components.PlaylistPlaybackState
 import com.jpishimwe.syncplayer.ui.player.components.PlaylistsActionBar
@@ -51,14 +52,18 @@ fun PlaylistsTabScreen(
         is PlaylistUiState.Loaded -> {
             val playlists = (uiState as PlaylistUiState.Loaded).playlists
 
-            if (playlists.isEmpty()) {
-                Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+/*            if (playlists.isEmpty()) {
+                Box(modifier.fillMaxSize()) {
+                    PlaylistsActionBar(
+                        onCreatePlaylist = { viewModel.onEvent(PlaylistEvent.CreatePlaylist("New Playlist")) },
+                    )
+
                     Text("No playlists yet")
                 }
                 return
-            }
+            }*/
 
-            LazyColumn(modifier = modifier.fillMaxSize()) {
+            LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = MiniPlayerPeek)) {
                 stickyHeader {
                     PlaylistsActionBar(
                         onCreatePlaylist = { viewModel.onEvent(PlaylistEvent.CreatePlaylist("New Playlist")) },

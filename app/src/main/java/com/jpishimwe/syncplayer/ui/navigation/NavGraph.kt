@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -49,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -69,6 +69,7 @@ import com.jpishimwe.syncplayer.ui.library.LibraryViewModel
 import com.jpishimwe.syncplayer.ui.player.NowPlayingScreen
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 import com.jpishimwe.syncplayer.ui.player.components.MiniPlayer
+import com.jpishimwe.syncplayer.ui.player.components.ScreenshotHolder
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistDetailScreen
 import com.jpishimwe.syncplayer.ui.settings.SettingsScreen
 import com.jpishimwe.syncplayer.ui.theme.LocalExtendedColorScheme
@@ -145,6 +146,8 @@ fun NavGraph(
     var overlayHeightPx by remember { mutableIntStateOf(0) }
     val overlayHeightDp = with(LocalDensity.current) { overlayHeightPx.toDp() }
 
+    val view = LocalView.current
+
     Box(modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.surface)) {
         // Content sits below the overlay, padded by its actual measured height
         NavHost(
@@ -158,12 +161,15 @@ fun NavGraph(
                     onSelectedTabChanged = { selectedTab = it },
                     onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
                     onNavigateToAlbumDetail = { id, name ->
+                        ScreenshotHolder.capture(view)
                         navController.navigate(Screen.AlbumDetail.createRoute(id, name))
                     },
                     onNavigateToArtistDetail = { name ->
+                        ScreenshotHolder.capture(view)
                         navController.navigate(Screen.ArtistDetail.createRoute(name))
                     },
                     onNavigateToPlaylistDetail = { id, name ->
+                        ScreenshotHolder.capture(view)
                         navController.navigate(Screen.PlaylistDetail.createRoute(id, name))
                     },
                     playerViewModel = playerViewModel,

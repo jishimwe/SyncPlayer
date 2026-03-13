@@ -476,86 +476,113 @@ WHERE p.deletedAt = 0 GROUP BY p.id ORDER BY p.name ASC
 
 ---
 
-## Phase 5: Detail Screens
+## Phase 5: Detail Screens ✅
 
 ### Artist Detail (Figma Screens 3 & 4)
 
 **`ui/library/ArtistDetailScreen.kt`** — Major rewrite
 
-Per spec layout:
+Layered `Box` layout with 3 z-layers:
 ```
-[Hero: full-width circular-cropped portrait ~240dp tall]
-  [frosted glass strip top-left: back chevron | artist name | #albums . #songs]
-  [frosted glass strip top-right: overflow menu]
-[Segmented tabs: Songs | Albums — bottom edge of hero]
-  [shuffle + play — right of tabs]
-[Song list or Album grid]
-[MiniPlayer]
+Box(fillMaxSize, statusBarsPadding) {
+    Layer 0 — BlurredBackground (screenshot of previous screen, GPU-blurred + dark scrim)
+    Layer 1 — Fixed portrait (360dp, full-width, ContentScale.Crop) + bottom gradient fade
+    Layer 2 — LazyColumn(contentPadding top = portrait - 24dp overlap) {
+                  Glass panel lip (rounded top corners, frostedGlassRendered)
+                  stickyHeader: Songs | Albums tab bar (accent gradient border, frosted glass)
+                  Song list or Album grid (background-wrapped items)
+              }
+    Layer 3 — Pinned Row: back pill | artist name + metadata pill | overflow pill
+}
 ```
 
-- Hero image: circular-cropped artist portrait, ~240dp tall
-- Frosted glass info overlay strips on hero (using `FrostedGlassPill` or custom)
-- Sub-tabs: Songs | Albums
-- Shuffle + play buttons beside tabs
-- Songs sub-tab: `SongItem` list
-- Albums sub-tab: 2-column `AlbumGridItem` grid
-- Hero shrinks/parallax on scroll
-
-**New DAO/Repository**: `getAlbumsByArtist(artist: String): Flow<List<Album>>`
-```sql
-SELECT albumId AS id, album AS name, artist, COUNT(*) AS songCount, albumArtUri
-FROM songs WHERE artist = :artist GROUP BY albumId ORDER BY album ASC
-```
+- Portrait: full-width edge-to-edge, 360dp, `ContentScale.Crop` (not 240dp circle)
+- List scrolls over portrait with rounded-top glass panel edge (16dp corner radius)
+- Bottom gradient fade on portrait (72dp, transparent → 70% black)
+- Sticky tab bar styled like `SortFilterBar`: `frostedGlassRendered()` + accent gradient border + `RoundedCornerShape(8.dp)`
+- Pinned `FrostedGlassPill` buttons always visible at top: down-chevron back, centered name `Column` with `weight(1f)`, overflow menu
+- Songs sub-tab: `SongItem` list with `background(colorScheme.background)` wrapper
+- Albums sub-tab: 2-column `AlbumGridItem` grid via `.chunked(2)` rows
 
 ### Album Detail (Figma — spec defines layout)
 
-**`ui/library/AlbumDetailScreen.kt`** — Moderate rewrite
+**`ui/library/AlbumDetailScreen.kt`** — Major rewrite (same layered pattern)
 
-Per spec layout:
 ```
-[Hero: full-width album art ~240dp tall]
-  [frosted glass strip top-left: back chevron | album name | artist]
-  [frosted glass strip bottom-right: shuffle + play]
-[Song list — no alphabet index]
-[MiniPlayer]
+Box(fillMaxSize, statusBarsPadding) {
+    Layer 0 — BlurredBackground
+    Layer 1 — Fixed album art (300dp, full-width) + bottom gradient fade
+    Layer 2 — LazyColumn(contentPadding top = art - 24dp overlap) {
+                  Glass panel lip
+                  stickyHeader: song count label + shuffle + play (accent border bar)
+                  Song list (background-wrapped items)
+              }
+    Layer 3 — Pinned Row: back pill | album name + artist pill | overflow pill
+}
 ```
 
-- Hero: full-width album art with frosted glass overlays
-- Hero shrinks/parallax on scroll
-- Switch to `SongItem` component for song list
+- Same structural pattern as ArtistDetailScreen, no sub-tabs (single song list)
+- Sticky bar shows song count label instead of tab toggles
 
 ### Playlist Detail (Figma Screen 8)
 
-**`ui/playlists/PlaylistDetailScreen.kt`** — Moderate rewrite
+**`ui/playlists/PlaylistDetailScreen.kt`** — Major rewrite (homogenized with Album/Artist)
 
 Per spec layout:
 ```
-[Header: playlist name | #songs . duration]
-[Sub-header: shuffle + play]
-[Deletable + reorderable song list]
-[MiniPlayer]
+Box(fillMaxSize, statusBarsPadding) {
+    Layer 0 — BlurredBackground
+    Column(padding top = 56dp for pinned header clearance) {
+        Action bar: song count + duration label | shuffle | play (accent border, frosted glass)
+        LazyColumn(reorderable) {
+            PlaylistSongItem items (background-wrapped, draggable)
+        }
+    }
+    Pinned Row: back pill | playlist name + metadata pill | add-songs pill
+}
 ```
 
-- Playlist name header with song count + total duration
-- Shuffle + play buttons
-- Song list with `SongItem` (variant: Deletable for delete icon, Reorderable for drag)
-- Move "add songs" to header action or overflow (remove FAB)
+- No hero image (playlists don't have one) — content starts below pinned header
+- Action bar outside `LazyColumn` (not `stickyHeader`) because reorderable library needs consistent item keys
+- Add-songs button replaces overflow in the pinned row (right pill)
+- `PlaylistSongItem` + reorderable logic unchanged from pre-redesign
+
+### Blurred Background System
+
+**`ui/components/BlurredBackground.kt`** — New file
+
+- `ScreenshotHolder` singleton: holds a nullable `Bitmap`, `capture(view)` uses `View.drawToBitmap()`, `clear()` recycles
+- `BlurredBackground` composable: reads from `ScreenshotHolder`, draws bitmap with `RenderEffect.createBlurEffect(25f, 25f)` via `graphicsLayer`, overlays dark scrim (55% black). Falls back to plain dark background if no screenshot.
+- Capture trigger: `ScreenshotHolder.capture(view)` called immediately before `navController.navigate()` in every navigation callback that leads to a detail screen
+- Perf: one bitmap capture (~1-2 frames) + GPU-accelerated blur (API 31+, minSdk 34). Static after initial render — zero per-frame cost.
 
 ### Files
-| File                                   | Action                                          |
-|----------------------------------------|-------------------------------------------------|
-| `ui/library/ArtistDetailScreen.kt`     | Major rewrite (hero + frosted glass + sub-tabs) |
-| `ui/library/AlbumDetailScreen.kt`      | Moderate rewrite (hero + frosted glass)         |
-| `ui/playlists/PlaylistDetailScreen.kt` | Moderate rewrite (header + SongItem)            |
-| `data/local/SongDao.kt`                | Add `getAlbumsByArtist()`                       |
-| `data/SongRepository.kt`               | Add `getAlbumsByArtist()`                       |
-| `data/SongRepositoryImpl.kt`           | Implement                                       |
+| File                                   | Action                                                    |
+|----------------------------------------|-----------------------------------------------------------|
+| `ui/library/ArtistDetailScreen.kt`     | Major rewrite (layered Box, fixed portrait, glass panel)  |
+| `ui/library/AlbumDetailScreen.kt`      | Major rewrite (same layered pattern as Artist)            |
+| `ui/playlists/PlaylistDetailScreen.kt` | Major rewrite (homogenized header + action bar)           |
+| `ui/components/BlurredBackground.kt`   | Created (ScreenshotHolder + BlurredBackground composable) |
+| `data/local/SongDao.kt`                | Add `getAlbumsByArtist()`                                 |
+| `data/SongRepository.kt`               | Add `getAlbumsByArtist()`                                 |
+| `data/SongRepositoryImpl.kt`           | Implement                                                 |
+| Navigation trigger points              | Add `ScreenshotHolder.capture(view)` before `navigate()`  |
 
-### Verify
+### Verify ✅
 - `assembleDebug` passes
-- Artist detail: hero with frosted glass strips, Songs/Albums sub-tabs
-- Album detail: hero with frosted glass strips, song list
-- Playlist detail: header + deletable/reorderable song list
+- Artist detail: full-width portrait, glass panel slides over on scroll, sticky tab bar, pinned pills
+- Album detail: full-width album art, glass panel, sticky action bar, pinned pills
+- Playlist detail: pinned header pills, accent-border action bar, reorderable song list
+- Blurred background visible behind all detail screens (previous screen blurred + scrimmed)
+- Portrait not muted (no `frostedGlassRendered` overlay on portrait layer)
+
+### Implementation Notes (deviations from plan)
+- Portrait is full-width rectangle (not 240dp circle) — better visual impact and matches Zune inspiration
+- Scroll behavior is list-overlaps-portrait with rounded-top glass panel edge, not parallax/shrink — simpler implementation, cleaner visual
+- Back button uses `KeyboardArrowDown` (down chevron) in `FrostedGlassPill`, not `ArrowBackIosNew` in a black circle — consistent across all three detail screens
+- All three detail screens share identical Layer 3 pattern: `Row(SpaceBetween) { FrostedGlassPill × 3 }` with back, center info, and trailing action
+- `BlurredBackground` uses `ScreenshotHolder` singleton (not ViewModel) — bitmaps are large and should not survive config changes
+- Playlist action bar is outside `LazyColumn` (not `stickyHeader`) to avoid conflicts with `rememberReorderableLazyListState` — reorderable items need a clean `LazyColumn` with consistent keys
 
 ---
 
@@ -733,40 +760,41 @@ If Compose version doesn't support this, defer to a future update.
 | `ui/components/PlaylistCollage.kt`          | 4     |
 | `ui/components/PlaylistItem.kt`             | 4     |
 | `ui/components/PlaylistsActionBar.kt`       | 4     |
+| `ui/components/BlurredBackground.kt`        | 5     |
 | `data/remote/ArtistImageService.kt`         | 7     |
 | `model/ArtistImage.kt`                      | 7     |
 | `data/local/ArtistImageDao.kt`              | 7     |
 
 ## Summary: All Modified Files
 
-| File                                     | Phase | Severity                                                         |
-|------------------------------------------|-------|------------------------------------------------------------------|
-| `ui/theme/Color.kt`                      | 0     | Add AccentColor, BackgroundDark, FrostedGlassSurface             |
-| `ui/theme/Theme.kt`                      | 0     | Add LocalAccentColor, override background, disable dynamic color |
-| `ui/theme/Type.kt`                       | 0     | Add weight variants per spec                                     |
-| `gradle/libs.versions.toml`              | 0     | Add palette-ktx                                                  |
-| `app/build.gradle.kts`                   | 0     | Add palette-ktx dependency                                       |
-| `ui/navigation/NavGraph.kt`              | 1, 6  | Major rewrite (tabs + AnimatedContent)                           |
-| `ui/library/LibraryScreen.kt`            | 1, 3  | Major refactor                                                   |
-| `ui/library/LibraryViewModel.kt`         | 1     | Update tab enum                                                  |
-| `model/Artist.kt`                        | 3     | Add `artUri` field                                               |
-| `data/local/SongDao.kt`                  | 3, 5  | Update + add queries                                             |
-| `ui/library/AlbumGridItem.kt`            | 3     | Corner radius, playing border, play overlay                      |
-| `data/local/ListeningHistoryDao.kt`      | 4     | Add album/artist queries                                         |
-| `data/local/PlaylistDao.kt`              | 4     | Update query for duration                                        |
-| `data/SongRepository.kt`                 | 4, 5  | Add methods                                                      |
-| `data/SongRepositoryImpl.kt`             | 4, 5  | Implement methods                                                |
-| `ui/library/MetadataViewModel.kt`        | 4     | Update state class                                               |
-| `model/Playlist.kt`                      | 4     | Add `totalDuration` field                                        |
-| `ui/library/ArtistDetailScreen.kt`       | 5     | Major rewrite (hero + frosted glass + sub-tabs)                  |
-| `ui/library/AlbumDetailScreen.kt`        | 5     | Moderate rewrite (hero + frosted glass)                          |
-| `ui/playlists/PlaylistDetailScreen.kt`   | 5     | Moderate rewrite                                                 |
-| `ui/player/NowPlayingScreenContent.kt`   | 6     | Major rewrite                                                    |
-| `ui/player/components/PlayerControls.kt` | 6     | Frosted pill, repeat/shuffle, larger play                        |
-| `ui/player/components/MiniPlayer.kt`     | 6     | Major rewrite (pill, frosted glass)                              |
-| `ui/player/components/QueueSheet.kt`     | 6     | Frosted glass, SongItem reorderable                              |
-| `data/local/SyncPlayerDatabase.kt`       | 7     | Add ArtistImage entity + migration                               |
-| `di/AppModule.kt`                        | 7     | Bind artist image service                                        |
+| File                                     | Phase | Severity                                                               |
+|------------------------------------------|-------|------------------------------------------------------------------------|
+| `ui/theme/Color.kt`                      | 0     | Add AccentColor, BackgroundDark, FrostedGlassSurface                   |
+| `ui/theme/Theme.kt`                      | 0     | Add LocalAccentColor, override background, disable dynamic color       |
+| `ui/theme/Type.kt`                       | 0     | Add weight variants per spec                                           |
+| `gradle/libs.versions.toml`              | 0     | Add palette-ktx                                                        |
+| `app/build.gradle.kts`                   | 0     | Add palette-ktx dependency                                             |
+| `ui/navigation/NavGraph.kt`              | 1, 6  | Major rewrite (tabs + AnimatedContent)                                 |
+| `ui/library/LibraryScreen.kt`            | 1, 3  | Major refactor                                                         |
+| `ui/library/LibraryViewModel.kt`         | 1     | Update tab enum                                                        |
+| `model/Artist.kt`                        | 3     | Add `artUri` field                                                     |
+| `data/local/SongDao.kt`                  | 3, 5  | Update + add queries                                                   |
+| `ui/library/AlbumGridItem.kt`            | 3     | Corner radius, playing border, play overlay                            |
+| `data/local/ListeningHistoryDao.kt`      | 4     | Add album/artist queries                                               |
+| `data/local/PlaylistDao.kt`              | 4     | Update query for duration                                              |
+| `data/SongRepository.kt`                 | 4, 5  | Add methods                                                            |
+| `data/SongRepositoryImpl.kt`             | 4, 5  | Implement methods                                                      |
+| `ui/library/MetadataViewModel.kt`        | 4     | Update state class                                                     |
+| `model/Playlist.kt`                      | 4     | Add `totalDuration` field                                              |
+| `ui/library/ArtistDetailScreen.kt`       | 5     | Major rewrite (layered Box, fixed portrait, glass panel, pinned pills) |
+| `ui/library/AlbumDetailScreen.kt`        | 5     | Major rewrite (same layered pattern as Artist)                         |
+| `ui/playlists/PlaylistDetailScreen.kt`   | 5     | Major rewrite (homogenized header + action bar)                        |
+| `ui/player/NowPlayingScreenContent.kt`   | 6     | Major rewrite                                                          |
+| `ui/player/components/PlayerControls.kt` | 6     | Frosted pill, repeat/shuffle, larger play                              |
+| `ui/player/components/MiniPlayer.kt`     | 6     | Major rewrite (pill, frosted glass)                                    |
+| `ui/player/components/QueueSheet.kt`     | 6     | Frosted glass, SongItem reorderable                                    |
+| `data/local/SyncPlayerDatabase.kt`       | 7     | Add ArtistImage entity + migration                                     |
+| `di/AppModule.kt`                        | 7     | Bind artist image service                                              |
 
 ## Summary: Deleted Files
 

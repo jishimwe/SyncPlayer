@@ -1,19 +1,28 @@
 package com.jpishimwe.syncplayer.ui.playlists
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
@@ -27,7 +36,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,9 +48,16 @@ import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
+import com.jpishimwe.syncplayer.ui.player.components.BlurredBackground
+import com.jpishimwe.syncplayer.ui.player.components.FrostedGlassPill
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
+import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+
+private val BarShape = RoundedCornerShape(8.dp)
 
 // Formats a total playlist duration (ms) as "Xh Ym" or "Ym" for values under an hour
 private fun formatPlaylistTotalDuration(totalMs: Long): String {
@@ -122,97 +140,188 @@ fun PlaylistDetailScreenContent(
 
     val totalDuration = remember(playlistSongs) { playlistSongs.sumOf { it.duration } }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // ── Header: back · name + count/duration · add ─────────────────────
-        Row(
+    val accentBorderBrush =
+        Brush.linearGradient(
+            colors =
+                listOf(
+                    myAccentColor.copy(alpha = 0.24f),
+                    myAccentColor.copy(alpha = 0.75f),
+                    myAccentColor.copy(alpha = 0.24f),
+                ),
+        )
+
+    // ── Root ─────────────────────────────────────────────────────────────
+    Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+        // Layer 0 — blurred screenshot of previous screen
+        BlurredBackground()
+
+        // Main content column: action bar + song list
+        Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                    .fillMaxSize()
+                    // Top padding to clear the pinned header row
+                    .padding(top = 56.dp),
         ) {
-            IconButton(onClick = onNavigateBack, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBackIosNew,
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                Text(
-                    text = playlistName,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "${playlistSongs.size} songs · ${formatPlaylistTotalDuration(totalDuration)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            IconButton(
-                onClick = { showSongPicker = true },
-                modifier = Modifier.size(40.dp),
+            // ── Action bar: song count + shuffle + play ──────────────────
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .border(BorderStroke(1.dp, accentBorderBrush), BarShape)
+                        .clip(BarShape),
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add songs",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+                // Frosted glass background layer
+                Box(modifier = Modifier.matchParentSize().frostedGlassRendered())
+
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "${playlistSongs.size} songs · ${formatPlaylistTotalDuration(totalDuration)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                    )
+
+                    Spacer(Modifier.weight(1f))
+
+                    // Shuffle button
+                    IconButton(onClick = onShuffleClick) {
+                        Icon(
+                            Icons.Default.Shuffle,
+                            contentDescription = "Shuffle",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+
+                    // Play all button
+                    IconButton(onClick = onPlayAllClick) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = "Play all",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+
+            // ── Song list (reorderable) ──────────────────────────────────
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(bottom = MiniPlayerPeek)
+            ) {
+                itemsIndexed(
+                    items = playlistSongs,
+                    key = { _, item -> item.id },
+                ) { index, item ->
+                    ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.background),
+                        ) {
+                            PlaylistSongItem(
+                                song = item,
+                                onSongClick = { onSongClick(index) },
+                                onRemove = { onRemoveSong(item.id) },
+                                isDragging = isDragging,
+                                modifier = Modifier.draggableHandle(),
+                            )
+                        }
+                    }
+                }
             }
         }
 
-        // ── Sub-header: shuffle + play-all ──────────────────────────────────
+        // ── Pinned header: back + playlist name + add songs (always visible) ──
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .align(Alignment.TopStart)
+                    .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = onShuffleClick) {
-                Icon(
-                    imageVector = Icons.Default.Shuffle,
-                    contentDescription = "Shuffle",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+            // Back button
+            FrostedGlassPill(
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
             }
-            IconButton(onClick = onPlayAllClick) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play all",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
 
-        // ── Song list ────────────────────────────────────────────────────────
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier.weight(1f),
-        ) {
-            itemsIndexed(
-                items = playlistSongs,
-                key = { _, item -> item.id },
-            ) { index, item ->
-                ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
-                    PlaylistSongItem(
-                        song = item,
-                        onSongClick = { onSongClick(index) },
-                        onRemove = { onRemoveSong(item.id) },
-                        isDragging = isDragging,
-                        modifier = Modifier.draggableHandle(),
+            Spacer(Modifier.width(4.dp))
+
+            // Playlist name + metadata pill
+            FrostedGlassPill(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(4.dp),
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = playlistName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = "${playlistSongs.size} songs · ${formatPlaylistTotalDuration(totalDuration)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(4.dp))
+
+            // Add songs button
+            FrostedGlassPill(
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                IconButton(
+                    onClick = { showSongPicker = true },
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add songs",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(40.dp),
                     )
                 }
             }
         }
     }
 
-    // Song picker outside the Column — same position as before
+    // Song picker outside the Box — same position as before
     if (showSongPicker) {
         SongPickerSheet(
             allSongs = allSongs,

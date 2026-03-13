@@ -1,6 +1,7 @@
 package com.jpishimwe.syncplayer.ui.home.tabs
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
+import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.SongItem
 import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
 import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
@@ -49,7 +51,7 @@ fun FavoriteTabScreen(
             }
         }
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
+    LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = MiniPlayerPeek)) {
         stickyHeader {
             SortFilterBar(
                 sortLabel = selectedSort,
