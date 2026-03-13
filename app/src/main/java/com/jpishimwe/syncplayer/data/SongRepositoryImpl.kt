@@ -32,6 +32,8 @@ class SongRepositoryImpl
 
         override fun getSongsByArtist(artist: String): Flow<List<Song>> = songDao.getSongsByArtist(artist)
 
+        override fun getAlbumsByArtist(artist: String): Flow<List<Album>> = songDao.getAlbumsByArtist(artist)
+
         override suspend fun incrementPlayCount(songId: Long) {
             songDao.incrementPlayCount(songId, System.currentTimeMillis())
         }

@@ -361,64 +361,80 @@ FROM songs GROUP BY artist ORDER BY artist ASC
 
 ---
 
-## Phase 4: Tab Screens — History, Faves, Playlists
+## Phase 4: Tab Screens — History, Faves, Playlists ✅
 
 ### History Tab (Figma Screen 6)
 
-**`ui/library/HistoryTabContent.kt`** — New file (replaces RecentlyPlayedTab + MostPlayedTab)
-- Three `CollapsibleSection`s: Songs, Albums, Artists
-- Songs: `SongItem` with star rating display (Rated variant)
-- Albums: 2-column grid preview (reuse `AlbumGridItem`)
-- Artists: circular portrait grid preview
-- Most Played data merged as sort/filter option within Songs section
+**`ui/home/tabs/HistoryTabScreen.kt`** — New file (replaces RecentlyPlayedTab + MostPlayedTab)
+- Three `CollapsibleSectionHeader`s: Recently Played (songs), Recently Played Albums, Recently Played Artists
+- Songs: `SongItem` with `showRating = true`
+- Albums and artists: `.chunked(2)` rows inside `LazyColumn` items — avoids nested lazy layout (`LazyVerticalGrid` cannot be nested inside `LazyColumn`)
+- Section expansion state preserved across tab switches via `rememberSaveable`
 
-**[GUESS] Data layer additions** — the spec says "repository untouched" but we need album/artist history data:
-
-**`data/local/ListeningHistoryDao.kt`** — Add queries:
+**`data/local/ListeningHistoryDao.kt`** — Added queries:
 ```sql
--- Recently played albums
+-- Recently played albums (correlated subquery for albumArtUri — avoids undefined
+-- GROUP BY column selection for non-aggregated fields)
 SELECT s.albumId AS id, s.album AS name, s.artist,
-       COUNT(DISTINCT s.id) AS songCount, s.albumArtUri AS albumArtUri
+       COUNT(DISTINCT s.id) AS songCount,
+       (SELECT s2.albumArtUri FROM songs s2
+        WHERE s2.albumId = s.albumId AND s2.albumArtUri IS NOT NULL LIMIT 1) AS albumArtUri
 FROM listening_history h INNER JOIN songs s ON s.id = h.songId
 GROUP BY s.albumId ORDER BY MAX(h.playedAt) DESC LIMIT 20
 
--- Recently played artists (with artUri heuristic)
+-- Recently played artists (same artUri heuristic as SongDao.getAllArtists)
 SELECT s.artist AS name, COUNT(DISTINCT s.id) AS songCount,
        COUNT(DISTINCT s.albumId) AS albumCount,
-       (SELECT albumArtUri FROM songs s2 WHERE s2.artist = s.artist LIMIT 1) AS artUri
+       (SELECT s2.albumArtUri FROM songs s2
+        WHERE s2.artist = s.artist AND s2.albumArtUri IS NOT NULL
+        ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
 FROM listening_history h INNER JOIN songs s ON s.id = h.songId
 GROUP BY s.artist ORDER BY MAX(h.playedAt) DESC LIMIT 20
 ```
 
-**`data/SongRepository.kt`** — Add:
+**`data/SongRepository.kt`** — Added:
 - `getRecentlyPlayedAlbums(): Flow<List<Album>>`
 - `getRecentlyPlayedArtists(): Flow<List<Artist>>`
 
-**`ui/library/MetadataViewModel.kt`** — Update `MetadataUiState.Loaded`:
-- Add `recentlyPlayedAlbums: List<Album>`
-- Add `recentlyPlayedArtists: List<Artist>`
+**`ui/library/MetadataViewModel.kt`** — Updated `MetadataUiState.Loaded`:
+- Added `recentlyPlayedAlbums: List<Album>`
+- Added `recentlyPlayedArtists: List<Artist>`
+- `combine` expanded from 3 flows to 5 (uses the 5-arg overload from kotlinx-coroutines)
 
 ### Faves Tab (Figma Screen 12)
 
-**`ui/library/FavesTabContent.kt`** — New file
-- Sticky `SortFilterBar` at top (sort by: Name, Rating)
-- `SongItem` with Rated variant (star + number between text and overflow)
-- Shuffle + play all in sort bar
+**`ui/home/tabs/FavoriteTabScreen.kt`** — New file
+- Sticky `SortFilterBar` at top (sort by: Title, Artist, Rating)
+- `SongItem` with `showRating = true`
+- Sorting done locally via `remember(songs, selectedSort)` — no ViewModel round-trip for a purely presentational operation
 
 ### Playlists Tab (Figma Screen 9)
 
-**`ui/playlists/PlaylistsTabContent.kt`** — New file (adapts PlaylistsScreenContent)
-- Remove standalone `Scaffold` wrapper and FAB
-- Search/filter bar with create-playlist icon (replaces FAB)
-- `PlaylistListItem` redesign per spec (72dp height):
-  - **2x2 album art collage** (4 thumbnails at 28x28dp each) as leading image
-  - Playlist name (Title Medium), "#Songs . duration" (Label Small)
-  - Play button, overflow menu
-- Create/rename/delete dialogs kept
+**`ui/home/tabs/PlaylistsTabScreen.kt`** — New file (adapts PlaylistsScreenContent)
+- Sticky `PlaylistsActionBar` with create-playlist icon (replaces FAB)
+- `PlaylistItem` rows with collage thumbnail, play/pause control, overflow menu
+- `currentPlaylistId` + `isPlaying` drive per-row `PlaylistPlaybackState` — only the active playlist row gets an accent border
 
-**`model/Playlist.kt`** — Add `totalDuration: Long = 0`
+**`ui/components/PlaylistItem.kt`** — New file
+- 72dp height row: `PlaylistCollage` | name + subtitle | play/pause | overflow `⋮`
+- `PlaylistPlaybackState` enum: Default, Playing, Paused
+- Accent border on **full row** (not just collage thumbnail) — matches Figma; collage is too visually busy for a thumbnail-only border to read clearly
+- Playing → pause icon; Default and Paused → play icon (tint difference conveys paused vs inactive)
+- Three previews (one per state)
 
-**`data/local/PlaylistDao.kt`** — Update query for duration:
+**`ui/components/PlaylistsActionBar.kt`** — New file
+- Same frosted glass pill + gradient accent border as `SortFilterBar`
+- Single `PlaylistAdd` icon on trailing edge; left side empty (reserved for future search)
+
+**`ui/components/PlaylistCollage.kt`** — New file
+- 2×2 grid of album art thumbnails (28×28dp each = 56×56dp total)
+- Takes `List<String?>` of up to 4 album art URIs
+- Falls back to centred music note icon when list is empty
+- Individual empty cells render as transparent — no icon clutter at 28dp
+
+**`model/Playlist.kt`** — Added `totalDuration: Long = 0` (defaulted so all existing callsites compile unchanged)
+
+**`data/local/PlaylistDao.kt`** — Updated `getAllPlaylistsWithCount()` query:
 ```sql
 SELECT p.id, p.name, p.createdAt, COUNT(ps.songId) AS songCount,
        COALESCE(SUM(s.duration), 0) AS totalDuration
@@ -427,30 +443,36 @@ LEFT JOIN songs s ON ps.songId = s.id
 WHERE p.deletedAt = 0 GROUP BY p.id ORDER BY p.name ASC
 ```
 
-**`ui/components/PlaylistCollage.kt`** — New file
-- 2x2 grid of album art thumbnails (28x28dp each = 56x56dp total)
-- Takes `List<String?>` of up to 4 album art URIs
-- Falls back to music note icon if fewer than 4
+### Files ✅
+| File                                  | Action                                              |
+|---------------------------------------|-----------------------------------------------------|
+| `ui/home/tabs/HistoryTabScreen.kt`    | Created (was `ui/library/HistoryTabContent.kt`)     |
+| `ui/home/tabs/FavoriteTabScreen.kt`   | Created (was `ui/library/FavesTabContent.kt`)       |
+| `ui/home/tabs/PlaylistsTabScreen.kt`  | Created (was `ui/playlists/PlaylistsTabContent.kt`) |
+| `ui/components/PlaylistItem.kt`       | Created — was not planned separately                |
+| `ui/components/PlaylistsActionBar.kt` | Created — was not planned separately                |
+| `ui/components/PlaylistCollage.kt`    | Created                                             |
+| `data/local/ListeningHistoryDao.kt`   | Updated — album/artist queries added                |
+| `data/local/PlaylistDao.kt`           | Updated — duration JOIN added                       |
+| `data/SongRepository.kt`              | Updated — two new method signatures                 |
+| `data/SongRepositoryImpl.kt`          | Updated — two new overrides                         |
+| `ui/library/MetadataViewModel.kt`     | Updated — 5-flow combine, two new state fields      |
+| `model/Playlist.kt`                   | Updated — `totalDuration: Long = 0` added           |
 
-### Files
-| File                                  | Action                    |
-|---------------------------------------|---------------------------|
-| `ui/library/HistoryTabContent.kt`     | Create                    |
-| `ui/library/FavesTabContent.kt`       | Create                    |
-| `ui/playlists/PlaylistsTabContent.kt` | Create                    |
-| `ui/components/PlaylistCollage.kt`    | Create                    |
-| `data/local/ListeningHistoryDao.kt`   | Add album/artist queries  |
-| `data/local/PlaylistDao.kt`           | Update query for duration |
-| `data/SongRepository.kt`              | Add new methods           |
-| `data/SongRepositoryImpl.kt`          | Implement new methods     |
-| `ui/library/MetadataViewModel.kt`     | Update state class        |
-| `model/Playlist.kt`                   | Add `totalDuration` field |
-
-### Verify
+### Verify ✅
 - `assembleDebug` passes
 - History tab: collapsible sections with song/album/artist content
-- Faves tab: rated songs with star + number
-- Playlists tab: 2x2 collage thumbnails, duration display
+- Faves tab: rated songs with sort bar
+- Playlists tab: collage thumbnails, duration display, create-playlist action bar
+
+### Implementation Notes (deviations from plan)
+- Tab screen files live in `ui/home/tabs/` not `ui/library/` or `ui/playlists/` — consistent with Phase 3 pattern
+- `PlaylistItem` and `PlaylistPlaybackState` extracted into `ui/components/PlaylistItem.kt` rather than being inlined in `PlaylistsTabScreen` — cleaner separation and enables reuse in `PlaylistDetailScreen` (Phase 5)
+- `PlaylistsActionBar` extracted into `ui/components/PlaylistsActionBar.kt` — same pattern as `SortFilterBar`
+- `FavoriteTabScreen` sorts locally rather than routing through `MetadataViewModel` — avoids a ViewModel round-trip for a purely presentational operation
+- `HistoryTabScreen` uses `.chunked(2)` rows in `LazyColumn` for albums and artists rather than nested `LazyVerticalGrid` — nested lazy layouts are not supported in Compose
+- `PlaylistItem` accent border wraps the full row rather than just the collage thumbnail — diverges from the `SongItem` thumbnail-only border pattern but matches the Figma and is more legible given the collage's visual complexity
+- `artUris = emptyList()` passed to `PlaylistItem` for now — per-playlist album art URIs require a dedicated DAO query that is deferred; `PlaylistCollage` handles the empty case with a music note fallback
 
 ---
 
@@ -705,10 +727,12 @@ If Compose version doesn't support this, defer to a future update.
 | `ui/library/AlbumsTabContent.kt`            | 3     |
 | `ui/library/ArtistsTabContent.kt`           | 3     |
 | `ui/library/ArtistGridItem.kt`              | 3     |
-| `ui/library/HistoryTabContent.kt`           | 4     |
-| `ui/library/FavesTabContent.kt`             | 4     |
-| `ui/playlists/PlaylistsTabContent.kt`       | 4     |
+| `ui/home/tabs/HistoryTabScreen.kt`          | 4     |
+| `ui/home/tabs/FavoriteTabScreen.kt`         | 4     |
+| `ui/home/tabs/PlaylistsTabScreen.kt`        | 4     |
 | `ui/components/PlaylistCollage.kt`          | 4     |
+| `ui/components/PlaylistItem.kt`             | 4     |
+| `ui/components/PlaylistsActionBar.kt`       | 4     |
 | `data/remote/ArtistImageService.kt`         | 7     |
 | `model/ArtistImage.kt`                      | 7     |
 | `data/local/ArtistImageDao.kt`              | 7     |

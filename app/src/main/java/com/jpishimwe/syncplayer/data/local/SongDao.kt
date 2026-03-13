@@ -192,13 +192,24 @@ interface SongDao {
 
     @Query(
         """
-            SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
-                   (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
-            FROM songs
-            WHERE artist LIKE '%' || :query || '%'
-            GROUP BY artist
-            ORDER BY artist ASC
-        """,
+        SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
+               (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
+        FROM songs
+        WHERE artist LIKE '%' || :query || '%'
+        GROUP BY artist
+        ORDER BY artist ASC
+    """,
     )
     fun searchArtists(query: String): Flow<List<Artist>>
+
+    @Query(
+        """
+        SELECT albumId AS id, album AS name, artist, COUNT(*) AS songCount, albumArtUri
+        FROM songs
+        WHERE artist = :artist
+        GROUP BY albumId
+        ORDER BY album ASC
+    """,
+    )
+    fun getAlbumsByArtist(artist: String): Flow<List<Album>>
 }

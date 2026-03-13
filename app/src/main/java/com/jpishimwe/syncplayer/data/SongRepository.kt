@@ -21,6 +21,8 @@ interface SongRepository {
 
     fun getSongsByArtist(artist: String): Flow<List<Song>>
 
+    fun getAlbumsByArtist(artist: String): Flow<List<Album>>
+
     suspend fun incrementPlayCount(songId: Long)
 
     suspend fun setRating(

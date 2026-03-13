@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,29 +40,33 @@ fun PlaylistsActionBar(
     onCreatePlaylist: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val borderBrush = Brush.linearGradient(
-        colors = listOf(
-            myAccentColor.copy(alpha = 0.24f),
-            myAccentColor.copy(alpha = 0.75f),
-            myAccentColor.copy(alpha = 0.24f),
-        ),
-    )
+    val borderBrush =
+        Brush.linearGradient(
+            colors =
+                listOf(
+                    myAccentColor.copy(alpha = 0.24f),
+                    myAccentColor.copy(alpha = 0.75f),
+                    myAccentColor.copy(alpha = 0.24f),
+                ),
+        )
     val barShape = RoundedCornerShape(8.dp)
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-            .border(BorderStroke(1.dp, borderBrush), barShape)
-            .clip(barShape),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .border(BorderStroke(1.dp, borderBrush), barShape)
+                .clip(barShape),
     ) {
         // Frosted glass background layer — must be first so content renders on top
         Box(modifier = Modifier.matchParentSize().frostedGlassRendered())
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 2.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Left side intentionally empty — reserved for future search/filter
@@ -71,7 +75,7 @@ fun PlaylistsActionBar(
             // Create playlist
             IconButton(onClick = onCreatePlaylist) {
                 Icon(
-                    imageVector = Icons.Default.PlaylistAdd,
+                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                     contentDescription = "New playlist",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(24.dp),

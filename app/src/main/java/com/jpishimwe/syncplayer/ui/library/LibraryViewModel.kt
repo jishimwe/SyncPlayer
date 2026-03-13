@@ -2,7 +2,6 @@ package com.jpishimwe.syncplayer.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.util.query
 import com.jpishimwe.syncplayer.data.SongRepository
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
@@ -215,6 +214,11 @@ class LibraryViewModel
         fun getSongsByAlbum(albumId: Long): Flow<List<Song>> = songRepository.getSongsByAlbum(albumId)
 
         fun getSongsByArtist(artist: String): Flow<List<Song>> = songRepository.getSongsByArtist(artist)
+
+        fun getAlbumsByArtist(artist: String): Flow<List<Album>> = songRepository.getAlbumsByArtist(artist)
+
+        fun getArtistByName(artistName: String): Flow<Artist?> =
+            songRepository.getAllArtists().map { list -> list.find { it.name == artistName } }
 
         fun onSearchQueryChanged(query: String) {
             _searchQuery.value = query
