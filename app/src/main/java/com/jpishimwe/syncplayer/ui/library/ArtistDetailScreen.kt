@@ -1,9 +1,7 @@
 package com.jpishimwe.syncplayer.ui.library
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +60,7 @@ import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
 import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.theme.gradientBorderStroke
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
 
@@ -178,7 +177,13 @@ fun ArtistDetailScreenContent(
         // Layer 2 — scrollable content: glass panel slides over portrait
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = PortraitHeight - PanelOverlap, start = 8.dp, end = 8.dp, bottom = MiniPlayerPeek),
+            contentPadding =
+                PaddingValues(
+                    top = PortraitHeight - PanelOverlap,
+                    start = 8.dp,
+                    end = 8.dp,
+                    bottom = MiniPlayerPeek,
+                ),
         ) {
             // ── Glass panel lip: rounded top edge ────────────────────────
             item(key = "panel_lip") {
@@ -206,7 +211,7 @@ fun ArtistDetailScreenContent(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp, vertical = 4.dp)
-                                .border(BorderStroke(1.dp, accentBorderBrush), TabBarShape)
+                                .gradientBorderStroke()
                                 .clip(TabBarShape),
                     ) {
                         // Frosted glass background layer

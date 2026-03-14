@@ -1,10 +1,10 @@
 package com.jpishimwe.syncplayer.ui.theme
 
 import androidx.compose.foundation.background
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
@@ -26,4 +26,12 @@ fun Modifier.frostedGlassRendered(
         .graphicsLayer {
             val blur = blurRadius.toPx()
             renderEffect = BlurEffect(blur, blur, TileMode.Clamp)
-        }.background(color.copy(alpha = alpha))
+        }.background(
+            Brush.verticalGradient(
+                colors =
+                    listOf(
+                        color.copy(alpha = alpha + 0.1f),
+                        color.copy(alpha = alpha - 0.1f),
+                    ),
+            ),
+        )

@@ -40,7 +40,6 @@ import com.jpishimwe.syncplayer.ui.library.PermissionHandler
 import com.jpishimwe.syncplayer.ui.navigation.LibraryTab
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
-import com.jpishimwe.syncplayer.ui.player.components.ScreenshotHolder
 
 @Composable
 fun HomeScreen(
@@ -84,20 +83,16 @@ fun HomeScreen(
                 playerUiState = playerUiState,
                 onRetry = libraryViewModel::refreshLibrary,
                 onSongClick = { songs, index ->
-                    ScreenshotHolder.capture(view)
                     playerViewModel.onEvent(PlayerEvent.PlaySongs(songs, index))
                     onNavigateToNowPlaying()
                 },
                 onAlbumClick = { albumId, albumName ->
-                    ScreenshotHolder.capture(view)
                     onNavigateToAlbumDetail(albumId, albumName)
                 },
                 onArtistClick = { artistName ->
-                    ScreenshotHolder.capture(view)
                     onNavigateToArtistDetail(artistName)
                 },
                 onPlaylistClick = { playlistId, playlistName ->
-                    ScreenshotHolder.capture(view)
                     onNavigateToPlaylistDetail(playlistId, playlistName)
                 },
                 modifier = modifier,

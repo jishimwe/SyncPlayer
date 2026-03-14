@@ -2,10 +2,16 @@ package com.jpishimwe.syncplayer.ui.navigation
 
 import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -82,7 +88,7 @@ sealed class Screen(
 ) {
     data object Home : Screen("home")
 
-    data object NowPlaying : Screen("now_playing")
+    // NowPlaying removed — no longer a navigation route, now an AnimatedContent overlay
 
     data object AlbumDetail : Screen("album_detail/{albumId}/{albumName}") {
         fun createRoute(
@@ -136,8 +142,19 @@ fun NavGraph(
             .value
             ?.destination
             ?.route
-    val isOnNowPlayingScreen = currentRoute == Screen.NowPlaying.route
     val isOnTopLevelScreen = currentRoute == Screen.Home.route
+
+    val view = LocalView.current
+
+    // --- Now Playing expansion state (replaces navigation) ---
+    var isNowPlayingExpanded by rememberSaveable { mutableStateOf(false) }
+    val expandNowPlaying: () -> Unit = {
+        Log.e("NavGraph", "expandNowPlaying: bitmap BEFORE capture = ${ScreenshotHolder.bitmap != null}")
+        ScreenshotHolder.capture(view)
+        Log.e("NavGraph", "expandNowPlaying: bitmap AFTER capture = ${ScreenshotHolder.bitmap != null}")
+        isNowPlayingExpanded = true
+    }
+    val collapseNowPlaying = { isNowPlayingExpanded = false }
 
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.SONGS) }
     var searchActive by rememberSaveable { mutableStateOf(false) }
@@ -145,8 +162,6 @@ fun NavGraph(
     // Measured at runtime — no hardcoding
     var overlayHeightPx by remember { mutableIntStateOf(0) }
     val overlayHeightDp = with(LocalDensity.current) { overlayHeightPx.toDp() }
-
-    val view = LocalView.current
 
     Box(modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.surface)) {
         // Content sits below the overlay, padded by its actual measured height
@@ -159,7 +174,7 @@ fun NavGraph(
                 HomeScreen(
                     selectedTab = selectedTab,
                     onSelectedTabChanged = { selectedTab = it },
-                    onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
+                    onNavigateToNowPlaying = expandNowPlaying,
                     onNavigateToAlbumDetail = { id, name ->
                         ScreenshotHolder.capture(view)
                         navController.navigate(Screen.AlbumDetail.createRoute(id, name))
@@ -190,7 +205,7 @@ fun NavGraph(
                     albumId = backStackEntry.arguments?.getLong("albumId") ?: 0L,
                     albumName = backStackEntry.arguments?.getString("albumName") ?: "",
                     onNavigateBack = { navController.navigateUp() },
-                    onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
+                    onNavigateToNowPlaying = expandNowPlaying,
                 )
             }
 
@@ -204,7 +219,7 @@ fun NavGraph(
                 ArtistDetailScreen(
                     artistName = backStackEntry.arguments?.getString("artistName") ?: "",
                     onNavigateBack = { navController.navigateUp() },
-                    onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
+                    onNavigateToNowPlaying = expandNowPlaying,
                 )
             }
 
@@ -220,13 +235,11 @@ fun NavGraph(
                     playlistId = backStackEntry.arguments?.getLong("playlistId") ?: 0L,
                     playlistName = backStackEntry.arguments?.getString("playlistName") ?: "",
                     onNavigateBack = { navController.navigateUp() },
-                    onNavigateToNowPlaying = { navController.navigate(Screen.NowPlaying.route) },
+                    onNavigateToNowPlaying = expandNowPlaying,
                 )
             }
 
-            composable(Screen.NowPlaying.route) {
-                NowPlayingScreen(onNavigateBack = { navController.navigateUp() })
-            }
+            // NowPlaying route removed — handled by AnimatedContent overlay below
 
             composable(Screen.Settings.route) {
                 SettingsScreen()
@@ -234,7 +247,7 @@ fun NavGraph(
         }
 
         // Overlay: title bar + tab row, measures itself and reports height
-        if (isOnTopLevelScreen) {
+        if (isOnTopLevelScreen && !isNowPlayingExpanded) {
             Column(
                 modifier =
                     Modifier
@@ -263,15 +276,47 @@ fun NavGraph(
             }
         }
 
-        if (playerState.currentSong != null && !isOnNowPlayingScreen) {
+        // System back while Now Playing is expanded → collapse instead of nav pop
+        BackHandler(enabled = isNowPlayingExpanded) {
+            collapseNowPlaying()
+        }
+
+        // --- MiniPlayer: visible when song loaded and NOT expanded ---
+        AnimatedVisibility(
+            visible = playerState.currentSong != null && !isNowPlayingExpanded,
+            enter = fadeIn(animationSpec = tween(300)),
+            exit = fadeOut(animationSpec = tween(200)),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(8.dp),
+        ) {
             MiniPlayer(
                 uiState = playerState,
                 onEvent = playerViewModel::onEvent,
-                onClick = { navController.navigate(Screen.NowPlaying.route) },
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(8.dp),
+                onClick = {
+                    expandNowPlaying()
+                },
+            )
+        }
+
+        // --- Now Playing: full-screen overlay when expanded ---
+        AnimatedVisibility(
+            visible = isNowPlayingExpanded,
+            enter =
+                slideInVertically(
+                    animationSpec = tween(400, easing = FastOutSlowInEasing),
+                    initialOffsetY = { fullHeight -> fullHeight },
+                ) + fadeIn(animationSpec = tween(300)),
+            exit =
+                slideOutVertically(
+                    animationSpec = tween(400, easing = FastOutSlowInEasing),
+                    targetOffsetY = { fullHeight -> fullHeight },
+                ) + fadeOut(animationSpec = tween(200)),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            NowPlayingScreen(
+                onNavigateBack = collapseNowPlaying,
             )
         }
     }

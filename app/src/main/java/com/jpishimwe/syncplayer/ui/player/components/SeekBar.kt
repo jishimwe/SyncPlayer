@@ -1,18 +1,42 @@
 package com.jpishimwe.syncplayer.ui.player.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.ui.theme.gradientBorderStroke
+import com.jpishimwe.syncplayer.ui.theme.myAccentColor
+import java.util.Locale
+
+private val TrackHeight = 12.dp
+private val TrackShape = RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)
+private val ThumbWidth = 6.dp
+private val ThumbHeight = 20.dp
+private val ThumbShape = RoundedCornerShape(3.dp)
 
 @Composable
 fun SeekBar(
@@ -22,34 +46,143 @@ fun SeekBar(
     formatTime: (Long) -> String,
     modifier: Modifier = Modifier,
 ) {
-    var tempPosition by remember { mutableStateOf<Long?>(null) }
+    var isDragging by remember { mutableStateOf(false) }
+    var dragFraction by remember { mutableFloatStateOf(0f) }
+    var trackWidthPx by remember { mutableFloatStateOf(1f) }
+
+    val safeDuration = duration.coerceAtLeast(1L)
+    val displayFraction =
+        if (isDragging) {
+            dragFraction
+        } else {
+            (currentPosition.toFloat() / safeDuration.toFloat()).coerceIn(0f, 1f)
+        }
+
+    val displayPosition =
+        if (isDragging) {
+            (dragFraction * safeDuration).toLong().coerceIn(0L, safeDuration)
+        } else {
+            currentPosition
+        }
 
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
-        Slider(
-            value = (tempPosition ?: currentPosition).toFloat(),
-            onValueChange = { tempPosition = it.toLong() },
-            valueRange = 0f..duration.toFloat().coerceAtLeast(1f),
-            onValueChangeFinished = {
-                tempPosition?.let { onSeek(it) }
-                tempPosition = null
-            },
-        )
+        // Custom track + thumb
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(ThumbHeight) // Touch target height
+                    .onSizeChanged { trackWidthPx = it.width.toFloat().coerceAtLeast(1f) }
+                    .pointerInput(safeDuration) {
+                        detectTapGestures { offset ->
+                            val fraction = (offset.x / trackWidthPx).coerceIn(0f, 1f)
+                            onSeek((fraction * safeDuration).toLong())
+                        }
+                    }.pointerInput(safeDuration) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { offset ->
+                                isDragging = true
+                                dragFraction = (offset.x / trackWidthPx).coerceIn(0f, 1f)
+                            },
+                            onDragEnd = {
+                                onSeek((dragFraction * safeDuration).toLong())
+                                isDragging = false
+                            },
+                            onDragCancel = {
+                                isDragging = false
+                            },
+                            onHorizontalDrag = { _, dragAmount ->
+                                dragFraction = (dragFraction + dragAmount / trackWidthPx).coerceIn(0f, 1f)
+                            },
+                        )
+                    },
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            // Inactive track (full width)
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .gradientBorderStroke(shape = TrackShape)
+                        .height(TrackHeight)
+                        .clip(TrackShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+            )
 
+            // Active track (filled portion)
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth(fraction = displayFraction)
+                        .height(TrackHeight)
+                        .clip(TrackShape)
+                        .background(myAccentColor),
+            )
+
+            // Thumb — small pill positioned at the progress edge
+            Box(
+                modifier =
+                    Modifier
+                        .padding(
+                            start =
+                                with(LocalDensity.current) {
+                                    // Position thumb at the fraction point, centered on its width
+                                    val thumbWidthPx = ThumbWidth.toPx()
+                                    val offsetPx =
+                                        (displayFraction * trackWidthPx - thumbWidthPx / 2)
+                                            .coerceIn(0f, (trackWidthPx - thumbWidthPx).coerceAtLeast(0f))
+                                    offsetPx.toDp()
+                                },
+                        ).width(ThumbWidth)
+                        .height(ThumbHeight)
+                        .clip(ThumbShape)
+                        .background(myAccentColor.copy(alpha = 0.7f)),
+            )
+        }
+
+        // Timestamps
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = formatTime(tempPosition ?: currentPosition),
+                text = formatTime(displayPosition),
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Text(
-                text = formatTime(duration),
+                text = formatTime(safeDuration),
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
+}
+
+fun thisFormatTime(ms: Long): String {
+    val totalSeconds = (ms / 1000) % 60
+    val minutes = (ms / (1000 * 60)) % 60
+    val hours = (ms / (1000 * 60 * 60))
+    return if (hours > 0) {
+        String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, totalSeconds)
+    } else {
+        String.format(Locale.getDefault(), "%d:%02d", minutes, totalSeconds)
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+fun SeekBarPreview() {
+    SeekBar(
+        currentPosition = 65000L,
+        duration = 213000L,
+        onSeek = {},
+        formatTime = { thisFormatTime(it) },
+    )
 }
