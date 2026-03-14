@@ -301,6 +301,7 @@ private fun SongItemPreview() {
                 id = 1,
                 title = "Blinding Lights",
                 artist = "The Weeknd",
+                albumArtist = "The Weeknd",
                 album = "After Hours",
                 duration = 200000L,
                 albumArtUri = null,

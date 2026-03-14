@@ -9,6 +9,7 @@ import com.jpishimwe.syncplayer.data.local.SongDao
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_4_5
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_5_6
+import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_6_7
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,6 +32,7 @@ object DatabaseModule {
                 "syncplayer.db",
             ).addMigrations(MIGRATION_4_5)
             .addMigrations(MIGRATION_5_6)
+            .addMigrations(MIGRATION_6_7)
             .build()
 
     @Provides

@@ -586,7 +586,7 @@ Box(fillMaxSize, statusBarsPadding) {
 
 ---
 
-## Phase 6: Now Playing & Queue
+## Phase 6: Now Playing & Queue ✅
 
 ### Full-Screen Player (Figma Screen 7)
 
@@ -645,20 +645,33 @@ Key changes:
 - First item accent-highlighted per spec
 
 ### Files
-| File                                     | Action                                               |
-|------------------------------------------|------------------------------------------------------|
-| `ui/player/NowPlayingScreenContent.kt`   | Major rewrite                                        |
-| `ui/player/components/PlayerControls.kt` | Add repeat/shuffle, frosted pill, larger play        |
-| `ui/player/components/MiniPlayer.kt`     | Major rewrite (pill, frosted glass, 3 controls)      |
-| `ui/player/components/QueueSheet.kt`     | Redesign (frosted glass, SongItem Reorderable)       |
-| `ui/navigation/NavGraph.kt`              | [GUESS] Remove NowPlaying route, add AnimatedContent |
+| File                                            | Action                                                    |
+|-------------------------------------------------|-----------------------------------------------------------|
+| `ui/player/NowPlayingScreenContent.kt`          | Major rewrite                                             |
+| `ui/player/components/PlayerControls.kt`        | Layered glass pill, diamond play, bordered prev/next      |
+| `ui/player/components/MiniPlayer.kt`            | Major rewrite (pill, frosted glass, 3 controls)           |
+| `ui/player/components/QueueSheet.kt`            | Redesign (frosted glass, accent playing item, drag-only)  |
+| `ui/player/components/SeekBar.kt`               | Custom track + thumb (accent progress, pill thumb)        |
+| `ui/player/components/BlurredBackground.kt`     | PixelCopy capture + hardware RenderEffect blur            |
+| `ui/navigation/NavGraph.kt`                     | Remove NowPlaying route, add AnimatedVisibility overlay   |
 
-### Verify
+### Verify ✅
 - `assembleDebug` passes
-- MiniPlayer: frosted glass pill, floating, 3 controls
-- Full player: large art, frosted glass controls pill, color-tinted background
+- MiniPlayer: frosted glass pill, floating, 3 controls, accent states
+- Full player: large art, glass controls pill, palette-tinted background, blurred background
 - Queue: frosted glass sheet, accent highlighting, drag handles
-- MiniPlayer -> Now Playing expansion animation (or navigation fallback)
+- MiniPlayer -> Now Playing AnimatedVisibility slide-up transition
+- System back collapses Now Playing (BackHandler)
+
+### Implementation Notes (deviations from plan)
+- **AnimatedContent → AnimatedVisibility**: Plan proposed `AnimatedContent` to morph MiniPlayer into NowPlaying. In practice, `AnimatedContent` couldn't properly size-transition between a small pill and a full-screen overlay. Replaced with two separate `AnimatedVisibility` blocks — MiniPlayer fades in/out, NowPlaying slides up/down. Simpler and more reliable.
+- **Shared element deferred**: Album art shared element transition (MiniPlayer → NowPlaying) not implemented — requires `SharedTransitionLayout` which is Phase 7 scope.
+- **PlayerControls diamond play button**: Plan said "accent-tinted circular background". Figma showed a more complex design: two imbricated rounded squares rotated 45° (ghost layer + shadow layer), with bordered prev/next and borderless repeat/shuffle. Implemented per Figma, not plan text.
+- **SeekBar fully custom**: Plan flagged `Slider` as "test first — may need custom". Material `Slider` couldn't achieve the thick rounded track + narrow pill thumb from the Figma. Replaced entirely with custom `Box`-based track + thumb using `pointerInput` for tap and drag.
+- **ScreenshotHolder.capture switched to PixelCopy**: `View.drawToBitmap()` uses software rendering which fails on views containing hardware bitmaps (Coil album art). Switched to `PixelCopy.request()` with a background `HandlerThread` to avoid main-thread deadlock. Also fixes blurred backgrounds on detail screens (Phase 5).
+- **BlurredBackground blur baked into bitmap**: Compose's `Modifier.blur()` and `graphicsLayer { BlurEffect }` failed to blur `Image(bitmap = asImageBitmap())`. Replaced with Android `HardwareRenderer` + `RenderEffect.createBlurEffect()` that pre-blurs the bitmap before Compose renders it. Zero per-frame cost.
+- **`Screen.NowPlaying` removed**: No longer a navigation route. Now Playing is an overlay managed by `isNowPlayingExpanded: Boolean` state in `NavGraph`. All `onNavigateToNowPlaying` callbacks in HomeScreen and detail screens now set this flag instead of navigating.
+- **Per-item delete removed from QueueSheet**: Spec says drag handle replaces overflow — individual delete removed. Header trash icon handles bulk clear.
 
 ---
 
@@ -767,34 +780,36 @@ If Compose version doesn't support this, defer to a future update.
 
 ## Summary: All Modified Files
 
-| File                                     | Phase | Severity                                                               |
-|------------------------------------------|-------|------------------------------------------------------------------------|
-| `ui/theme/Color.kt`                      | 0     | Add AccentColor, BackgroundDark, FrostedGlassSurface                   |
-| `ui/theme/Theme.kt`                      | 0     | Add LocalAccentColor, override background, disable dynamic color       |
-| `ui/theme/Type.kt`                       | 0     | Add weight variants per spec                                           |
-| `gradle/libs.versions.toml`              | 0     | Add palette-ktx                                                        |
-| `app/build.gradle.kts`                   | 0     | Add palette-ktx dependency                                             |
-| `ui/navigation/NavGraph.kt`              | 1, 6  | Major rewrite (tabs + AnimatedContent)                                 |
-| `ui/library/LibraryScreen.kt`            | 1, 3  | Major refactor                                                         |
-| `ui/library/LibraryViewModel.kt`         | 1     | Update tab enum                                                        |
-| `model/Artist.kt`                        | 3     | Add `artUri` field                                                     |
-| `data/local/SongDao.kt`                  | 3, 5  | Update + add queries                                                   |
-| `ui/library/AlbumGridItem.kt`            | 3     | Corner radius, playing border, play overlay                            |
-| `data/local/ListeningHistoryDao.kt`      | 4     | Add album/artist queries                                               |
-| `data/local/PlaylistDao.kt`              | 4     | Update query for duration                                              |
-| `data/SongRepository.kt`                 | 4, 5  | Add methods                                                            |
-| `data/SongRepositoryImpl.kt`             | 4, 5  | Implement methods                                                      |
-| `ui/library/MetadataViewModel.kt`        | 4     | Update state class                                                     |
-| `model/Playlist.kt`                      | 4     | Add `totalDuration` field                                              |
-| `ui/library/ArtistDetailScreen.kt`       | 5     | Major rewrite (layered Box, fixed portrait, glass panel, pinned pills) |
-| `ui/library/AlbumDetailScreen.kt`        | 5     | Major rewrite (same layered pattern as Artist)                         |
-| `ui/playlists/PlaylistDetailScreen.kt`   | 5     | Major rewrite (homogenized header + action bar)                        |
-| `ui/player/NowPlayingScreenContent.kt`   | 6     | Major rewrite                                                          |
-| `ui/player/components/PlayerControls.kt` | 6     | Frosted pill, repeat/shuffle, larger play                              |
-| `ui/player/components/MiniPlayer.kt`     | 6     | Major rewrite (pill, frosted glass)                                    |
-| `ui/player/components/QueueSheet.kt`     | 6     | Frosted glass, SongItem reorderable                                    |
-| `data/local/SyncPlayerDatabase.kt`       | 7     | Add ArtistImage entity + migration                                     |
-| `di/AppModule.kt`                        | 7     | Bind artist image service                                              |
+| File                                        | Phase | Severity                                                               |
+|---------------------------------------------|-------|------------------------------------------------------------------------|
+| `ui/theme/Color.kt`                         | 0     | Add AccentColor, BackgroundDark, FrostedGlassSurface                   |
+| `ui/theme/Theme.kt`                         | 0     | Add LocalAccentColor, override background, disable dynamic color       |
+| `ui/theme/Type.kt`                          | 0     | Add weight variants per spec                                           |
+| `gradle/libs.versions.toml`                 | 0     | Add palette-ktx                                                        |
+| `app/build.gradle.kts`                      | 0     | Add palette-ktx dependency                                             |
+| `ui/library/LibraryScreen.kt`               | 1, 3  | Major refactor                                                         |
+| `ui/library/LibraryViewModel.kt`            | 1     | Update tab enum                                                        |
+| `model/Artist.kt`                           | 3     | Add `artUri` field                                                     |
+| `data/local/SongDao.kt`                     | 3, 5  | Update + add queries                                                   |
+| `ui/library/AlbumGridItem.kt`               | 3     | Corner radius, playing border, play overlay                            |
+| `data/local/ListeningHistoryDao.kt`         | 4     | Add album/artist queries                                               |
+| `data/local/PlaylistDao.kt`                 | 4     | Update query for duration                                              |
+| `data/SongRepository.kt`                    | 4, 5  | Add methods                                                            |
+| `data/SongRepositoryImpl.kt`                | 4, 5  | Implement methods                                                      |
+| `ui/library/MetadataViewModel.kt`           | 4     | Update state class                                                     |
+| `model/Playlist.kt`                         | 4     | Add `totalDuration` field                                              |
+| `ui/library/ArtistDetailScreen.kt`          | 5     | Major rewrite (layered Box, fixed portrait, glass panel, pinned pills) |
+| `ui/library/AlbumDetailScreen.kt`           | 5     | Major rewrite (same layered pattern as Artist)                         |
+| `ui/playlists/PlaylistDetailScreen.kt`      | 5     | Major rewrite (homogenized header + action bar)                        |
+| `ui/player/NowPlayingScreenContent.kt`      | 6     | Major rewrite (palette bg, blurred bg, spec layout)                    |
+| `ui/player/components/PlayerControls.kt`    | 6     | Layered glass pill, diamond play, bordered prev/next                   |
+| `ui/player/components/MiniPlayer.kt`        | 6     | Major rewrite (pill, frosted glass, 3 accent states)                   |
+| `ui/player/components/QueueSheet.kt`        | 6     | Frosted glass, accent playing item, drag-handle-only                   |
+| `ui/player/components/SeekBar.kt`           | 6     | Custom track + pill thumb (replaced Material Slider)                   |
+| `ui/player/components/BlurredBackground.kt` | 5, 6  | PixelCopy capture (fixes hardware bitmap), HardwareRenderer blur       |
+| `ui/navigation/NavGraph.kt`                 | 1, 6  | Remove NowPlaying route, AnimatedVisibility overlay, BackHandler       |
+| `data/local/SyncPlayerDatabase.kt`          | 7     | Add ArtistImage entity + migration                                     |
+| `di/AppModule.kt`                           | 7     | Bind artist image service                                              |
 
 ## Summary: Deleted Files
 

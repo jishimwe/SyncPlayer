@@ -234,6 +234,7 @@ private fun MiniPlayerPreview() {
                 id = 1L,
                 title = "Fe3O4: FORWARD",
                 artist = "NMIXX",
+                albumArtist = "NMIXX",
                 album = "Fe3O4",
                 albumId = 1L,
                 duration = 213000L,

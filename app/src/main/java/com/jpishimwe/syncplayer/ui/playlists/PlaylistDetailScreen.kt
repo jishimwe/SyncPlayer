@@ -217,7 +217,7 @@ fun PlaylistDetailScreenContent(
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = MiniPlayerPeek)
+                contentPadding = PaddingValues(bottom = MiniPlayerPeek),
             ) {
                 itemsIndexed(
                     items = playlistSongs,
@@ -341,6 +341,7 @@ private val previewPlaylistSongs =
             id = 1,
             title = "Blinding Lights",
             artist = "The Weeknd",
+            albumArtist = "The Weeknd",
             album = "After Hours",
             duration = 200_000L,
             albumArtUri = null,
@@ -357,7 +358,8 @@ private val previewPlaylistSongs =
         Song(
             id = 2,
             title = "Levitating",
-            artist = "Dua Lipa",
+            artist = "Dua Lipa  Feat. DaBaby",
+            albumArtist = "Dua Lipa",
             album = "Future Nostalgia",
             duration = 203_000L,
             albumArtUri = null,
@@ -375,6 +377,7 @@ private val previewPlaylistSongs =
             id = 3,
             title = "As It Was",
             artist = "Harry Styles",
+            albumArtist = "Harry Styles",
             album = "Harry's House",
             duration = 167_000L,
             albumArtUri = null,
@@ -392,6 +395,7 @@ private val previewPlaylistSongs =
             id = 4,
             title = "Shivers",
             artist = "Ed Sheeran",
+            albumArtist = "Ed Sheeran",
             album = "=",
             duration = 207_000L,
             albumArtUri = null,

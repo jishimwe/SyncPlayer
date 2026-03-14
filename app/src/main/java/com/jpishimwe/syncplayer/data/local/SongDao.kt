@@ -36,10 +36,10 @@ interface SongDao {
 
     @Query(
         """
-        SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
+        SELECT albumArtist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
                (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
         FROM songs
-        GROUP BY artist
+        GROUP BY name
         ORDER BY artist ASC
         """,
     )
@@ -48,7 +48,7 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE albumId = :albumId ORDER BY trackNumber ASC")
     fun getSongsByAlbum(albumId: Long): Flow<List<Song>>
 
-    @Query("SELECT * FROM songs WHERE artist = :artist ORDER BY album ASC, trackNumber ASC")
+    @Query("SELECT * FROM songs WHERE artist = :artist OR albumArtist = :artist ORDER BY album ASC, trackNumber ASC")
     fun getSongsByArtist(artist: String): Flow<List<Song>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -66,6 +66,7 @@ interface SongDao {
         UPDATE songs SET
             title        = :title,
             artist       = :artist,
+            albumArtist  = :albumArtist,
             album        = :album,
             albumId      = :albumId,
             duration     = :duration,
@@ -81,6 +82,7 @@ interface SongDao {
         id: Long,
         title: String,
         artist: String,
+        albumArtist: String,
         album: String,
         albumId: Long,
         duration: Long,
@@ -105,6 +107,7 @@ interface SongDao {
                 id = song.id,
                 title = song.title,
                 artist = song.artist,
+                albumArtist = song.albumArtist,
                 album = song.album,
                 albumId = song.albumId,
                 duration = song.duration,
@@ -204,9 +207,9 @@ interface SongDao {
 
     @Query(
         """
-        SELECT albumId AS id, album AS name, artist, COUNT(*) AS songCount, albumArtUri
+        SELECT albumId AS id, album AS name, albumArtist as artist, COUNT(*) AS songCount, albumArtUri
         FROM songs
-        WHERE artist = :artist
+        WHERE artist = :artist OR albumArtist = :artist
         GROUP BY albumId
         ORDER BY album ASC
     """,
