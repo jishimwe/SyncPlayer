@@ -9,12 +9,12 @@ Comprehensive UI refactor to match 12 Figma screens + a visual design spec docum
 ### User Decisions
 - **Most Played**: Merge into History tab as a section
 - **Song overflow menu**: Standard set (Play Next, Add to Queue, Add to Playlist, Go to Artist, Go to Album)
-- **Artist images**: Fetch from web (e.g., MusicBrainz/Last.fm API)
+- **Artist images**: Fetch from web via Deezer API (no API key required, returns high-res 1000x1000 images)
 
 ### Guesses / Open Questions (flagged)
 - [GUESS] The spec says "repository layer — untouched" but History tab needs recently-played albums/artists data that doesn't currently exist in any DAO. Plan adds minimal DAO queries for this. If the intent is truly zero data-layer changes, History tab would only show songs.
 - [GUESS] MiniPlayer -> Now Playing AnimatedContent expansion: the spec says "not navigation". This requires significant architectural change (removing the NowPlaying NavHost route and replacing with an overlay/AnimatedContent at the Scaffold level). Plan treats this as a Phase 6 change. If too risky, we can keep navigation for now and add the animation later.
-- [GUESS] The spec mentions `SharedTransitionLayout` (Compose 1.7+). Need to verify our Compose version supports this. If not, shared element transitions get deferred.
+- [RESOLVED] `SharedTransitionLayout` is supported (Compose BOM 2026.01.01). Implemented in Phase 7 for album art and artist portrait transitions between grid and detail screens.
 - [GUESS] Frosted glass pre-API-31 fallback: not needed — Min SDK is 34.
 - [RESOLVED] Palette-ktx dependency: added to version catalog as `palette = "1.0.0"`, library entry `palette = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette" }`, accessed as `libs.palette` in build.gradle.kts.
 - [GUESS] `Slider` for seek bar in Now Playing: Material `Slider` may need heavy customization or full replacement. Needs testing before committing.
@@ -665,7 +665,7 @@ Key changes:
 
 ### Implementation Notes (deviations from plan)
 - **AnimatedContent → AnimatedVisibility**: Plan proposed `AnimatedContent` to morph MiniPlayer into NowPlaying. In practice, `AnimatedContent` couldn't properly size-transition between a small pill and a full-screen overlay. Replaced with two separate `AnimatedVisibility` blocks — MiniPlayer fades in/out, NowPlaying slides up/down. Simpler and more reliable.
-- **Shared element deferred**: Album art shared element transition (MiniPlayer → NowPlaying) not implemented — requires `SharedTransitionLayout` which is Phase 7 scope.
+- **Shared element deferred**: MiniPlayer → NowPlaying shared element not implemented — NowPlaying uses AnimatedVisibility overlay (not navigation), so `SharedTransitionLayout` doesn't apply. Album/artist grid → detail transitions implemented in Phase 7.
 - **PlayerControls diamond play button**: Plan said "accent-tinted circular background". Figma showed a more complex design: two imbricated rounded squares rotated 45° (ghost layer + shadow layer), with bordered prev/next and borderless repeat/shuffle. Implemented per Figma, not plan text.
 - **SeekBar fully custom**: Plan flagged `Slider` as "test first — may need custom". Material `Slider` couldn't achieve the thick rounded track + narrow pill thumb from the Figma. Replaced entirely with custom `Box`-based track + thumb using `pointerInput` for tap and drag.
 - **ScreenshotHolder.capture switched to PixelCopy**: `View.drawToBitmap()` uses software rendering which fails on views containing hardware bitmaps (Coil album art). Switched to `PixelCopy.request()` with a background `HandlerThread` to avoid main-thread deadlock. Also fixes blurred backgrounds on detail screens (Phase 5).
@@ -675,108 +675,156 @@ Key changes:
 
 ---
 
-## Phase 7: Artist Image Fetching, Transitions & Polish
+## Phase 7: Artist Image Fetching, Transitions & Polish ✅
 
-### Artist Image Service
+**Status**: Implemented. `assembleDebug` and `test` pass.
+
+### Artist Image Service ✅
 
 **`data/remote/ArtistImageService.kt`** — New file
-- Fetch artist images from MusicBrainz or Last.fm API
-- Cache results locally in Room
-- `getArtistImageUrl(artistName: String): String?`
+- Fetches artist images from **Deezer API** (`https://api.deezer.com/search/artist?q={name}&limit=1`)
+- Uses `java.net.HttpURLConnection` + `org.json.JSONObject` (zero new deps — both built into Android)
+- Parses `data[0].picture_xl` for high-res 1000x1000 images
+- Runs on `Dispatchers.IO`, 10s connect/read timeouts
+
+**`data/ArtistImageRepository.kt`** — New interface
+- `suspend fun getArtistImageUrl(artistName: String): String?`
+
+**`data/ArtistImageRepositoryImpl.kt`** — New implementation
+- Cache-first: checks Room, returns immediately if cached and < 7 days old
+- Failed lookups (null imageUrl) only cached for 1 day (retries sooner)
+- Blank artist names skipped
+- `@Singleton`, `@Inject constructor(dao, service)`
 
 **`model/ArtistImage.kt`** — New Room entity
 - `artist_images(artistName: String PK, imageUrl: String?, fetchedAt: Long)`
 
 **`data/local/ArtistImageDao.kt`** — New DAO
-- `getImage(artistName): Flow<ArtistImage?>`
-- `insertImage(image: ArtistImage)`
+- `getByArtistName(name): ArtistImage?` (suspend)
+- `insertOrReplace(entity)` (suspend, REPLACE strategy)
+- `getAll(): Flow<List<ArtistImage>>`
 
-**`data/local/SyncPlayerDatabase.kt`** — Add `ArtistImage` entity + DAO, increment version + migration
+**`data/local/SyncPlayerDatabase.kt`** — Added `ArtistImage` entity, bumped version 7→8, added `MIGRATION_7_8` (CREATE TABLE), added `artistImageDao()` abstract method
 
-**`di/AppModule.kt`** — Bind new service
+**`di/DatabaseModule.kt`** — Added `MIGRATION_7_8` to builder, added `provideArtistImageDao()` provider
 
-Integration: `ArtistsTabContent` and `ArtistDetailScreen` resolve images via service -> album art heuristic -> person icon fallback.
+**`di/AppModule.kt`** — Added `@Binds abstract fun bindArtistImageRepository(impl): ArtistImageRepository`
 
-### Shared Element Transitions
+**`gradle/libs.versions.toml`** — Added `coil-network-okhttp` library entry (group `io.coil-kt.coil3`, uses existing `coil` version ref)
 
-[GUESS] Requires `SharedTransitionLayout` from Compose 1.7+. If supported:
-- Album art: Albums grid item -> Album Detail hero
-- Artist portrait: Artists grid item -> Artist Detail hero
-- MiniPlayer album art -> Now Playing album art
+**`app/build.gradle.kts`** — Added `implementation(libs.coil.network.okhttp)` for Coil 3 network fetching
 
-If Compose version doesn't support this, defer to a future update.
+**`app/src/main/AndroidManifest.xml`** — Added `<uses-permission android:name="android.permission.INTERNET" />`
 
-### Scroll Behaviors
-- Hero images on detail screens: parallax or clip on scroll
-- Top App Bar: gains frosted glass background on scroll (using `nestedScroll` + `TopAppBarScrollBehavior`)
-- Sort bar: sticks below tab row on scroll
+**Integration via SQL JOIN** — `data/local/SongDao.kt`: Updated `getAllArtists()` and `searchArtists()` queries with LEFT JOIN on `artist_images` table:
+```sql
+COALESCE(ai.imageUrl, (SELECT albumArtUri FROM songs s2 WHERE ...)) AS artUri
+```
+Priority chain: Deezer URL → most recent album art → placeholder icon.
+
+**Background fetch** — `ui/library/LibraryViewModel.kt`: Injects `ArtistImageRepository`. `init` block calls `fetchMissingArtistImages()` which waits for non-empty artist list, then calls `getArtistImageUrl()` for each artist (throttled to 1 req/sec for Deezer rate limits).
+
+### Shared Element Transitions ✅
+
+Compose BOM 2026.01.01 supports `SharedTransitionLayout`. Implemented for:
+- **Album art**: `AlbumGridItem` → `AlbumDetailScreen` hero (key: `"album_art_${album.id}"`)
+- **Artist portrait**: `ArtistItem` → `ArtistDetailScreen` hero (key: `"artist_art_$artistName"`)
+- MiniPlayer → Now Playing: **not implemented** (Now Playing uses AnimatedVisibility overlay, not navigation — shared element not applicable)
+
+**Modified files:**
+- `ui/navigation/NavGraph.kt` — Wrapped `NavHost` in `SharedTransitionLayout`, passed scopes to screens
+- `ui/home/HomeScreen.kt` — Threaded `SharedTransitionScope` + `AnimatedVisibilityScope` to tab screens
+- `ui/home/tabs/AlbumsTabScreen.kt` — Passes scopes to `AlbumGridItem`
+- `ui/home/tabs/ArtistsTabScreen.kt` — Passes scopes to `ArtistItem`
+- `ui/player/components/AlbumItem.kt` — Applies `sharedElement` modifier to album art image
+- `ui/player/components/ArtistItem.kt` — Applies `sharedElement` modifier to `CircularArtistImage`
+- `ui/library/AlbumDetailScreen.kt` — Matching `sharedElement` on hero album art
+- `ui/library/ArtistDetailScreen.kt` — Matching `sharedElement` on hero portrait
+
+### Scroll Behaviors ✅
+
+- **Parallax**: Hero images on `AlbumDetailScreen` and `ArtistDetailScreen` use `graphicsLayer { translationY = firstVisibleItemScrollOffset * 0.5f }` derived from `LazyListState`
+- Top App Bar frosted glass on scroll: not implemented (deferred)
+- Sort bar sticky: not implemented (deferred)
 
 ### Cleanup
-- Delete: `ui/library/ArtistListItem.kt` (replaced by ArtistGridItem)
-- Delete: `ui/playlists/PlaylistsScreen.kt` (replaced by tab)
-- Delete: `ui/playlists/PlaylistsScreenContent.kt` (merged into PlaylistsTabContent)
-- Remove `BottomNavDestination` enum
-- Remove unused `MostPlayedTab`, `RecentlyPlayedTab`, `FavoriteTab` composables from LibraryScreen
-- Verify all files < 300 lines
 
-### Test Updates
-- `LibraryViewModelTest.kt` — Update for renamed tab enum
-- `LibraryViewModelMetadataTest.kt` — Update for new MetadataUiState shape
-- `NowPlayingScreenContentTest.kt` — Update for new layout
-- `NowPlayingScreenTest.kt` — Update for new layout
-- `PlayerViewModelTest.kt` — Mostly unaffected
+**Deferred** — file deletion and dead code cleanup to be done separately per user request.
 
-### String Resources
-- Tab labels, sort options, section headers, content descriptions
+### Test Updates ✅
+
+- `LibraryViewModelTest.kt` — Updated setup to provide fake `ArtistImageRepository`, added `albumArtist` to `testSong` helper, added `artUri = null` to `testArtist` helper
+- `ArtistImageRepositoryTest.kt` — **New test file** with `FakeArtistImageDao` and `FakeArtistImageService`. Tests: cache hit, cache miss (service called), stale cache refresh, null result caching
+- `FakeSongRepository.kt` — Added missing interface methods: `getAlbumsByArtist`, `getRecentlyPlayedAlbums`, `getRecentlyPlayedArtists`
+- Multiple test files fixed for pre-existing `albumArtist` compilation errors: `ConflictResolverTest`, `SyncOrchestratorTest`, `LibraryViewModelMetadataTest`, `NowPlayingScreenTest`, `PlayerViewModelTest`
 
 ### Files
-| File                                     | Action                 |
-|------------------------------------------|------------------------|
-| `data/remote/ArtistImageService.kt`      | Create                 |
-| `model/ArtistImage.kt`                   | Create                 |
-| `data/local/ArtistImageDao.kt`           | Create                 |
-| `data/local/SyncPlayerDatabase.kt`       | Add entity + migration |
-| `di/AppModule.kt`                        | Bind service           |
-| `ui/library/ArtistListItem.kt`           | Delete                 |
-| `ui/playlists/PlaylistsScreen.kt`        | Delete                 |
-| `ui/playlists/PlaylistsScreenContent.kt` | Delete                 |
-| All test files                           | Update assertions      |
+| File                                            | Action                             |
+|-------------------------------------------------|------------------------------------|
+| `data/remote/ArtistImageService.kt`             | Created                            |
+| `data/ArtistImageRepository.kt`                 | Created (interface)                |
+| `data/ArtistImageRepositoryImpl.kt`             | Created                            |
+| `model/ArtistImage.kt`                          | Created                            |
+| `data/local/ArtistImageDao.kt`                  | Created                            |
+| `data/local/SyncPlayerDatabase.kt`              | Added entity + migration 7→8       |
+| `di/DatabaseModule.kt`                          | Added DAO provider + migration     |
+| `di/AppModule.kt`                               | Added repository binding           |
+| `data/local/SongDao.kt`                         | Updated artist queries (LEFT JOIN) |
+| `ui/library/LibraryViewModel.kt`                | Added image fetch logic            |
+| `ui/navigation/NavGraph.kt`                     | SharedTransitionLayout wrapper     |
+| `ui/home/HomeScreen.kt`                         | Thread transition scopes           |
+| `ui/home/tabs/AlbumsTabScreen.kt`               | Pass transition scopes             |
+| `ui/home/tabs/ArtistsTabScreen.kt`              | Pass transition scopes             |
+| `ui/player/components/AlbumItem.kt`             | sharedElement modifier             |
+| `ui/player/components/ArtistItem.kt`            | sharedElement modifier             |
+| `ui/library/AlbumDetailScreen.kt`               | sharedElement + parallax           |
+| `ui/library/ArtistDetailScreen.kt`              | sharedElement + parallax           |
+| `gradle/libs.versions.toml`                     | Added coil-network-okhttp          |
+| `app/build.gradle.kts`                          | Added coil-network-okhttp dep      |
+| `app/src/main/AndroidManifest.xml`              | Added INTERNET permission          |
+| `app/src/test/.../ArtistImageRepositoryTest.kt` | Created                            |
+| `app/src/test/.../LibraryViewModelTest.kt`      | Updated                            |
+| `app/src/test/.../FakeSongRepository.kt`        | Updated                            |
 
 ### Verify
-- `assembleDebug` passes
-- `test` passes (all unit tests green)
-- Artist images load from web with caching
-- Shared element transitions work (or gracefully absent)
-- Full manual walkthrough of all 12 Figma screens
+- ✅ `assembleDebug` passes
+- ✅ `test` passes (all unit tests green)
+- ✅ Artist images fetch from Deezer with Room caching (requires device internet)
+- ✅ Album art shared element transition: grid → detail
+- ✅ Artist portrait shared element transition: grid → detail
+- ✅ Parallax scroll on detail screen hero images
 
 ---
 
 ## Summary: All New Files
 
-| File                                        | Phase |
-|---------------------------------------------|-------|
-| `ui/theme/GlassEffect.kt`                   | 0     |
-| `ui/components/SortFilterBar.kt`            | 2     |
-| `ui/components/AlphabeticalIndexSidebar.kt` | 2     |
-| `ui/components/CollapsibleSection.kt`       | 2     |
-| `ui/components/SongItem.kt`                 | 2     |
-| `ui/components/SongOverflowMenu.kt`         | 2     |
-| `ui/components/CircularArtistImage.kt`      | 2     |
-| `ui/components/FrostedGlassPill.kt`         | 2     |
-| `ui/library/SongsTabContent.kt`             | 3     |
-| `ui/library/AlbumsTabContent.kt`            | 3     |
-| `ui/library/ArtistsTabContent.kt`           | 3     |
-| `ui/library/ArtistGridItem.kt`              | 3     |
-| `ui/home/tabs/HistoryTabScreen.kt`          | 4     |
-| `ui/home/tabs/FavoriteTabScreen.kt`         | 4     |
-| `ui/home/tabs/PlaylistsTabScreen.kt`        | 4     |
-| `ui/components/PlaylistCollage.kt`          | 4     |
-| `ui/components/PlaylistItem.kt`             | 4     |
-| `ui/components/PlaylistsActionBar.kt`       | 4     |
-| `ui/components/BlurredBackground.kt`        | 5     |
-| `data/remote/ArtistImageService.kt`         | 7     |
-| `model/ArtistImage.kt`                      | 7     |
-| `data/local/ArtistImageDao.kt`              | 7     |
+| File                                         | Phase |
+|----------------------------------------------|-------|
+| `ui/theme/GlassEffect.kt`                    | 0     |
+| `ui/components/SortFilterBar.kt`             | 2     |
+| `ui/components/AlphabeticalIndexSidebar.kt`  | 2     |
+| `ui/components/CollapsibleSection.kt`        | 2     |
+| `ui/components/SongItem.kt`                  | 2     |
+| `ui/components/SongOverflowMenu.kt`          | 2     |
+| `ui/components/CircularArtistImage.kt`       | 2     |
+| `ui/components/FrostedGlassPill.kt`          | 2     |
+| `ui/library/SongsTabContent.kt`              | 3     |
+| `ui/library/AlbumsTabContent.kt`             | 3     |
+| `ui/library/ArtistsTabContent.kt`            | 3     |
+| `ui/library/ArtistGridItem.kt`               | 3     |
+| `ui/home/tabs/HistoryTabScreen.kt`           | 4     |
+| `ui/home/tabs/FavoriteTabScreen.kt`          | 4     |
+| `ui/home/tabs/PlaylistsTabScreen.kt`         | 4     |
+| `ui/components/PlaylistCollage.kt`           | 4     |
+| `ui/components/PlaylistItem.kt`              | 4     |
+| `ui/components/PlaylistsActionBar.kt`        | 4     |
+| `ui/components/BlurredBackground.kt`         | 5     |
+| `data/remote/ArtistImageService.kt`          | 7     |
+| `data/ArtistImageRepository.kt`              | 7     |
+| `data/ArtistImageRepositoryImpl.kt`          | 7     |
+| `model/ArtistImage.kt`                       | 7     |
+| `data/local/ArtistImageDao.kt`               | 7     |
+| `test/.../ArtistImageRepositoryTest.kt`      | 7     |
 
 ## Summary: All Modified Files
 
@@ -808,8 +856,22 @@ If Compose version doesn't support this, defer to a future update.
 | `ui/player/components/SeekBar.kt`           | 6     | Custom track + pill thumb (replaced Material Slider)                   |
 | `ui/player/components/BlurredBackground.kt` | 5, 6  | PixelCopy capture (fixes hardware bitmap), HardwareRenderer blur       |
 | `ui/navigation/NavGraph.kt`                 | 1, 6  | Remove NowPlaying route, AnimatedVisibility overlay, BackHandler       |
-| `data/local/SyncPlayerDatabase.kt`          | 7     | Add ArtistImage entity + migration                                     |
-| `di/AppModule.kt`                           | 7     | Bind artist image service                                              |
+| `data/local/SyncPlayerDatabase.kt`          | 7     | Add ArtistImage entity + migration 7→8                                 |
+| `di/DatabaseModule.kt`                      | 7     | Add ArtistImageDao provider + migration                                |
+| `di/AppModule.kt`                           | 7     | Bind ArtistImageRepository                                             |
+| `data/local/SongDao.kt`                     | 7     | LEFT JOIN artist_images for artUri                                     |
+| `ui/library/LibraryViewModel.kt`            | 7     | Inject ArtistImageRepository, background fetch                         |
+| `ui/navigation/NavGraph.kt`                 | 7     | SharedTransitionLayout wrapper                                         |
+| `ui/home/HomeScreen.kt`                     | 7     | Thread transition scopes                                               |
+| `ui/home/tabs/AlbumsTabScreen.kt`           | 7     | Pass transition scopes                                                 |
+| `ui/home/tabs/ArtistsTabScreen.kt`          | 7     | Pass transition scopes                                                 |
+| `ui/player/components/AlbumItem.kt`         | 7     | sharedElement modifier on album art                                    |
+| `ui/player/components/ArtistItem.kt`        | 7     | sharedElement modifier on artist portrait                              |
+| `ui/library/AlbumDetailScreen.kt`           | 7     | sharedElement + parallax scroll                                        |
+| `ui/library/ArtistDetailScreen.kt`          | 7     | sharedElement + parallax scroll                                        |
+| `gradle/libs.versions.toml`                 | 7     | Add coil-network-okhttp                                                |
+| `app/build.gradle.kts`                      | 7     | Add coil-network-okhttp dependency                                     |
+| `app/src/main/AndroidManifest.xml`          | 7     | Add INTERNET permission                                                |
 
 ## Summary: Deleted Files
 

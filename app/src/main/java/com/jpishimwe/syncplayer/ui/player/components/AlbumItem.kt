@@ -3,6 +3,8 @@ package com.jpishimwe.syncplayer.ui.player.components
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -94,7 +96,9 @@ fun AlbumGridItem(
                                     with(sharedTransitionScope) {
                                         mod.sharedElement(
                                             rememberSharedContentState(key = "album_art_${album.id}"),
+                                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(8.dp)),
                                             animatedVisibilityScope = animatedVisibilityScope,
+                                            boundsTransform = { _, _ -> tween(300, easing = FastOutSlowInEasing) },
                                         )
                                     }
                                 } else {

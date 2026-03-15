@@ -4,6 +4,9 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,16 +35,19 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,6 +85,7 @@ private val PanelOverlap = 24.dp
 
 private val PanelTopShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private val TabBarShape = RoundedCornerShape(8.dp)
+private val TopBarHeight = 64.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -137,14 +144,23 @@ fun ArtistDetailScreenContent(
     var selectedSubTab by remember { mutableStateOf(ArtistSubTab.Songs) }
     val lazyListState = rememberLazyListState()
 
-    // Parallax: hero scrolls at half speed
-    val firstVisibleItemScrollOffset =
-        if (lazyListState.firstVisibleItemIndex == 0) {
-            lazyListState.firstVisibleItemScrollOffset.toFloat()
-        } else {
-            // Once scrolled past the first item, max out the parallax
-            Float.MAX_VALUE
+    // Parallax: compute how far the LazyColumn has scrolled from its rest position.
+    val parallaxOffset by remember {
+        derivedStateOf {
+            val firstItem = lazyListState.layoutInfo.visibleItemsInfo.firstOrNull()
+            if (firstItem == null) {
+                0f
+            } else {
+                (-firstItem.offset.toFloat()).coerceAtLeast(0f)
+            }
         }
+    }
+
+    // Content fade: layers 0/2/3 fade in independently, hero (layer 1) handled by shared element
+    val contentAlpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        contentAlpha.animateTo(1f, tween(350, delayMillis = 150, easing = FastOutSlowInEasing))
+    }
 
     val accentBorderBrush =
         Brush.linearGradient(
@@ -159,16 +175,16 @@ fun ArtistDetailScreenContent(
 // ── Root ─────────────────────────────────────────────────────────────
     Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         // Layer 0 — blurred screenshot of previous screen
-        BlurredBackground()
+        Box(modifier = Modifier.alpha(contentAlpha.value)) { BlurredBackground() }
 
-        // Layer 1 — fixed portrait pinned to top (parallax: scrolls at half speed)
+        // Layer 1 — fixed portrait pinned to top (parallax: scrolls slower than content)
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .height(PortraitHeight)
                     .graphicsLayer {
-                        translationY = firstVisibleItemScrollOffset * 0.5f
+                        translationY = -parallaxOffset * 0.35f
                     },
         ) {
             SubcomposeAsyncImage(
@@ -222,17 +238,17 @@ fun ArtistDetailScreenContent(
         // Layer 2 — scrollable content: glass panel slides over portrait
         LazyColumn(
             state = lazyListState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(top = TopBarHeight).alpha(contentAlpha.value),
             contentPadding =
                 PaddingValues(
-                    top = PortraitHeight - PanelOverlap,
+                    top = PortraitHeight - PanelOverlap - TopBarHeight,
                     start = 8.dp,
                     end = 8.dp,
                     bottom = MiniPlayerPeek,
                 ),
         ) {
-            // ── Glass panel lip: rounded top edge ────────────────────────
-            item(key = "panel_lip") {
+            // ── Glass panel lip: rounded top edge (sticky) ──────────────
+            stickyHeader(key = "panel_lip") {
                 Box(
                     modifier =
                         Modifier
@@ -381,6 +397,18 @@ fun ArtistDetailScreenContent(
                     }
                 }
             }
+
+            // ── Glass panel lip: rounded bottom edge ─────────────────────
+            item(key = "panel_lip_bottom") {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(PanelOverlap)
+                            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
+                            .frostedGlassRendered(),
+                )
+            }
         }
 
         // Layer 3 — pinned top buttons: back + overflow (always visible)
@@ -389,7 +417,16 @@ fun ArtistDetailScreenContent(
                 Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopStart)
-                    .padding(8.dp),
+                    .padding(8.dp)
+                    .let { mod ->
+                        if (sharedTransitionScope != null) {
+                            with(sharedTransitionScope) {
+                                mod.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+                            }
+                        } else {
+                            mod
+                        }
+                    }.alpha(contentAlpha.value),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {

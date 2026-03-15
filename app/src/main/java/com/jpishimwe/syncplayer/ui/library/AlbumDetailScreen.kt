@@ -4,6 +4,9 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,13 +37,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -71,6 +78,7 @@ private val PanelOverlap = 24.dp
 
 private val PanelTopShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private val BarShape = RoundedCornerShape(8.dp)
+private val TopBarHeight = 64.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -122,13 +130,28 @@ fun AlbumDetailScreenContent(
     val songCount = songs.size
     val lazyListState = rememberLazyListState()
 
-    // Parallax: hero scrolls at half speed
-    val firstVisibleItemScrollOffset =
-        if (lazyListState.firstVisibleItemIndex == 0) {
-            lazyListState.firstVisibleItemScrollOffset.toFloat()
-        } else {
-            Float.MAX_VALUE
+    // Parallax: compute how far the LazyColumn has scrolled from its rest position.
+    // The first item (panel_lip) starts at contentPadding.top = 336dp.
+    // As the user scrolls, firstItem.offset goes from 0 → negative.
+    // Total scroll ≈ -firstItem.offset (when index 0) or beyond hero once index > 0.
+    val parallaxOffset by remember {
+        derivedStateOf {
+            val firstItem = lazyListState.layoutInfo.visibleItemsInfo.firstOrNull()
+            if (firstItem == null) {
+                0f
+            } else {
+                // firstItem.offset starts at the contentPadding top edge and goes negative
+                // as the user scrolls down. The magnitude is how far we've scrolled.
+                (-firstItem.offset.toFloat()).coerceAtLeast(0f)
+            }
         }
+    }
+
+    // Content fade: layers 0/2/3 fade in independently, hero (layer 1) handled by shared element
+    val contentAlpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        contentAlpha.animateTo(1f, tween(350, delayMillis = 150, easing = FastOutSlowInEasing))
+    }
 
     val accentBorderBrush =
         Brush.linearGradient(
@@ -143,7 +166,7 @@ fun AlbumDetailScreenContent(
     // ── Root ─────────────────────────────────────────────────────────────
     Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         // Layer 0 — blurred screenshot of previous screen
-        BlurredBackground()
+        Box(modifier = Modifier.alpha(contentAlpha.value)) { BlurredBackground() }
 
         // Layer 1 — fixed album art pinned to top (parallax: scrolls at half speed)
         Box(
@@ -152,7 +175,7 @@ fun AlbumDetailScreenContent(
                     .fillMaxWidth()
                     .height(AlbumArtHeight)
                     .graphicsLayer {
-                        translationY = firstVisibleItemScrollOffset * 0.5f
+                        translationY = -parallaxOffset * 0.35f
                     },
         ) {
             SubcomposeAsyncImage(
@@ -167,7 +190,9 @@ fun AlbumDetailScreenContent(
                                 with(sharedTransitionScope) {
                                     mod.sharedElement(
                                         rememberSharedContentState(key = "album_art_$albumId"),
+                                        clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(8.dp)),
                                         animatedVisibilityScope = animatedVisibilityScope,
+                                        boundsTransform = { _, _ -> tween(300, easing = FastOutSlowInEasing) },
                                     )
                                 }
                             } else {
@@ -206,11 +231,22 @@ fun AlbumDetailScreenContent(
         // Layer 2 — scrollable content: glass panel slides over album art
         LazyColumn(
             state = lazyListState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = AlbumArtHeight - PanelOverlap, start = 8.dp, end = 8.dp, bottom = MiniPlayerPeek),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = TopBarHeight)
+                    .alpha(contentAlpha.value)
+                    .clip(PanelTopShape),
+            contentPadding =
+                PaddingValues(
+                    top = AlbumArtHeight - PanelOverlap - TopBarHeight,
+                    start = 8.dp,
+                    end = 8.dp,
+                    bottom = MiniPlayerPeek,
+                ),
         ) {
-            // ── Glass panel lip: rounded top edge ────────────────────────
-            item(key = "panel_lip") {
+            // ── Glass panel lip: rounded top edge (sticky) ──────────────
+            stickyHeader(key = "panel_lip") {
                 Box(
                     modifier =
                         Modifier
@@ -308,6 +344,18 @@ fun AlbumDetailScreenContent(
                     )
                 }
             }
+
+            // ── Glass panel lip: rounded bottom edge ─────────────────────
+            item(key = "panel_lip_bottom") {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(PanelOverlap)
+                            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
+                            .frostedGlassRendered(),
+                )
+            }
         }
 
         // Layer 3 — pinned top buttons: back + album info + overflow
@@ -316,7 +364,16 @@ fun AlbumDetailScreenContent(
                 Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopStart)
-                    .padding(8.dp),
+                    .padding(8.dp)
+                    .let { mod ->
+                        if (sharedTransitionScope != null) {
+                            with(sharedTransitionScope) {
+                                mod.renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+                            }
+                        } else {
+                            mod
+                        }
+                    }.alpha(contentAlpha.value),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {

@@ -6,21 +6,21 @@ SyncPlayer plays audio from on-device storage and syncs listening data — not t
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Language | Kotlin 2.2.10 (bundled by AGP 9) |
-| UI | Jetpack Compose + Material 3 |
-| Architecture | MVVM, single Activity |
-| Local DB | Room 2.7.1 |
-| Playback | Media3 1.9.2 (ExoPlayer) |
-| DI | Hilt 2.59 |
-| KSP | 2.3.5 |
-| Images | Coil 3.1.0 |
-| Navigation | Navigation Compose 2.9.0 |
-| Auth | Firebase Auth (Google sign-in) |
-| Sync | Cloud Firestore |
-| Build | AGP 9.0.0, Gradle 9.1.0, Kotlin DSL, version catalog |
-| Tests | JUnit 5 5.11.4, Turbine 1.2.1, MockK 1.14.9, Compose UI Test |
+| Layer        | Technology                                                   |
+|--------------|--------------------------------------------------------------|
+| Language     | Kotlin 2.2.10 (bundled by AGP 9)                             |
+| UI           | Jetpack Compose + Material 3                                 |
+| Architecture | MVVM, single Activity                                        |
+| Local DB     | Room 2.7.1                                                   |
+| Playback     | Media3 1.9.2 (ExoPlayer)                                     |
+| DI           | Hilt 2.59                                                    |
+| KSP          | 2.3.5                                                        |
+| Images       | Coil 3.1.0                                                   |
+| Navigation   | Navigation Compose 2.9.0                                     |
+| Auth         | Firebase Auth (Google sign-in)                               |
+| Sync         | Cloud Firestore                                              |
+| Build        | AGP 9.0.0, Gradle 9.1.0, Kotlin DSL, version catalog         |
+| Tests        | JUnit 5 5.11.4, Turbine 1.2.1, MockK 1.14.9, Compose UI Test |
 
 ## Architecture
 
@@ -54,14 +54,14 @@ app/src/main/java/com/jpishimwe/syncplayer/
 
 Current routes:
 
-| Route | Screen | Description |
-|-------|--------|-------------|
-| `library` | LibraryScreen | Songs/Albums/Artists/Faves/Top Plays/Recent tabs with MiniPlayer |
-| `now_playing` | NowPlayingScreen | Full-screen player with controls and queue sheet |
-| `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album |
-| `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist |
-| `playlists` | PlaylistsScreen | Playlist list with create/rename/delete |
-| `playlist_detail/{playlistId}/{playlistName}` | PlaylistDetailScreen | Songs in a playlist with reorder/add/remove |
+| Route                                         | Screen               | Description                                                      |
+|-----------------------------------------------|----------------------|------------------------------------------------------------------|
+| `library`                                     | LibraryScreen        | Songs/Albums/Artists/Faves/Top Plays/Recent tabs with MiniPlayer |
+| `now_playing`                                 | NowPlayingScreen     | Full-screen player with controls and queue sheet                 |
+| `album_detail/{albumId}/{albumName}`          | AlbumDetailScreen    | Songs in an album                                                |
+| `artist_detail/{artistName}`                  | ArtistDetailScreen   | Songs by an artist                                               |
+| `playlists`                                   | PlaylistsScreen      | Playlist list with create/rename/delete                          |
+| `playlist_detail/{playlistId}/{playlistName}` | PlaylistDetailScreen | Songs in a playlist with reorder/add/remove                      |
 
 Bottom navigation bar switches between Library, Playlists, and Settings tabs. A persistent MiniPlayer sits above the bottom nav on top-level screens. Navigation uses `saveState`/`restoreState` for tab state preservation.
 
@@ -250,6 +250,31 @@ Explicitly out of scope for Phase 7. Carries to Phase 8 backlog:
 
 ---
 
+### Phase 7.5: UI Redesign ✅
+
+Comprehensive visual overhaul to a Zune-inspired, content-forward aesthetic. Replaced bottom navigation with horizontal scrollable top tab row, frosted glass overlays, bold typography, and strict accent color system.
+
+**Source of truth**: `docs/features/ui-redesign/visual-design-spec.md`
+
+- ✅ Phase 0 — Theme & design tokens: accent color (`#FF1D58`), near-black background (`#111113`), frosted glass modifier, typography weight variants
+- ✅ Phase 1 — Navigation restructure: bottom nav → horizontal scrollable top tab row with `HorizontalPager`
+- ✅ Phase 2 — New reusable components: `SongItem`, `AlbumItem`, `ArtistItem`, `FrostedGlassPill`, `MiniPlayer` redesign, `BlurredBackground`
+- ✅ Phase 3 — Tab screens: Songs, Albums, Artists with grid layouts and playback state indicators
+- ✅ Phase 4 — Tab screens: History (with Most Played section), Favorites, Playlists
+- ✅ Phase 5 — Detail screens: `AlbumDetailScreen` and `ArtistDetailScreen` with layered glass UI, parallax hero images, sticky sub-tab headers
+- ✅ Phase 6 — Now Playing & Queue: full redesign with `AnimatedVisibility` overlay (not navigation), `ScreenshotHolder` capture via `PixelCopy`
+- ✅ Phase 7 — Artist image fetching (Deezer API), shared element transitions (album art + artist portrait grid → detail), parallax scroll polish
+
+#### Post-redesign fixes
+
+- ✅ Top bar pills (`renderInSharedTransitionScopeOverlay`): pills rendered in shared transition overlay so they don't jump in after the 300ms shared element transition
+- ✅ Layer 2/Layer 3 scroll overlap: added `padding(top = TopBarHeight)` to LazyColumn so sticky headers and content stop below the top bar pills instead of scrolling behind them
+- ✅ Glass panel lip persistence: converted top panel lip from `item` to `stickyHeader` so it stays visible when scrolling; added bottom panel lip with rounded bottom corners
+
+**Plan doc**: [`docs/features/ui-redesign/plan.md`](features/ui-redesign/plan.md)
+
+---
+
 ### Phase 8: External Integrations (Planned)
 
 **Prerequisite:** Phase 7 complete and stable. ✅ Requires designing a `SyncProvider` plugin interface before any implementation starts.
@@ -258,17 +283,17 @@ Before implementing integrations, the following Phase 7 deferred items and backl
 
 **Backlog (prioritized for pre-Phase 8 cleanup):**
 
-| Item | Priority | Effort | Source |
-|------|----------|--------|--------|
-| Listening history detail screen | Low | Medium | `improvements/plan.md` #2 |
-| Slide/drag gesture for star rating | Low | Medium | `improvements/plan.md` #3 |
-| Consolidate favorite/star rating | Low | Small | `improvements/plan.md` #4 — defer to dogfooding |
-| Audio focus edge case testing (manual) | Medium | Medium | `improvements/plan.md` #7 |
-| Custom notification layout | Low | Medium | `improvements/plan.md` #9 |
-| Dead code cleanup in `LibraryViewModel` | Low | Trivial | Phase 7 design doc |
-| Sort for Artists tab | Low | Small | Phase 7 design doc |
-| Seek bar and star rating Compose UI tests | Low | Small | Testing design doc — deferred pending `semantics` tags |
-| `LibraryScreenContent` search/sort UI tests | Low | Small | Testing design doc — deferred pending Material 3 API stability |
+| Item                                        | Priority | Effort  | Source                                                         |
+|---------------------------------------------|----------|---------|----------------------------------------------------------------|
+| Listening history detail screen             | Low      | Medium  | `improvements/plan.md` #2                                      |
+| Slide/drag gesture for star rating          | Low      | Medium  | `improvements/plan.md` #3                                      |
+| Consolidate favorite/star rating            | Low      | Small   | `improvements/plan.md` #4 — defer to dogfooding                |
+| Audio focus edge case testing (manual)      | Medium   | Medium  | `improvements/plan.md` #7                                      |
+| Custom notification layout                  | Low      | Medium  | `improvements/plan.md` #9                                      |
+| Dead code cleanup in `LibraryViewModel`     | Low      | Trivial | Phase 7 design doc                                             |
+| Sort for Artists tab                        | Low      | Small   | Phase 7 design doc                                             |
+| Seek bar and star rating Compose UI tests   | Low      | Small   | Testing design doc — deferred pending `semantics` tags         |
+| `LibraryScreenContent` search/sort UI tests | Low      | Small   | Testing design doc — deferred pending Material 3 API stability |
 
 **Recommended order before starting integrations:**
 1. Audio focus manual verification (#7) — find real bugs before complexity grows
@@ -313,12 +338,12 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 
 ### Test types
 
-| Type | Runs on | Speed | What to test |
-|------|---------|-------|-------------|
-| **Unit tests** | JVM (local) | Fast | ViewModels, Repositories, mappers, business logic |
-| **Room tests** | Emulator/device | Fast | DAOs with in-memory database |
-| **Compose UI tests** | Emulator/device | Medium | Critical user flows, screen states |
-| **Integration tests** | Emulator/device | Slow | Sync logic, provider implementations |
+| Type                  | Runs on         | Speed  | What to test                                      |
+|-----------------------|-----------------|--------|---------------------------------------------------|
+| **Unit tests**        | JVM (local)     | Fast   | ViewModels, Repositories, mappers, business logic |
+| **Room tests**        | Emulator/device | Fast   | DAOs with in-memory database                      |
+| **Compose UI tests**  | Emulator/device | Medium | Critical user flows, screen states                |
+| **Integration tests** | Emulator/device | Slow   | Sync logic, provider implementations              |
 
 ### Principles
 
@@ -395,15 +420,15 @@ A dedicated audit and implementation pass closed all coverage gaps identified af
 
 ### Test libraries
 
-| Library | Purpose | Scope |
-|---------|---------|-------|
-| JUnit 5 | Test runner and assertions | `testImplementation` |
-| Turbine | Testing Kotlin Flows (`StateFlow` assertions) | `testImplementation` |
-| kotlinx-coroutines-test | Deterministic coroutine execution | `testImplementation` + `androidTestImplementation` |
-| MockK 1.14.9 | Mocking concrete classes with Android dependencies (e.g. `SyncOrchestrator` + `Context`) | `testImplementation` |
-| Compose UI Test (junit4) | `createAndroidComposeRule` for screen-level UI assertions | `androidTestImplementation` |
-| Room Testing | `Room.inMemoryDatabaseBuilder` for DAO tests | `androidTestImplementation` |
-| AndroidX Test (JUnit4 runner) | `@RunWith(AndroidJUnit4::class)` for instrumented tests | `androidTestImplementation` |
+| Library                       | Purpose                                                                                  | Scope                                              |
+|-------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------------|
+| JUnit 5                       | Test runner and assertions                                                               | `testImplementation`                               |
+| Turbine                       | Testing Kotlin Flows (`StateFlow` assertions)                                            | `testImplementation`                               |
+| kotlinx-coroutines-test       | Deterministic coroutine execution                                                        | `testImplementation` + `androidTestImplementation` |
+| MockK 1.14.9                  | Mocking concrete classes with Android dependencies (e.g. `SyncOrchestrator` + `Context`) | `testImplementation`                               |
+| Compose UI Test (junit4)      | `createAndroidComposeRule` for screen-level UI assertions                                | `androidTestImplementation`                        |
+| Room Testing                  | `Room.inMemoryDatabaseBuilder` for DAO tests                                             | `androidTestImplementation`                        |
+| AndroidX Test (JUnit4 runner) | `@RunWith(AndroidJUnit4::class)` for instrumented tests                                  | `androidTestImplementation`                        |
 
 ---
 
@@ -441,17 +466,17 @@ GitHub Actions pipeline for automated builds, tests, and releases. **Not yet imp
 
 ## Key Libraries by Phase
 
-| Phase | Libraries |
-|-------|-----------|
-| 1 — Library | Room, Coil (album art), Hilt, Activity Result API (permissions) |
-| 2 — Playback | Media3 (ExoPlayer, Session, UI), kotlinx-coroutines-guava, reorderable |
-| 3 — Navigation | (no new libraries) |
-| 4 — Playlists | (Room — already added) |
-| 5 — Metadata | (Room — already added) |
-| 6 — Sync | Firebase Auth, Cloud Firestore, Google Play Services Auth, MockK (tests) |
-| 7 — Polish | (no new libraries) |
+| Phase                     | Libraries                                                                     |
+|---------------------------|-------------------------------------------------------------------------------|
+| 1 — Library               | Room, Coil (album art), Hilt, Activity Result API (permissions)               |
+| 2 — Playback              | Media3 (ExoPlayer, Session, UI), kotlinx-coroutines-guava, reorderable        |
+| 3 — Navigation            | (no new libraries)                                                            |
+| 4 — Playlists             | (Room — already added)                                                        |
+| 5 — Metadata              | (Room — already added)                                                        |
+| 6 — Sync                  | Firebase Auth, Cloud Firestore, Google Play Services Auth, MockK (tests)      |
+| 7 — Polish                | (no new libraries)                                                            |
 | 8 — External Integrations | XML parsing (kotlinx.serialization or built-in), Retrofit (YouTube Music API) |
-| Testing (all phases) | JUnit 5, Turbine, kotlinx-coroutines-test, Compose UI Test, Hilt Testing |
+| Testing (all phases)      | JUnit 5, Turbine, kotlinx-coroutines-test, Compose UI Test, Hilt Testing      |
 
 ---
 

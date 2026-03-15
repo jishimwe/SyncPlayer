@@ -5,10 +5,8 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -153,9 +151,7 @@ fun NavGraph(
     // --- Now Playing expansion state (replaces navigation) ---
     var isNowPlayingExpanded by rememberSaveable { mutableStateOf(false) }
     val expandNowPlaying: () -> Unit = {
-        Log.e("NavGraph", "expandNowPlaying: bitmap BEFORE capture = ${ScreenshotHolder.bitmap != null}")
         ScreenshotHolder.capture(view)
-        Log.e("NavGraph", "expandNowPlaying: bitmap AFTER capture = ${ScreenshotHolder.bitmap != null}")
         isNowPlayingExpanded = true
     }
     val collapseNowPlaying = { isNowPlayingExpanded = false }
@@ -169,93 +165,93 @@ fun NavGraph(
 
     Box(modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.surface)) {
         SharedTransitionLayout {
-        // Content sits below the overlay, padded by its actual measured height
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Home.route,
-            modifier = modifier.padding(top = if (isOnTopLevelScreen) overlayHeightDp else 0.dp),
-        ) {
-            composable(Screen.Home.route) {
-                HomeScreen(
-                    selectedTab = selectedTab,
-                    onSelectedTabChanged = { selectedTab = it },
-                    onNavigateToNowPlaying = expandNowPlaying,
-                    onNavigateToAlbumDetail = { id, name ->
-                        ScreenshotHolder.capture(view)
-                        navController.navigate(Screen.AlbumDetail.createRoute(id, name))
-                    },
-                    onNavigateToArtistDetail = { name ->
-                        ScreenshotHolder.capture(view)
-                        navController.navigate(Screen.ArtistDetail.createRoute(name))
-                    },
-                    onNavigateToPlaylistDetail = { id, name ->
-                        ScreenshotHolder.capture(view)
-                        navController.navigate(Screen.PlaylistDetail.createRoute(id, name))
-                    },
-                    playerViewModel = playerViewModel,
-                    libraryViewModel = libraryViewModel,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@composable,
-                    modifier = modifier,
-                )
-            }
+            // Content sits below the overlay, padded by its actual measured height
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+                modifier = modifier.padding(top = if (isOnTopLevelScreen) overlayHeightDp else 0.dp),
+            ) {
+                composable(Screen.Home.route) {
+                    HomeScreen(
+                        selectedTab = selectedTab,
+                        onSelectedTabChanged = { selectedTab = it },
+                        onNavigateToNowPlaying = expandNowPlaying,
+                        onNavigateToAlbumDetail = { id, name ->
+                            ScreenshotHolder.capture(view)
+                            navController.navigate(Screen.AlbumDetail.createRoute(id, name))
+                        },
+                        onNavigateToArtistDetail = { name ->
+                            ScreenshotHolder.capture(view)
+                            navController.navigate(Screen.ArtistDetail.createRoute(name))
+                        },
+                        onNavigateToPlaylistDetail = { id, name ->
+                            ScreenshotHolder.capture(view)
+                            navController.navigate(Screen.PlaylistDetail.createRoute(id, name))
+                        },
+                        playerViewModel = playerViewModel,
+                        libraryViewModel = libraryViewModel,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable,
+                        modifier = modifier,
+                    )
+                }
 
-            composable(
-                Screen.AlbumDetail.route,
-                arguments =
-                    listOf(
-                        navArgument("albumId") { type = NavType.LongType },
-                        navArgument("albumName") { type = NavType.StringType },
-                    ),
-            ) { backStackEntry ->
-                AlbumDetailScreen(
-                    albumId = backStackEntry.arguments?.getLong("albumId") ?: 0L,
-                    albumName = backStackEntry.arguments?.getString("albumName") ?: "",
-                    onNavigateBack = { navController.navigateUp() },
-                    onNavigateToNowPlaying = expandNowPlaying,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@composable,
-                )
-            }
+                composable(
+                    Screen.AlbumDetail.route,
+                    arguments =
+                        listOf(
+                            navArgument("albumId") { type = NavType.LongType },
+                            navArgument("albumName") { type = NavType.StringType },
+                        ),
+                ) { backStackEntry ->
+                    AlbumDetailScreen(
+                        albumId = backStackEntry.arguments?.getLong("albumId") ?: 0L,
+                        albumName = backStackEntry.arguments?.getString("albumName") ?: "",
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToNowPlaying = expandNowPlaying,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable,
+                    )
+                }
 
-            composable(
-                Screen.ArtistDetail.route,
-                arguments =
-                    listOf(
-                        navArgument("artistName") { type = NavType.StringType },
-                    ),
-            ) { backStackEntry ->
-                ArtistDetailScreen(
-                    artistName = backStackEntry.arguments?.getString("artistName") ?: "",
-                    onNavigateBack = { navController.navigateUp() },
-                    onNavigateToNowPlaying = expandNowPlaying,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@composable,
-                )
-            }
+                composable(
+                    Screen.ArtistDetail.route,
+                    arguments =
+                        listOf(
+                            navArgument("artistName") { type = NavType.StringType },
+                        ),
+                ) { backStackEntry ->
+                    ArtistDetailScreen(
+                        artistName = backStackEntry.arguments?.getString("artistName") ?: "",
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToNowPlaying = expandNowPlaying,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedVisibilityScope = this@composable,
+                    )
+                }
 
-            composable(
-                Screen.PlaylistDetail.route,
-                arguments =
-                    listOf(
-                        navArgument("playlistId") { type = NavType.LongType },
-                        navArgument("playlistName") { type = NavType.StringType },
-                    ),
-            ) { backStackEntry ->
-                PlaylistDetailScreen(
-                    playlistId = backStackEntry.arguments?.getLong("playlistId") ?: 0L,
-                    playlistName = backStackEntry.arguments?.getString("playlistName") ?: "",
-                    onNavigateBack = { navController.navigateUp() },
-                    onNavigateToNowPlaying = expandNowPlaying,
-                )
-            }
+                composable(
+                    Screen.PlaylistDetail.route,
+                    arguments =
+                        listOf(
+                            navArgument("playlistId") { type = NavType.LongType },
+                            navArgument("playlistName") { type = NavType.StringType },
+                        ),
+                ) { backStackEntry ->
+                    PlaylistDetailScreen(
+                        playlistId = backStackEntry.arguments?.getLong("playlistId") ?: 0L,
+                        playlistName = backStackEntry.arguments?.getString("playlistName") ?: "",
+                        onNavigateBack = { navController.navigateUp() },
+                        onNavigateToNowPlaying = expandNowPlaying,
+                    )
+                }
 
-            // NowPlaying route removed — handled by AnimatedContent overlay below
+                // NowPlaying route removed — handled by AnimatedContent overlay below
 
-            composable(Screen.Settings.route) {
-                SettingsScreen()
+                composable(Screen.Settings.route) {
+                    SettingsScreen()
+                }
             }
-        }
         }
 
         // Overlay: title bar + tab row, measures itself and reports height

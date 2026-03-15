@@ -3,18 +3,15 @@ package com.jpishimwe.syncplayer.ui.player.components
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
@@ -30,7 +27,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.room.util.TableInfo
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
@@ -99,6 +95,7 @@ fun ArtistItem(
                                 mod.sharedElement(
                                     rememberSharedContentState(key = "artist_art_$artistName"),
                                     animatedVisibilityScope = animatedVisibilityScope,
+                                    boundsTransform = { _, _ -> tween(300, easing = FastOutSlowInEasing) },
                                 )
                             }
                         } else {

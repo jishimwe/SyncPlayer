@@ -92,7 +92,7 @@ fun HomeScreen(
                 onRetry = libraryViewModel::refreshLibrary,
                 onSongClick = { songs, index ->
                     playerViewModel.onEvent(PlayerEvent.PlaySongs(songs, index))
-                    onNavigateToNowPlaying()
+//                    onNavigateToNowPlaying()
                 },
                 onAlbumClick = { albumId, albumName ->
                     onNavigateToAlbumDetail(albumId, albumName)
