@@ -99,4 +99,10 @@ class FakeSongRepository : SongRepository {
     override fun searchAlbums(query: String): Flow<List<Album>> = albumsFlow
 
     override fun searchArtists(query: String): Flow<List<Artist>> = artistsFlow
+
+    override fun getAlbumsByArtist(artist: String): Flow<List<Album>> = albumsFlow
+
+    override fun getRecentlyPlayedAlbums(): Flow<List<Album>> = albumsFlow
+
+    override fun getRecentlyPlayedArtists(): Flow<List<Artist>> = artistsFlow
 }

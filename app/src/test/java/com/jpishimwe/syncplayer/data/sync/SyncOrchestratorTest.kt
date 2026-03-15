@@ -271,6 +271,7 @@ class SyncOrchestratorTest {
         id = id,
         title = "Song $id",
         artist = "Artist",
+        albumArtist = "Artist",
         album = "Album",
         albumId = 1,
         duration = 200_000,
@@ -302,7 +303,8 @@ class FakeSongDao : SongDao {
     override suspend fun insertAll(songs: List<Song>) {}
     override suspend fun insertAllIgnore(songs: List<Song>) {}
     override suspend fun deleteAll() {}
-    override suspend fun updateAudioMetadata(id: Long, title: String, artist: String, album: String, albumId: Long, duration: Long, trackNumber: Int, year: Int, dateAdded: Long, contentUri: String?, albumArtUri: String?) {}
+    override suspend fun updateAudioMetadata(id: Long, title: String, artist: String, albumArtist: String, album: String, albumId: Long, duration: Long, trackNumber: Int, year: Int, dateAdded: Long, contentUri: String?, albumArtUri: String?) {}
+    override fun getAlbumsByArtist(artist: String): Flow<List<Album>> = MutableStateFlow(emptyList())
     override suspend fun upsertSongs(songs: List<Song>) {}
     override suspend fun incrementPlayCount(songId: Long, playedAt: Long, modifiedAt: Long) {}
     override suspend fun setRating(songId: Long, rating: Int, modifiedAt: Long) {}
@@ -352,4 +354,6 @@ class FakeListeningHistoryDao : ListeningHistoryDao {
     override fun getRecentlyPlayed(limit: Int): Flow<List<Song>> = MutableStateFlow(emptyList())
     override suspend fun clearAll() {}
     override suspend fun getHistorySince(since: Long): List<ListeningHistoryEntity> = history.filter { it.playedAt > since }
+    override fun getRecentlyPlayedAlbums(limit: Int): Flow<List<Album>> = MutableStateFlow(emptyList())
+    override fun getRecentlyPlayedArtists(limit: Int): Flow<List<Artist>> = MutableStateFlow(emptyList())
 }

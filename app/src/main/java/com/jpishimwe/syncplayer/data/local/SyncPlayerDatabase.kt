@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.jpishimwe.syncplayer.model.ArtistImage
 import com.jpishimwe.syncplayer.model.RatingConverter
 import com.jpishimwe.syncplayer.model.Song
 
@@ -14,8 +15,9 @@ import com.jpishimwe.syncplayer.model.Song
         PlaylistEntity::class,
         PlaylistSongCrossRef::class,
         ListeningHistoryEntity::class,
+        ArtistImage::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 @TypeConverters(RatingConverter::class)
@@ -27,6 +29,8 @@ abstract class SyncPlayerDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
 
     abstract fun listeningHistoryDao(): ListeningHistoryDao
+
+    abstract fun artistImageDao(): ArtistImageDao
 
     companion object {
         val MIGRATION_4_5 =
@@ -52,6 +56,22 @@ abstract class SyncPlayerDatabase : RoomDatabase() {
                 Migration(6, 7) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE songs ADD COLUMN albumArtist TEXT NOT NULL DEFAULT ''")
+                }
+            }
+
+        val MIGRATION_7_8 =
+            object :
+                Migration(7, 8) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS artist_images (
+                            artistName TEXT NOT NULL PRIMARY KEY,
+                            imageUrl TEXT,
+                            fetchedAt INTEGER NOT NULL
+                        )
+                        """.trimIndent(),
+                    )
                 }
             }
     }

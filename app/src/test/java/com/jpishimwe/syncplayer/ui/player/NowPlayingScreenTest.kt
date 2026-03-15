@@ -22,6 +22,7 @@ class NowPlayingScreenTest {
             id = 1,
             title = "Test Song",
             artist = "Test Artist",
+            albumArtist = "Test Artist",
             album = "Test Album",
             albumArtUri = null,
             duration = 225000L,

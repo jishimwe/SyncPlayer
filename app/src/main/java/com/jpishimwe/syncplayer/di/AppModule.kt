@@ -2,6 +2,8 @@ package com.jpishimwe.syncplayer.di
 
 import android.content.ContentResolver
 import android.content.Context
+import com.jpishimwe.syncplayer.data.ArtistImageRepository
+import com.jpishimwe.syncplayer.data.ArtistImageRepositoryImpl
 import com.jpishimwe.syncplayer.data.PlayerRepository
 import com.jpishimwe.syncplayer.data.PlayerRepositoryImpl
 import com.jpishimwe.syncplayer.data.PlaylistRepository
@@ -26,6 +28,9 @@ abstract class AppModule {
 
     @Binds
     abstract fun bindPlaylistRepository(impl: PlaylistRepositoryImpl): PlaylistRepository
+
+    @Binds
+    abstract fun bindArtistImageRepository(impl: ArtistImageRepositoryImpl): ArtistImageRepository
 
     companion object {
         @Provides

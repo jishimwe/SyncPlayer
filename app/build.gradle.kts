@@ -89,6 +89,7 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     // Firebase (versions managed by BOM)
     implementation(platform(libs.firebase.bom))

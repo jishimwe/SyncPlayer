@@ -1,5 +1,8 @@
 package com.jpishimwe.syncplayer.ui.player.components
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,6 +48,7 @@ sealed interface AlbumPlaybackState {
     data object Paused : AlbumPlaybackState
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AlbumGridItem(
     album: Album,
@@ -53,6 +57,8 @@ fun AlbumGridItem(
     onPlayClick: () -> Unit,
     modifier: Modifier = Modifier,
     playbackState: AlbumPlaybackState = AlbumPlaybackState.Default,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val isActive = playbackState != AlbumPlaybackState.Default
     val textColor = if (isActive) myAccentColor else MaterialTheme.colorScheme.onSurface
@@ -82,7 +88,19 @@ fun AlbumGridItem(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .aspectRatio(1f),
+                            .aspectRatio(1f)
+                            .let { mod ->
+                                if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                                    with(sharedTransitionScope) {
+                                        mod.sharedElement(
+                                            rememberSharedContentState(key = "album_art_${album.id}"),
+                                            animatedVisibilityScope = animatedVisibilityScope,
+                                        )
+                                    }
+                                } else {
+                                    mod
+                                }
+                            },
                     error = {
                         Icon(
                             Icons.Default.Album,

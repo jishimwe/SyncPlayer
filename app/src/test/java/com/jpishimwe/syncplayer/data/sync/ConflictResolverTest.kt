@@ -23,6 +23,7 @@ class ConflictResolverTest {
         id = id,
         title = "Test Song",
         artist = "Test Artist",
+        albumArtist = "Test Artist",
         album = "Test Album",
         albumId = 0L,
         duration = 200_000L,

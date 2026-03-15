@@ -9,7 +9,9 @@ import com.jpishimwe.syncplayer.data.local.SongDao
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_4_5
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_5_6
+import com.jpishimwe.syncplayer.data.local.ArtistImageDao
 import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_6_7
+import com.jpishimwe.syncplayer.data.local.SyncPlayerDatabase.Companion.MIGRATION_7_8
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +35,7 @@ object DatabaseModule {
             ).addMigrations(MIGRATION_4_5)
             .addMigrations(MIGRATION_5_6)
             .addMigrations(MIGRATION_6_7)
+            .addMigrations(MIGRATION_7_8)
             .build()
 
     @Provides
@@ -46,4 +49,7 @@ object DatabaseModule {
 
     @Provides
     fun provideListeningHistoryDao(database: SyncPlayerDatabase): ListeningHistoryDao = database.listeningHistoryDao()
+
+    @Provides
+    fun provideArtistImageDao(database: SyncPlayerDatabase): ArtistImageDao = database.artistImageDao()
 }

@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jpishimwe.syncplayer.data.ArtistImageRepository
 import com.jpishimwe.syncplayer.data.SongRepository
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
@@ -16,8 +17,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 enum class LibraryTab(
@@ -61,7 +65,12 @@ class LibraryViewModel
     @Inject
     constructor(
         private val songRepository: SongRepository,
+        private val artistImageRepository: ArtistImageRepository,
     ) : ViewModel() {
+        init {
+            fetchMissingArtistImages()
+        }
+
         private val _selectedTab = MutableStateFlow(LibraryTab.SONGS)
         private val _isRefreshing = MutableStateFlow(false)
         private val _searchQuery = MutableStateFlow("")
@@ -230,5 +239,19 @@ class LibraryViewModel
 
         fun onSortOrder(order: SortOrder) {
             _sortOrder.value = order
+        }
+
+        fun fetchMissingArtistImages() {
+            viewModelScope.launch {
+                // Wait until artists are actually loaded (non-empty after scan)
+                val artists = songRepository.getAllArtists()
+                    .filter { it.isNotEmpty() }
+                    .first()
+                // Call repo for every artist — it returns immediately for cached entries
+                for (artist in artists) {
+                    artistImageRepository.getArtistImageUrl(artist.name)
+                    delay(1_000) // throttle: 1 req/sec to respect Deezer rate limits
+                }
+            }
         }
     }

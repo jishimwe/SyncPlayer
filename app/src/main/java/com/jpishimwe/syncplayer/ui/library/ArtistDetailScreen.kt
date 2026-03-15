@@ -1,6 +1,9 @@
 package com.jpishimwe.syncplayer.ui.library
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -36,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
@@ -75,6 +80,7 @@ private val PanelOverlap = 24.dp
 private val PanelTopShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private val TabBarShape = RoundedCornerShape(8.dp)
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ArtistDetailScreen(
     artistName: String,
@@ -82,6 +88,8 @@ fun ArtistDetailScreen(
     onNavigateToNowPlaying: () -> Unit,
     // Defaulted so NavGraph doesn't need updating until Phase 6
     onNavigateToAlbumDetail: (Long, String) -> Unit = { _, _ -> },
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
 ) {
@@ -105,9 +113,12 @@ fun ArtistDetailScreen(
         },
         onAlbumClick = onNavigateToAlbumDetail,
         onNavigateBack = onNavigateBack,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ArtistDetailScreenContent(
     artist: Artist?,
@@ -120,8 +131,20 @@ fun ArtistDetailScreenContent(
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onAlbumClick: (Long, String) -> Unit,
     onNavigateBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     var selectedSubTab by remember { mutableStateOf(ArtistSubTab.Songs) }
+    val lazyListState = rememberLazyListState()
+
+    // Parallax: hero scrolls at half speed
+    val firstVisibleItemScrollOffset =
+        if (lazyListState.firstVisibleItemIndex == 0) {
+            lazyListState.firstVisibleItemScrollOffset.toFloat()
+        } else {
+            // Once scrolled past the first item, max out the parallax
+            Float.MAX_VALUE
+        }
 
     val accentBorderBrush =
         Brush.linearGradient(
@@ -138,13 +161,35 @@ fun ArtistDetailScreenContent(
         // Layer 0 — blurred screenshot of previous screen
         BlurredBackground()
 
-        // Layer 1 — fixed portrait pinned to top
-        Box(modifier = Modifier.fillMaxWidth().height(PortraitHeight)) {
+        // Layer 1 — fixed portrait pinned to top (parallax: scrolls at half speed)
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(PortraitHeight)
+                    .graphicsLayer {
+                        translationY = firstVisibleItemScrollOffset * 0.5f
+                    },
+        ) {
             SubcomposeAsyncImage(
                 model = artist?.artUri,
                 contentDescription = artistName,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .let { mod ->
+                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                                with(sharedTransitionScope) {
+                                    mod.sharedElement(
+                                        rememberSharedContentState(key = "artist_art_$artistName"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                    )
+                                }
+                            } else {
+                                mod
+                            }
+                        },
                 error = {
                     Box(
                         modifier =
@@ -176,6 +221,7 @@ fun ArtistDetailScreenContent(
 
         // Layer 2 — scrollable content: glass panel slides over portrait
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding =
                 PaddingValues(

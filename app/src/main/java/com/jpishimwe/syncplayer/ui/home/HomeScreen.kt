@@ -1,6 +1,9 @@
 package com.jpishimwe.syncplayer.ui.home
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +44,7 @@ import com.jpishimwe.syncplayer.ui.navigation.LibraryTab
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreen(
     selectedTab: LibraryTab,
@@ -50,6 +54,8 @@ fun HomeScreen(
     onNavigateToArtistDetail: (String) -> Unit,
     onNavigateToPlaylistDetail: (Long, String) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     libraryViewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     metadataViewModel: MetadataViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
@@ -59,7 +65,9 @@ fun HomeScreen(
         val metadataUiState by metadataViewModel.uiState.collectAsStateWithLifecycle()
         val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
 
-        LaunchedEffect(Unit) { libraryViewModel.refreshLibrary() }
+        LaunchedEffect(Unit) {
+            libraryViewModel.refreshLibrary()
+        }
 
         val lifeCycleOwner = LocalLifecycleOwner.current
         DisposableEffect(lifeCycleOwner) {
@@ -95,12 +103,15 @@ fun HomeScreen(
                 onPlaylistClick = { playlistId, playlistName ->
                     onNavigateToPlaylistDetail(playlistId, playlistName)
                 },
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
                 modifier = modifier,
             )
         }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreenContent(
     selectedTab: LibraryTab,
@@ -113,6 +124,8 @@ fun HomeScreenContent(
     onAlbumClick: (Long, String) -> Unit,
     onArtistClick: (String) -> Unit,
     onPlaylistClick: (Long, String) -> Unit,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     modifier: Modifier = Modifier,
 ) {
     val tab = LibraryTab.entries
@@ -193,6 +206,8 @@ fun HomeScreenContent(
                                 libraryUiState = libraryUiState,
                                 currentAlbumId = currentAlbumId,
                                 onAlbumClick = onAlbumClick,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
                             )
                         }
 
@@ -201,6 +216,8 @@ fun HomeScreenContent(
                                 libraryUiState = libraryUiState,
                                 currentArtistName = currentArtistName,
                                 onArtistClick = onArtistClick,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
                             )
                         }
 

@@ -1,6 +1,9 @@
 package com.jpishimwe.syncplayer.ui.library
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,12 +72,15 @@ private val PanelOverlap = 24.dp
 private val PanelTopShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 private val BarShape = RoundedCornerShape(8.dp)
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AlbumDetailScreen(
     albumId: Long,
     albumName: String,
     onNavigateBack: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
 ) {
@@ -81,6 +89,7 @@ fun AlbumDetailScreen(
     val currentSongId = playerUiState.currentSong?.id
 
     AlbumDetailScreenContent(
+        albumId = albumId,
         albumName = albumName,
         songs = songs,
         currentSongId = currentSongId,
@@ -89,9 +98,12 @@ fun AlbumDetailScreen(
             onNavigateToNowPlaying()
         },
         onNavigateBack = onNavigateBack,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AlbumDetailScreenContent(
     albumName: String,
@@ -100,11 +112,23 @@ fun AlbumDetailScreenContent(
     // Accepts a list so shuffle can pass songs.shuffled()
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onNavigateBack: () -> Unit,
+    albumId: Long = 0L,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     // Album art URI — all songs share the same album art; use the first non-null
     val albumArtUri = songs.firstOrNull { it.albumArtUri != null }?.albumArtUri
     val artist = songs.firstOrNull()?.artist.orEmpty()
     val songCount = songs.size
+    val lazyListState = rememberLazyListState()
+
+    // Parallax: hero scrolls at half speed
+    val firstVisibleItemScrollOffset =
+        if (lazyListState.firstVisibleItemIndex == 0) {
+            lazyListState.firstVisibleItemScrollOffset.toFloat()
+        } else {
+            Float.MAX_VALUE
+        }
 
     val accentBorderBrush =
         Brush.linearGradient(
@@ -121,13 +145,35 @@ fun AlbumDetailScreenContent(
         // Layer 0 — blurred screenshot of previous screen
         BlurredBackground()
 
-        // Layer 1 — fixed album art pinned to top
-        Box(modifier = Modifier.fillMaxWidth().height(AlbumArtHeight)) {
+        // Layer 1 — fixed album art pinned to top (parallax: scrolls at half speed)
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(AlbumArtHeight)
+                    .graphicsLayer {
+                        translationY = firstVisibleItemScrollOffset * 0.5f
+                    },
+        ) {
             SubcomposeAsyncImage(
                 model = albumArtUri,
                 contentDescription = albumName,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .let { mod ->
+                            if (sharedTransitionScope != null && animatedVisibilityScope != null && albumId != 0L) {
+                                with(sharedTransitionScope) {
+                                    mod.sharedElement(
+                                        rememberSharedContentState(key = "album_art_$albumId"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                    )
+                                }
+                            } else {
+                                mod
+                            }
+                        },
                 error = {
                     Box(
                         modifier =
@@ -159,6 +205,7 @@ fun AlbumDetailScreenContent(
 
         // Layer 2 — scrollable content: glass panel slides over album art
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = AlbumArtHeight - PanelOverlap, start = 8.dp, end = 8.dp, bottom = MiniPlayerPeek),
         ) {

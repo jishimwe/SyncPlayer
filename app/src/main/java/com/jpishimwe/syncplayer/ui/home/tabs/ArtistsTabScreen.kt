@@ -1,5 +1,8 @@
 package com.jpishimwe.syncplayer.ui.home.tabs
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -34,12 +37,15 @@ import kotlinx.coroutines.launch
 
 private val artistSortOptions = listOf(SortOrder.BY_ARTIST.label)
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ArtistsTabScreen(
     libraryUiState: LibraryUiState.Loaded,
     currentArtistName: String?,
     onArtistClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val artists = libraryUiState.artists
 
@@ -93,6 +99,8 @@ fun ArtistsTabScreen(
                     onClick = { onArtistClick(artist.name) },
                     onPlayPause = { onArtistClick(artist.name) },
                     onMenuClick = {},
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
                 )
             }
         }

@@ -1,5 +1,8 @@
 package com.jpishimwe.syncplayer.ui.player.components
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -54,6 +57,7 @@ sealed interface ArtistPlaybackState {
  * Layout: Box stacks [CircularArtistImage] and [FrostedGlassPill] — pill
  * sits at BottomCenter, partially overlapping the image.
  */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ArtistItem(
     artistName: String,
@@ -64,6 +68,8 @@ fun ArtistItem(
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
     imageSize: Dp = 152.dp,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val isActive =
         playbackState is ArtistPlaybackState.Playing ||
@@ -84,7 +90,21 @@ fun ArtistItem(
             artistName = artistName,
             size = imageSize,
             isPlaying = isActive,
-            modifier = Modifier.padding(bottom = 20.dp), // leave room for pill overlap
+            modifier =
+                Modifier
+                    .padding(bottom = 20.dp) // leave room for pill overlap
+                    .let { mod ->
+                        if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                            with(sharedTransitionScope) {
+                                mod.sharedElement(
+                                    rememberSharedContentState(key = "artist_art_$artistName"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                )
+                            }
+                        } else {
+                            mod
+                        }
+                    },
         )
 
         // Pill overlaid at bottom

@@ -37,8 +37,11 @@ interface SongDao {
     @Query(
         """
         SELECT albumArtist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
-               (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
+               COALESCE(ai.imageUrl,
+                   (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1)
+               ) AS artUri
         FROM songs
+        LEFT JOIN artist_images ai ON ai.artistName = songs.albumArtist
         GROUP BY name
         ORDER BY artist ASC
         """,
@@ -196,8 +199,11 @@ interface SongDao {
     @Query(
         """
         SELECT artist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
-               (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
+               COALESCE(ai.imageUrl,
+                   (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1)
+               ) AS artUri
         FROM songs
+        LEFT JOIN artist_images ai ON ai.artistName = songs.artist
         WHERE artist LIKE '%' || :query || '%'
         GROUP BY artist
         ORDER BY artist ASC

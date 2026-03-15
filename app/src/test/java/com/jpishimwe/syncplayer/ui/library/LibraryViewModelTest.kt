@@ -2,6 +2,7 @@ package com.jpishimwe.syncplayer.ui.library
 
 import app.cash.turbine.test
 import com.jpishimwe.syncplayer.MainDispatcherRule
+import com.jpishimwe.syncplayer.data.ArtistImageRepository
 import com.jpishimwe.syncplayer.data.FakeSongRepository
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist
@@ -25,12 +26,17 @@ class LibraryViewModelTest {
     }
 
     private lateinit var repository: FakeSongRepository
+    private lateinit var artistImageRepository: ArtistImageRepository
     private lateinit var viewModel: LibraryViewModel
 
     @BeforeEach
     fun setup() {
         repository = FakeSongRepository()
-        viewModel = LibraryViewModel(repository)
+        artistImageRepository =
+            object : ArtistImageRepository {
+                override suspend fun getArtistImageUrl(artistName: String): String? = null
+            }
+        viewModel = LibraryViewModel(repository, artistImageRepository)
     }
 
     @Test
@@ -278,6 +284,7 @@ class LibraryViewModelTest {
             id = id,
             title = "Song $id",
             artist = "Artist",
+            albumArtist = "Artist",
             album = "Album",
             albumId = 1,
             duration = 200_000,
@@ -302,5 +309,6 @@ class LibraryViewModelTest {
             name = name,
             songCount = 2,
             albumCount = 1,
+            artUri = null,
         )
 }

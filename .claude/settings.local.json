@@ -11,7 +11,8 @@
       "Bash(./gradlew.bat assembleDebug:*)",
       "Bash(./gradlew.bat compileDebugAndroidTestKotlin:*)",
       "Bash(grep:*)",
-      "Bash(./gradlew.bat compileDebugUnitTestKotlin:*)"
+      "Bash(./gradlew.bat compileDebugUnitTestKotlin:*)",
+      "Bash(find \"/c/Users/ishim/AndroidStudioProjects/SyncPlayer/app/src/main/res\" -name \"*artist*\" -o -name \"*image*\" 2>/dev/null | head -20)"
     ]
   }
 }

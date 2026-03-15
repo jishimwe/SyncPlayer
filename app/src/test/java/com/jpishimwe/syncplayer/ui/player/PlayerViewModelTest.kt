@@ -284,6 +284,7 @@ class PlayerViewModelTest {
             id = id,
             title = "Song $id",
             artist = "Artist",
+            albumArtist = "Artist",
             album = "Album",
             albumId = 1,
             duration = 200_000,

@@ -5,6 +5,10 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -127,7 +131,7 @@ data class TabBounds(
     val width: Int,
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -164,6 +168,7 @@ fun NavGraph(
     val overlayHeightDp = with(LocalDensity.current) { overlayHeightPx.toDp() }
 
     Box(modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.surface)) {
+        SharedTransitionLayout {
         // Content sits below the overlay, padded by its actual measured height
         NavHost(
             navController = navController,
@@ -189,6 +194,8 @@ fun NavGraph(
                     },
                     playerViewModel = playerViewModel,
                     libraryViewModel = libraryViewModel,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable,
                     modifier = modifier,
                 )
             }
@@ -206,6 +213,8 @@ fun NavGraph(
                     albumName = backStackEntry.arguments?.getString("albumName") ?: "",
                     onNavigateBack = { navController.navigateUp() },
                     onNavigateToNowPlaying = expandNowPlaying,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable,
                 )
             }
 
@@ -220,6 +229,8 @@ fun NavGraph(
                     artistName = backStackEntry.arguments?.getString("artistName") ?: "",
                     onNavigateBack = { navController.navigateUp() },
                     onNavigateToNowPlaying = expandNowPlaying,
+                    sharedTransitionScope = this@SharedTransitionLayout,
+                    animatedVisibilityScope = this@composable,
                 )
             }
 
@@ -244,6 +255,7 @@ fun NavGraph(
             composable(Screen.Settings.route) {
                 SettingsScreen()
             }
+        }
         }
 
         // Overlay: title bar + tab row, measures itself and reports height
