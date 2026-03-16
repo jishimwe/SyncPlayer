@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.player.components.AlbumGridItem
@@ -42,6 +43,7 @@ fun AlbumsTabScreen(
     libraryUiState: LibraryUiState.Loaded,
     currentAlbumId: Long?,
     onAlbumClick: (Long, String) -> Unit,
+    onSongClick: (List<Song>, Int) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -87,8 +89,8 @@ fun AlbumsTabScreen(
                     album = album,
                     onClick = { onAlbumClick(album.id, album.name) },
                     playbackState = playbackState,
-                    onMenuClick = { /* TODO */ },
-                    onPlayClick = { /* TODO */ },
+                    onMenuClick = {},
+                    onPlayClick = { onAlbumClick(album.id, album.name) },
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -114,8 +116,8 @@ fun AlbumsTabScreen(
             sortLabel = selectedSort.label,
             sortOptions = albumSortOptions,
             onSortClick = { selectedSort = it },
-            onShuffle = { /* TODO */ },
-            onPlayAll = { /* TODO */ },
+            onShuffle = { onSongClick(libraryUiState.songs.shuffled(), 0) },
+            onPlayAll = { onSongClick(libraryUiState.songs, 0) },
             modifier =
                 Modifier
                     .fillMaxWidth()

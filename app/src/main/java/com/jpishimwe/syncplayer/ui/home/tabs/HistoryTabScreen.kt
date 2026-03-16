@@ -43,6 +43,8 @@ fun HistoryTabScreen(
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onAlbumClick: (albumId: Long, albumName: String) -> Unit,
     onArtistClick: (artistName: String) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val recentSongs = metadataUiState.recentlyPlayed
@@ -88,14 +90,10 @@ fun HistoryTabScreen(
                             ),
                         onMenuAction = { action ->
                             when (action) {
-                                SongMenuAction.GoToArtist -> {
-                                    onArtistClick(song.artist)
-                                }
-
-                                SongMenuAction.GoToAlbum -> {
-                                    onAlbumClick(song.albumId, song.album)
-                                }
-
+                                SongMenuAction.PlayNext -> onPlayNext(song)
+                                SongMenuAction.AddToQueue -> onAddToQueue(song)
+                                SongMenuAction.GoToArtist -> onArtistClick(song.artist)
+                                SongMenuAction.GoToAlbum -> onAlbumClick(song.albumId, song.album)
                                 else -> {}
                             }
                         },
@@ -174,8 +172,8 @@ fun HistoryTabScreen(
                                 onClick = { onArtistClick(artist.name) },
                                 modifier = Modifier.weight(1f),
                                 imageUri = artist.artUri,
-                                onPlayPause = { /*TODO*/ },
-                                onMenuClick = { /*TODO*/ },
+                                onPlayPause = { onArtistClick(artist.name) },
+                                onMenuClick = {},
                             )
                         }
                         if (rowArtists.size < 2) Spacer(Modifier.weight(1f))

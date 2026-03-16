@@ -209,6 +209,10 @@ fun NavGraph(
                         albumName = backStackEntry.arguments?.getString("albumName") ?: "",
                         onNavigateBack = { navController.navigateUp() },
                         onNavigateToNowPlaying = expandNowPlaying,
+                        onNavigateToArtistDetail = { name ->
+                            ScreenshotHolder.capture(view)
+                            navController.navigate(Screen.ArtistDetail.createRoute(name))
+                        },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
                     )

@@ -119,6 +119,8 @@ fun ArtistDetailScreen(
             onNavigateToNowPlaying()
         },
         onAlbumClick = onNavigateToAlbumDetail,
+        onPlayNext = { playerViewModel.onEvent(PlayerEvent.PlayNext(it)) },
+        onAddToQueue = { playerViewModel.onEvent(PlayerEvent.AddToQueue(it)) },
         onNavigateBack = onNavigateBack,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
@@ -137,6 +139,8 @@ fun ArtistDetailScreenContent(
     // Accepts a list so callers can pass songs.shuffled() for the shuffle action
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onAlbumClick: (Long, String) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
     onNavigateBack: () -> Unit,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -354,10 +358,13 @@ fun ArtistDetailScreenContent(
                                         SongMenuAction.GoToAlbum,
                                     ),
                                 onMenuAction = { action ->
-                                    if (action == SongMenuAction.GoToAlbum) {
-                                        onAlbumClick(song.albumId, song.album)
+                                    when (action) {
+                                        SongMenuAction.PlayNext -> onPlayNext(song)
+                                        SongMenuAction.AddToQueue -> onAddToQueue(song)
+                                        SongMenuAction.GoToAlbum -> onAlbumClick(song.albumId, song.album)
+                                        SongMenuAction.AddToPlaylist -> {} // Phase 3
+                                        else -> {}
                                     }
-                                    // TODO: wire PlayNext, AddToQueue, AddToPlaylist via PlayerViewModel
                                 },
                             )
                         }
@@ -579,6 +586,8 @@ private fun ArtistDetailSongsPreview() {
             currentAlbumId = null,
             onSongClick = { _, _ -> },
             onAlbumClick = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
             onNavigateBack = {},
         )
     }
@@ -598,6 +607,8 @@ private fun ArtistDetailEmptyPreview() {
             currentAlbumId = null,
             onSongClick = { _, _ -> },
             onAlbumClick = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
             onNavigateBack = {},
         )
     }

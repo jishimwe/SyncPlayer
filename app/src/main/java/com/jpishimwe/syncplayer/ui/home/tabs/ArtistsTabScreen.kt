@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.player.components.AlphabeticalIndexSidebar
@@ -43,6 +44,7 @@ fun ArtistsTabScreen(
     libraryUiState: LibraryUiState.Loaded,
     currentArtistName: String?,
     onArtistClick: (String) -> Unit,
+    onSongClick: (List<Song>, Int) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -124,8 +126,8 @@ fun ArtistsTabScreen(
             sortLabel = selectedSort.label,
             sortOptions = artistSortOptions,
             onSortClick = { selectedSort = it },
-            onShuffle = { /* TODO */ },
-            onPlayAll = { /* TODO */ },
+            onShuffle = { onSongClick(libraryUiState.songs.shuffled(), 0) },
+            onPlayAll = { onSongClick(libraryUiState.songs, 0) },
             modifier =
                 Modifier
                     .fillMaxWidth()

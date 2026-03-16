@@ -103,6 +103,9 @@ fun HomeScreen(
                 onPlaylistClick = { playlistId, playlistName ->
                     onNavigateToPlaylistDetail(playlistId, playlistName)
                 },
+                onPlayNext = { playerViewModel.onEvent(PlayerEvent.PlayNext(it)) },
+                onAddToQueue = { playerViewModel.onEvent(PlayerEvent.AddToQueue(it)) },
+                onPlayNow = { playerViewModel.onEvent(PlayerEvent.PlaySongs(listOf(it), 0)) },
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
                 modifier = modifier,
@@ -124,6 +127,9 @@ fun HomeScreenContent(
     onAlbumClick: (Long, String) -> Unit,
     onArtistClick: (String) -> Unit,
     onPlaylistClick: (Long, String) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
+    onPlayNow: (Song) -> Unit,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     modifier: Modifier = Modifier,
@@ -198,6 +204,9 @@ fun HomeScreenContent(
                                 onSongClick = onSongClick,
                                 onNavigateToArtist = onArtistClick,
                                 onNavigateToAlbum = onAlbumClick,
+                                onPlayNext = onPlayNext,
+                                onAddToQueue = onAddToQueue,
+                                onPlayNow = onPlayNow,
                             )
                         }
 
@@ -206,6 +215,7 @@ fun HomeScreenContent(
                                 libraryUiState = libraryUiState,
                                 currentAlbumId = currentAlbumId,
                                 onAlbumClick = onAlbumClick,
+                                onSongClick = onSongClick,
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
@@ -216,6 +226,7 @@ fun HomeScreenContent(
                                 libraryUiState = libraryUiState,
                                 currentArtistName = currentArtistName,
                                 onArtistClick = onArtistClick,
+                                onSongClick = onSongClick,
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
@@ -225,6 +236,10 @@ fun HomeScreenContent(
                             FavoriteTabScreen(
                                 metadataUiState = metadataUiState,
                                 onSongClick = onSongClick,
+                                onPlayNext = onPlayNext,
+                                onAddToQueue = onAddToQueue,
+                                onNavigateToArtist = onArtistClick,
+                                onNavigateToAlbum = onAlbumClick,
                             )
                         }
 
@@ -242,6 +257,8 @@ fun HomeScreenContent(
                                 onSongClick = onSongClick,
                                 onAlbumClick = onAlbumClick,
                                 onArtistClick = onArtistClick,
+                                onPlayNext = onPlayNext,
+                                onAddToQueue = onAddToQueue,
                             )
                         }
                     }

@@ -87,6 +87,7 @@ fun AlbumDetailScreen(
     albumName: String,
     onNavigateBack: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
+    onNavigateToArtistDetail: (String) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
@@ -105,6 +106,9 @@ fun AlbumDetailScreen(
             playerViewModel.onEvent(PlayerEvent.PlaySongs(songsToPlay, index))
             onNavigateToNowPlaying()
         },
+        onPlayNext = { playerViewModel.onEvent(PlayerEvent.PlayNext(it)) },
+        onAddToQueue = { playerViewModel.onEvent(PlayerEvent.AddToQueue(it)) },
+        onNavigateToArtist = onNavigateToArtistDetail,
         onNavigateBack = onNavigateBack,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
@@ -119,6 +123,9 @@ fun AlbumDetailScreenContent(
     currentSongId: Long?,
     // Accepts a list so shuffle can pass songs.shuffled()
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
+    onNavigateToArtist: (String) -> Unit,
     onNavigateBack: () -> Unit,
     albumId: Long = 0L,
     sharedTransitionScope: SharedTransitionScope? = null,
@@ -337,9 +344,14 @@ fun AlbumDetailScreenContent(
                                 SongMenuAction.AddToPlaylist,
                                 SongMenuAction.GoToArtist,
                             ),
-                        onMenuAction = {
-                            // TODO: wire PlayNext, AddToQueue, AddToPlaylist, GoToArtist
-                            //       via PlayerViewModel / navigation in Phase 6+
+                        onMenuAction = { action ->
+                            when (action) {
+                                SongMenuAction.PlayNext -> onPlayNext(song)
+                                SongMenuAction.AddToQueue -> onAddToQueue(song)
+                                SongMenuAction.GoToArtist -> onNavigateToArtist(song.artist)
+                                SongMenuAction.AddToPlaylist -> {} // Phase 3
+                                else -> {}
+                            }
                         },
                     )
                 }
@@ -538,6 +550,9 @@ private fun AlbumDetailDefaultPreview() {
             songs = previewAlbumSongs,
             currentSongId = null,
             onSongClick = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
+            onNavigateToArtist = {},
             onNavigateBack = {},
         )
     }
@@ -553,6 +568,9 @@ private fun AlbumDetailPlayingPreview() {
             songs = previewAlbumSongs,
             currentSongId = 1L,
             onSongClick = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
+            onNavigateToArtist = {},
             onNavigateBack = {},
         )
     }
@@ -568,6 +586,9 @@ private fun AlbumDetailEmptyPreview() {
             songs = emptyList(),
             currentSongId = null,
             onSongClick = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
+            onNavigateToArtist = {},
             onNavigateBack = {},
         )
     }

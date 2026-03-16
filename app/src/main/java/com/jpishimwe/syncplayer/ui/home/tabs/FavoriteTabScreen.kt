@@ -28,6 +28,10 @@ private val faveSortOptions = listOf("Title", "Artist", "Rating")
 fun FavoriteTabScreen(
     metadataUiState: MetadataUiState.Loaded,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
+    onNavigateToArtist: (String) -> Unit,
+    onNavigateToAlbum: (Long, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val songs = metadataUiState.favorites
@@ -77,7 +81,15 @@ fun FavoriteTabScreen(
                         SongMenuAction.GoToArtist,
                         SongMenuAction.GoToAlbum,
                     ),
-                onMenuAction = {}, // TODO: wire via PlayerViewModel
+                onMenuAction = { action ->
+                    when (action) {
+                        SongMenuAction.PlayNext -> onPlayNext(song)
+                        SongMenuAction.AddToQueue -> onAddToQueue(song)
+                        SongMenuAction.GoToArtist -> onNavigateToArtist(song.artist)
+                        SongMenuAction.GoToAlbum -> onNavigateToAlbum(song.albumId, song.album)
+                        else -> {}
+                    }
+                },
             )
         }
     }

@@ -36,6 +36,9 @@ fun SongsTabScreen(
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onNavigateToArtist: (String) -> Unit,
     onNavigateToAlbum: (Long, String) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
+    onPlayNow: (Song) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val songs = libraryUiState.songs
@@ -92,15 +95,13 @@ fun SongsTabScreen(
                         ),
                     onMenuAction = { action ->
                         when (action) {
-                            SongMenuAction.GoToArtist -> {
-                                onNavigateToArtist(song.artist)
-                            }
-
-                            SongMenuAction.GoToAlbum -> {
-                                onNavigateToAlbum(song.albumId, song.album)
-                            }
-
-                            else -> {} // TODO: wire PlayNext, PlayNow, AddToQueue, AddToPlaylist via PlayerViewModel
+                            SongMenuAction.PlayNext -> onPlayNext(song)
+                            SongMenuAction.PlayNow -> onPlayNow(song)
+                            SongMenuAction.AddToQueue -> onAddToQueue(song)
+                            SongMenuAction.GoToArtist -> onNavigateToArtist(song.artist)
+                            SongMenuAction.GoToAlbum -> onNavigateToAlbum(song.albumId, song.album)
+                            SongMenuAction.AddToPlaylist -> {} // Phase 3
+                            else -> {}
                         }
                     },
                 )
