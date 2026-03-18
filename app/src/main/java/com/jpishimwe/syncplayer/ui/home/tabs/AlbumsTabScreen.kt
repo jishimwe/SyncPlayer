@@ -113,8 +113,8 @@ fun AlbumsTabScreen(
 
         // Sticky sort bar spanning full width
         SortFilterBar(
-            sortLabel = selectedSort.label,
-            sortOptions = albumSortOptions,
+            selectedSort = selectedSort,
+            sortOptions = listOf(SortOrder.BY_ALBUM, SortOrder.BY_ARTIST), // TODO -> implement more sort options for album
             onSortClick = { selectedSort = it },
             onShuffle = { onSongClick(libraryUiState.songs.shuffled(), 0) },
             onPlayAll = { onSongClick(libraryUiState.songs, 0) },

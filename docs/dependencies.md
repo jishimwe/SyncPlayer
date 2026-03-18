@@ -14,7 +14,7 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 
 | Library | Version | Group ID | Notes |
 |---------|---------|----------|-------|
-| Android Gradle Plugin | 9.0.0 | com.android.tools.build | Bundles Kotlin 2.2.10 |
+| Android Gradle Plugin | 9.0.1 | com.android.tools.build | Bundles Kotlin 2.2.10 |
 | Gradle | 9.1.0 | - | Wrapper version |
 | Kotlin | 2.2.10 | org.jetbrains.kotlin | Bundled by AGP 9 |
 | Kotlin Compose Plugin | 2.2.10 | org.jetbrains.kotlin.plugin.compose | Required alongside bundled Kotlin |
@@ -25,17 +25,23 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 |---------|---------|----------|-------|
 | Compose BOM | 2026.01.01 | androidx.compose | Manages all Compose versions |
 | Compose UI | BOM | androidx.compose.ui | |
-| Compose Material 3 | BOM | androidx.compose.material3 | Use `PrimaryTabRow` not `TabRow` |
+| Compose Material 3 | 1.4.0 | androidx.compose.material3 | Pinned; use `PrimaryTabRow` not `TabRow` |
+| Material Icons Extended | BOM | androidx.compose.material | Full icon set |
+| Compose UI Graphics | 1.10.4 | androidx.compose.ui | Pinned separately |
 | Compose UI Tooling | BOM | androidx.compose.ui | Debug only |
+| Compose UI Text Google Fonts | 1.10.3 | androidx.compose.ui | Nunito Sans via downloadable fonts |
 | Activity Compose | 1.10.0 | androidx.activity | |
-| Lifecycle Runtime Compose | 2.9.0 | androidx.lifecycle | For `collectAsStateWithLifecycle()` |
+| Lifecycle Runtime KTX | 2.9.1 | androidx.lifecycle | |
+| Lifecycle Runtime Compose | 2.10.0 | androidx.lifecycle | For `collectAsStateWithLifecycle()` |
+| Lifecycle ViewModel Compose | 2.9.1 | androidx.lifecycle | For `viewModel()` in Compose |
+| Palette KTX | 1.0.0 | androidx.palette | Dynamic color extraction from album art |
 
 ### Dependency Injection
 
 | Library | Version | Group ID | Notes |
 |---------|---------|----------|-------|
 | Hilt | 2.59 | com.google.dagger | **Must be 2.59+ for AGP 9** |
-| Hilt Navigation Compose | 1.3.0 | androidx.hilt | For `hiltViewModel()` |
+| Hilt Navigation Compose | 1.2.0 | androidx.hilt | For `hiltViewModel()` |
 
 ### Database
 
@@ -44,6 +50,7 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 | Room Runtime | 2.7.1 | androidx.room | |
 | Room KTX | 2.7.1 | androidx.room | Coroutines support |
 | Room Compiler | 2.7.1 | androidx.room | KSP only |
+| Room Testing | 2.7.1 | androidx.room | In-memory DB for DAO tests |
 
 ### Annotation Processing
 
@@ -51,17 +58,28 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 |---------|---------|----------|-------|
 | KSP | 2.3.5 | com.google.devtools.ksp | **Must be 2.3.4+ for AGP 9** |
 
+### Media Playback
+
+| Library | Version | Group ID | Notes |
+|---------|---------|----------|-------|
+| Media3 ExoPlayer | 1.9.2 | androidx.media3 | Audio playback engine |
+| Media3 Session | 1.9.2 | androidx.media3 | MediaSession for notifications + lock screen |
+| Media3 UI | 1.9.2 | androidx.media3 | Player UI utilities |
+| Coroutines Guava | 1.10.2 | org.jetbrains.kotlinx | ListenableFuture → suspend bridge for Media3 |
+| Reorderable | 3.0.0 | sh.calvin.reorderable | Drag-and-drop reordering in queue |
+
 ### Firebase & Sync (Phase 6)
 
 | Library | Version | Group ID | Notes |
 |---------|---------|----------|-------|
-| Firebase BOM | latest stable | `com.google.firebase:firebase-bom` | Manages versions of all Firebase libs — no per-library versions needed |
-| Firebase Auth KTX | BOM | `com.google.firebase:firebase-auth-ktx` | Google Sign-In credential exchange |
-| Cloud Firestore KTX | BOM | `com.google.firebase:firebase-firestore-ktx` | Sync data store; offline persistence enabled |
-| Credential Manager | latest stable | `androidx.credentials:credentials` | Modern Google Sign-In API (replaces GoogleSignInClient) |
-| Credentials Play Services | same | `androidx.credentials:credentials-play-services-auth` | Play Services bridge for CredentialManager |
-| Google ID | latest stable | `com.google.android.libraries.identity.googleid:googleid` | `GoogleIdTokenCredential` type |
-| Coroutines Play Services | `1.10.1` | `org.jetbrains.kotlinx:kotlinx-coroutines-play-services` | `.await()` on Firebase `Task<T>` |
+| Firebase BOM | 34.10.0 | com.google.firebase | Manages versions of all Firebase libs |
+| Firebase Auth | BOM | com.google.firebase | Google Sign-In credential exchange |
+| Cloud Firestore | BOM | com.google.firebase | Sync data store; offline persistence enabled |
+| Credential Manager | 1.5.0 | androidx.credentials | Modern Google Sign-In API (replaces GoogleSignInClient) |
+| Credentials Play Services | 1.5.0 | androidx.credentials | Play Services bridge for CredentialManager |
+| Google ID | 1.1.1 | com.google.android.libraries.identity.googleid | `GoogleIdTokenCredential` type |
+| Coroutines Play Services | 1.10.2 | org.jetbrains.kotlinx | `.await()` on Firebase `Task<T>` |
+| Google Services Plugin | 4.4.3 | com.google.gms | Processes `google-services.json` |
 
 > **Firebase BOM**: Declare as `platform(libs.firebase.bom)` and omit version refs on `firebase-auth` and `firebase-firestore` entries in the catalog.
 
@@ -80,6 +98,7 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 |---------|---------|----------|-------|
 | Coil | 3.1.0 | io.coil-kt.coil3 | **Group changed in v3** |
 | Coil Compose | 3.1.0 | io.coil-kt.coil3 | |
+| Coil Network OkHttp | 3.1.0 | io.coil-kt.coil3 | For remote image fetching (artist images) |
 
 ### Navigation
 
@@ -87,22 +106,29 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 |---------|---------|----------|-------|
 | Navigation Compose | 2.9.0 | androidx.navigation | |
 
+### Code Quality
+
+| Library | Version | Group ID | Notes |
+|---------|---------|----------|-------|
+| ktlint (Gradle plugin) | 12.1.0 | org.jlleitschuh.gradle.ktlint | `ktlintFormat` / `ktlintCheck` |
+
 ### Testing
 
 | Library | Version | Group ID | Notes |
 |---------|---------|----------|-------|
 | JUnit 5 Jupiter API | 5.11.4 | org.junit.jupiter | |
 | JUnit 5 Jupiter Engine | 5.11.4 | org.junit.jupiter | |
-| JUnit Platform Launcher | 1.11.4 | org.junit.platform | Required for JUnit 5 |
+| JUnit Platform Launcher | — | org.junit.platform | Required for JUnit 5 (version managed by JUnit BOM) |
 | Turbine | 1.2.1 | app.cash.turbine | For testing Flows |
-| Kotlin Coroutines Test | 1.10.1 | org.jetbrains.kotlinx | |
+| Kotlin Coroutines Test | 1.10.2 | org.jetbrains.kotlinx | |
+| MockK | 1.14.9 | io.mockk | Mocking concrete classes with Android deps |
 | JUnit 4 | 4.13.2 | junit | For instrumented tests only |
-| Compose UI Test | BOM | androidx.compose.ui | |
+| Compose UI Test JUnit4 | 1.10.2 | androidx.compose.ui | Pinned; `createAndroidComposeRule` |
 | Compose UI Test Manifest | BOM | androidx.compose.ui | Debug only |
 
 ## AGP 9 Compatibility Notes
 
-Android Gradle Plugin 9.0.0 introduces significant changes that affect dependency versions.
+Android Gradle Plugin 9.x introduces significant changes that affect dependency versions.
 
 ### Critical Requirements
 
@@ -217,6 +243,10 @@ File google-services.json is missing. The Google Services Plugin cannot function
 ```
 
 **Never commit `google-services.json`** — add to `.gitignore` and store as a CI secret (base64-encoded).
+
+### Firebase KTX Note
+
+The `-ktx` suffix is no longer needed for Firebase libraries. The base artifacts (`firebase-auth`, `firebase-firestore`) now include Kotlin extensions directly. The version catalog uses the non-KTX names.
 
 ## Library-Specific Gotchas
 
@@ -349,27 +379,34 @@ No tests found
 
 ```toml
 [versions]
+agp = "9.0.1"
 room = "2.7.1"
 coil = "3.1.0"
-firebase-bom = "<latest>"
+media3 = "1.9.2"
+firebase-bom = "34.10.0"
 
 [libraries]
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+
+# Media3 — playback, session, UI
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
+androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
 
 # Firebase: use platform BOM; no version.ref on individual artifacts
 firebase-bom  = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
-firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-google-services = { id = "com.google.gms.google-services", version = "<latest>" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 ```
 
 ### Using in build.gradle.kts

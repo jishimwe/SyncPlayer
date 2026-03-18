@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
+import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.components.SongItem
 import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
@@ -58,8 +59,7 @@ fun FavoriteTabScreen(
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = MiniPlayerPeek)) {
         stickyHeader {
             SortFilterBar(
-                sortLabel = selectedSort,
-                sortOptions = faveSortOptions,
+                selectedSort = SortOrder.BY_ARTIST,
                 onSortClick = { selectedSort = it.label },
                 onShuffle = { onSongClick(sorted.shuffled(), 0) },
                 onPlayAll = { onSongClick(sorted, 0) },
@@ -83,10 +83,22 @@ fun FavoriteTabScreen(
                     ),
                 onMenuAction = { action ->
                     when (action) {
-                        SongMenuAction.PlayNext -> onPlayNext(song)
-                        SongMenuAction.AddToQueue -> onAddToQueue(song)
-                        SongMenuAction.GoToArtist -> onNavigateToArtist(song.artist)
-                        SongMenuAction.GoToAlbum -> onNavigateToAlbum(song.albumId, song.album)
+                        SongMenuAction.PlayNext -> {
+                            onPlayNext(song)
+                        }
+
+                        SongMenuAction.AddToQueue -> {
+                            onAddToQueue(song)
+                        }
+
+                        SongMenuAction.GoToArtist -> {
+                            onNavigateToArtist(song.artist)
+                        }
+
+                        SongMenuAction.GoToAlbum -> {
+                            onNavigateToAlbum(song.albumId, song.album)
+                        }
+
                         else -> {}
                     }
                 },

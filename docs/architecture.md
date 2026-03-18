@@ -34,28 +34,60 @@ SyncPlayer follows the MVVM (Model-View-ViewModel) architecture pattern with a s
 ```
 app/src/main/java/com/jpishimwe/syncplayer/
 ├── ui/
-│   ├── theme/              # Color, Theme, Type, Shape
-│   ├── components/         # Reusable UI components (MiniPlayer, SongListItem, etc.)
-│   ├── library/            # Library tabs: Songs, Albums, Artists, Favs, Top Plays, Recent
-│   │   ├── LibraryScreen.kt
-│   │   ├── LibraryViewModel.kt
-│   │   ├── LibraryUiState.kt
-│   │   └── LibraryEvent.kt
+│   ├── theme/              # Color, Theme, Type, accent colors, frosted glass modifier
+│   ├── home/               # Main screen coordinating all tabs
+│   │   ├── HomeScreen.kt          # PermissionHandler + ViewModel wiring
+│   │   └── tabs/                  # One file per tab
+│   │       ├── SongsTabScreen.kt
+│   │       ├── AlbumsTabScreen.kt
+│   │       ├── ArtistsTabScreen.kt
+│   │       ├── FavoriteTabScreen.kt
+│   │       ├── PlaylistsTabScreen.kt
+│   │       └── HistoryTabScreen.kt
+│   ├── library/            # ViewModels and state for library data
+│   │   ├── LibraryViewModel.kt    # Songs/albums/artists + LibraryUiState, SortOrder, LibraryTab
+│   │   ├── MetadataViewModel.kt   # Favorites/mostPlayed/recentlyPlayed + MetadataUiState
+│   │   ├── PermissionHandler.kt   # READ_MEDIA_AUDIO permission flow
+│   │   └── DurationFormatter.kt   # formatDuration(ms) utility
 │   ├── player/             # Now Playing screen, PlayerViewModel, PlayerEvent
+│   │   ├── components/            # Reusable UI components used across screens
+│   │   │   ├── SongListItem.kt    # SongItem, SongMenuAction, SongItemVariant
+│   │   │   ├── SortFilterBar.kt   # Sort dropdown + shuffle/play-all
+│   │   │   ├── AlphabeticalIndexSidebar.kt
+│   │   │   ├── MiniPlayer.kt      # Floating pill + MiniPlayerPeek constant
+│   │   │   ├── AlbumItem.kt       # Grid card for albums
+│   │   │   ├── ArtistItem.kt      # Grid card for artists
+│   │   │   ├── PlaylistItem.kt    # Row item for playlists
+│   │   │   ├── PlaylistCollage.kt # 4-image grid thumbnail
+│   │   │   ├── CollapsibleSection.kt
+│   │   │   ├── QueueSheet.kt      # Bottom sheet for queue
+│   │   │   ├── PlayerControls.kt
+│   │   │   ├── SeekBar.kt
+│   │   │   ├── CircularArtistImage.kt
+│   │   │   ├── BlurredBackground.kt
+│   │   │   └── FrostedGlassPill.kt
+│   │   ├── NowPlayingScreen.kt
+│   │   ├── PlayerViewModel.kt
+│   │   └── PlayerEvent.kt
 │   ├── playlists/          # Playlist list + detail, SongPickerSheet
 │   ├── settings/           # Sign-in, sync status, manual sync trigger
 │   │   ├── SettingsScreen.kt
 │   │   ├── SettingsViewModel.kt
 │   │   ├── SettingsUiState.kt
 │   │   └── SettingsEvent.kt
-│   └── navigation/         # NavGraph, Screen routes, bottom nav
+│   └── navigation/         # NavGraph, Screen routes, top tab row
+│       ├── NavGraph.kt            # Routes, CustomTabRow, DockedSearchBar
+│       └── Screen.kt              # Route sealed class + LibraryTab enum
 ├── data/
 │   ├── local/              # Room database, DAOs, entities
 │   │   ├── SyncPlayerDatabase.kt
 │   │   ├── SongDao.kt
-│   │   ├── PlaylistDao.kt      # PlaylistEntity, PlaylistSongCrossRef
-│   │   ├── QueueDao.kt         # QueueEntity
-│   │   └── ListeningHistoryDao.kt
+│   │   ├── PlaylistDao.kt         # PlaylistEntity, PlaylistSongCrossRef
+│   │   ├── QueueDao.kt            # QueueEntity
+│   │   ├── ListeningHistoryDao.kt
+│   │   ├── ArtistImageDao.kt      # Cached artist images from Deezer
+│   │   └── MediaStoreScanner.kt   # Device audio file scanner
+│   ├── remote/             # Remote API clients (Deezer artist images)
 │   ├── sync/               # Firebase sync layer
 │   │   ├── SongFingerprint.kt      # SHA-256 cross-device song key
 │   │   ├── FirestoreModels.kt      # Firestore document data classes
@@ -67,11 +99,13 @@ app/src/main/java/com/jpishimwe/syncplayer/
 │   │   └── SyncOrchestrator.kt     # Push+pull coordination, SyncStatus
 │   ├── SongRepository.kt       # Song + metadata CRUD interface
 │   ├── SongRepositoryImpl.kt
+│   ├── PlayerRepository.kt     # Media3 playback control interface
+│   ├── PlayerRepositoryImpl.kt
 │   ├── PlaylistRepository.kt
 │   ├── PlaylistRepositoryImpl.kt
-│   ├── PlayerRepository.kt     # Media3 playback control interface
-│   └── PlayerRepositoryImpl.kt
-├── model/                  # Domain models (Song, Album, Artist, Playlist, Rating, etc.)
+│   ├── ArtistImageRepository.kt    # Deezer artist image fetch + cache
+│   └── ArtistImageRepositoryImpl.kt
+├── model/                  # Domain models (Song, Album, Artist, Playlist, Rating, PlayerUiState, QueueItem, etc.)
 ├── service/                # PlaybackService (Media3 MediaSessionService)
 ├── di/                     # Hilt modules
 │   ├── AppModule.kt        # Repository bindings
@@ -99,41 +133,64 @@ app/src/main/java/com/jpishimwe/syncplayer/
 - **UI State**: Data classes representing screen state
 - **Events**: Sealed interfaces for user actions
 
-**Example**:
+**Example** (actual HomeScreen pattern):
 ```kotlin
-// Screen with ViewModel
+// Screen composable — obtains ViewModels, collects state, delegates to content
 @Composable
-fun LibraryScreen(
-    viewModel: LibraryViewModel = hiltViewModel()
+fun HomeScreen(
+    selectedTab: LibraryTab,
+    onNavigateToAlbumDetail: (Long, String) -> Unit,
+    // ... other navigation callbacks
+    libraryViewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
+    metadataViewModel: MetadataViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
+    playerViewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    LibraryScreenContent(
-        state = state,
-        onEvent = viewModel::onEvent
-    )
-}
-
-// Testable content composable
-@Composable
-fun LibraryScreenContent(
-    state: LibraryUiState,
-    onEvent: (LibraryEvent) -> Unit
-) {
-    // UI implementation
-}
-
-// ViewModel
-class LibraryViewModel @Inject constructor(
-    private val repository: SongRepository
-) : ViewModel() {
-    private val _state = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
-    val state: StateFlow<LibraryUiState> = _state.asStateFlow()
-    
-    fun onEvent(event: LibraryEvent) {
-        // Handle events
+    PermissionHandler {
+        val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
+        val metadataUiState by metadataViewModel.uiState.collectAsStateWithLifecycle()
+        val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
+        HomeScreenContent(
+            libraryUiState = libraryUiState,
+            metadataUiState = metadataUiState,
+            playerUiState = playerUiState,
+            onSongClick = { songs, index -> playerViewModel.onEvent(PlayerEvent.PlaySongs(songs, index)) },
+            // ...
+        )
     }
 }
+
+// Testable content composable — pure, receives all state
+@Composable
+fun HomeScreenContent(
+    libraryUiState: LibraryUiState,
+    metadataUiState: MetadataUiState,
+    playerUiState: PlayerUiState,
+    onSongClick: (List<Song>, Int) -> Unit,
+    // ...
+) {
+    HorizontalPager(state = pagerState) { page ->
+        when (tab[page]) {
+            LibraryTab.SONGS -> SongsTabScreen(...)
+            LibraryTab.ALBUMS -> AlbumsTabScreen(...)
+            // ...
+        }
+    }
+}
+
+// ViewModel — combines reactive flows into a single UiState
+@HiltViewModel
+class LibraryViewModel @Inject constructor(
+    private val songRepository: SongRepository,
+    private val artistImageRepository: ArtistImageRepository,
+) : ViewModel() {
+    val uiState: StateFlow<LibraryUiState> =
+        combine(songsFlow, albumsFlow, artistsFlow, refreshError) { songs, albums, artists, error ->
+            // ...
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)
+}
 ```
+
+**Note**: ViewModels are scoped to the Activity (`LocalActivity.current as ViewModelStoreOwner`) so they survive navigation between screens and are shared across HomeScreen, detail screens, and NavGraph.
 
 ### Domain Layer (Future)
 
@@ -157,35 +214,43 @@ class LibraryViewModel @Inject constructor(
 - Data transformation (entities ↔ models)
 
 **Components**:
-- **Repositories**: Public API for data access
-- **DAOs**: Database access objects
+- **Repositories**: Interface + Impl pairs for testability (e.g., `SongRepository` / `SongRepositoryImpl`)
+- **DAOs**: Database access objects (Room)
 - **Entities**: Room database tables
-- **Data sources**: MediaStore scanner, future network sync
+- **Data sources**: MediaStore scanner, Deezer API (artist images), Firebase (sync)
+
+**Repositories**:
+
+| Repository | Purpose |
+|------------|---------|
+| `SongRepository` | Song, album, artist CRUD; search; metadata (ratings, play counts) |
+| `PlayerRepository` | Media3 playback control (play, pause, skip, queue, shuffle, repeat) |
+| `PlaylistRepository` | Playlist CRUD, song associations, reorder |
+| `ArtistImageRepository` | Deezer artist image fetch + local cache |
+| `AuthRepository` | Firebase Auth sign-in/out |
+| `SyncRepository` | Firestore push/pull for metadata sync |
 
 **Example**:
 ```kotlin
-// Repository
-class SongRepository @Inject constructor(
-    private val songDao: SongDao,
-    private val mediaStoreScanner: MediaStoreScanner
-) {
-    fun getSongs(): Flow<List<Song>> = songDao.getAllSongs()
-        .map { entities -> entities.map { it.toModel() } }
-    
-    suspend fun scanMedia() {
-        val songs = mediaStoreScanner.scan()
-        songDao.insertAll(songs.map { it.toEntity() })
-    }
+// Repository interface (for testability — fakes in tests)
+interface SongRepository {
+    fun getAllSongs(): Flow<List<Song>>
+    fun searchSongs(query: String): Flow<List<Song>>
+    suspend fun refreshLibrary()
+    suspend fun setRating(songId: Long, rating: Rating)
+    // ...
 }
 
-// DAO
-@Dao
-interface SongDao {
-    @Query("SELECT * FROM songs")
-    fun getAllSongs(): Flow<List<SongEntity>>
-    
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(songs: List<SongEntity>)
+// Implementation
+class SongRepositoryImpl @Inject constructor(
+    private val songDao: SongDao,
+    private val mediaStoreScanner: MediaStoreScanner,
+) : SongRepository {
+    override fun getAllSongs(): Flow<List<Song>> = songDao.getAllSongs()
+    override suspend fun refreshLibrary() {
+        val songs = mediaStoreScanner.scan()
+        songDao.upsertSongs(songs)
+    }
 }
 ```
 
@@ -263,9 +328,10 @@ Use sealed interfaces for different states:
 ```kotlin
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
-    data class Success(
+    data class Loaded(
         val songs: List<Song>,
-        val selectedFilter: ArtistFilter = ArtistFilter.All
+        val albums: List<Album>,
+        val artists: List<Artist>,
     ) : LibraryUiState
     data class Error(val message: String) : LibraryUiState
 }
@@ -332,29 +398,42 @@ class LibraryViewModel @Inject constructor(
 
 ## Navigation
 
-Uses Jetpack Navigation Compose with type-safe routes.
+Uses Jetpack Navigation Compose. The top-level navigation is a horizontal scrollable tab row with `HorizontalPager` (replacing the original bottom nav bar after the UI redesign). Now Playing is shown as an `AnimatedVisibility` overlay, not a navigation route.
+
+### Current Routes
+
+| Route | Screen | Description |
+|-------|--------|-------------|
+| `home` | HomeScreen | HorizontalPager with 6 tabs: Songs, Albums, Artists, Favorites, Playlists, History |
+| `album_detail/{albumId}/{albumName}` | AlbumDetailScreen | Songs in an album |
+| `artist_detail/{artistName}` | ArtistDetailScreen | Songs by an artist |
+| `playlist_detail/{playlistId}/{playlistName}` | PlaylistDetailScreen | Songs in a playlist with reorder/add/remove |
+| `settings` | SettingsScreen | Sign-in, sync status, manual sync trigger |
+
+Now Playing is an `AnimatedVisibility` overlay managed by `NavGraph`, not a composable route. A `CustomTabRow` at the top provides scrollable tab switching. A `DockedSearchBar` handles search. A persistent `MiniPlayer` floats above content on top-level screens.
 
 ### Basic Setup
 
 ```kotlin
 @Composable
-fun SyncPlayerNavGraph(
-    navController: NavHostController
-) {
-    NavHost(
-        navController = navController,
-        startDestination = "library"
-    ) {
-        composable("library") {
-            LibraryScreen(
-                onNavigateToPlayer = { navController.navigate("player") }
+fun NavGraph() {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = Screen.Home.route) {
+        composable(Screen.Home.route) {
+            HomeScreen(
+                selectedTab = selectedTab,
+                onNavigateToAlbumDetail = { id, name -> navController.navigate(...) },
+                onNavigateToArtistDetail = { name -> navController.navigate(...) },
+                // ...
             )
         }
-        composable("player") {
-            PlayerScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
+        composable("album_detail/{albumId}/{albumName}") { /* ... */ }
+        composable("artist_detail/{artistName}") { /* ... */ }
+        // ...
+    }
+    // Now Playing overlay (not a route)
+    AnimatedVisibility(visible = showNowPlaying) {
+        NowPlayingScreen(onDismiss = { showNowPlaying = false })
     }
 }
 ```
@@ -364,41 +443,41 @@ fun SyncPlayerNavGraph(
 Every screen follows this pattern for testability:
 
 ```kotlin
-// 1. Screen composable (uses ViewModel)
+// 1. Screen composable (obtains ViewModel, collects state)
 @Composable
-fun LibraryScreen(
-    viewModel: LibraryViewModel = hiltViewModel(),
-    onNavigateToPlayer: () -> Unit = {}
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    LibraryScreenContent(
-        state = state,
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
+    SettingsScreenContent(
+        uiState = uiState,
+        snackbarMessage = snackbarMessage,
         onEvent = viewModel::onEvent,
-        onNavigateToPlayer = onNavigateToPlayer
     )
 }
 
-// 2. Content composable (pure, testable)
+// 2. Content composable (pure, testable — all state is parameters)
 @Composable
-fun LibraryScreenContent(
-    state: LibraryUiState,
-    onEvent: (LibraryEvent) -> Unit,
-    onNavigateToPlayer: () -> Unit
+fun SettingsScreenContent(
+    uiState: SettingsUiState,
+    snackbarMessage: String?,
+    onEvent: (SettingsEvent) -> Unit,
 ) {
-    // UI implementation
+    // UI implementation — no ViewModel references
 }
 
 // 3. Preview
 @Preview
 @Composable
-private fun LibraryScreenPreview() {
-    LibraryScreenContent(
-        state = LibraryUiState.Success(
-            songs = listOf(/* sample data */)
-        ),
-        onEvent = {},
-        onNavigateToPlayer = {}
-    )
+private fun SettingsScreenPreview() {
+    SyncPlayerTheme {
+        SettingsScreenContent(
+            uiState = SettingsUiState(/* sample data */),
+            snackbarMessage = null,
+            onEvent = {},
+        )
+    }
 }
 ```
 
@@ -440,7 +519,7 @@ fun loadSongs() {
                 )
             }
             .collect { songs ->
-                _state.value = LibraryUiState.Success(songs)
+                _state.value = LibraryUiState.Loaded(songs)
             }
     }
 }
@@ -451,7 +530,7 @@ fun loadSongs() {
 ```kotlin
 when (state) {
     LibraryUiState.Loading -> LoadingIndicator()
-    is LibraryUiState.Success -> SongList(state.songs)
+    is LibraryUiState.Loaded -> SongList(state.songs)
     is LibraryUiState.Error -> ErrorMessage(
         message = state.message,
         onRetry = { onEvent(LibraryEvent.RefreshRequested) }

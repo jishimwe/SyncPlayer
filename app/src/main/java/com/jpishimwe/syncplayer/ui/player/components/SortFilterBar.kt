@@ -49,16 +49,21 @@ import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SortFilterBar(
-    sortLabel: String,
+    selectedSort: SortOrder,
+    sortOptions: List<SortOrder> = SortOrder.entries.toList(),
     onSortClick: (sortOrder: SortOrder) -> Unit,
     onShuffle: () -> Unit,
     onPlayAll: () -> Unit,
     modifier: Modifier = Modifier,
-    sortOptions: List<String> = emptyList(),
 ) {
     val borderBrush =
         Brush.linearGradient(
-            colors = listOf(myAccentColor.copy(alpha = 0.24f), myAccentColor.copy(alpha = 0.75f), myAccentColor.copy(alpha = 0.24f)),
+            colors =
+                listOf(
+                    myAccentColor.copy(alpha = 0.24f),
+                    myAccentColor.copy(alpha = 0.75f),
+                    myAccentColor.copy(alpha = 0.24f),
+                ),
         )
     val barShape = RoundedCornerShape(8.dp)
 
@@ -85,7 +90,6 @@ fun SortFilterBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             var expanded by remember { mutableStateOf(false) }
-            var selectedSortOrder by remember { mutableStateOf(SortOrder.BY_TITLE) }
             // Sort label — TextButton keeps touch target large, no ripple bleed
             ExposedDropdownMenuBox(
                 expanded = expanded,
@@ -93,8 +97,8 @@ fun SortFilterBar(
             ) {
                 FilterChip(
                     selected = true,
-                    onClick = { expanded = !expanded },
-                    label = { Text(selectedSortOrder.label) },
+                    onClick = { },
+                    label = { Text(selectedSort.label) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Sort,
@@ -119,7 +123,7 @@ fun SortFilterBar(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                 ) {
-                    SortOrder.entries.forEach { order ->
+                    sortOptions.forEach { order ->
                         DropdownMenuItem(
                             text = { Text(order.label) },
                             onClick = {
@@ -161,7 +165,7 @@ fun SortFilterBar(
 private fun SortFilterBarPreview() {
     SyncPlayerTheme(darkTheme = true) {
         SortFilterBar(
-            sortLabel = "Title ▾",
+            selectedSort = SortOrder.BY_TITLE,
             onSortClick = {},
             onShuffle = {},
             onPlayAll = {},

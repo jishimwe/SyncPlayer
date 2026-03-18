@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -31,12 +31,12 @@ fun SongMenuOverflow(
         if (isPlaying) {
             myAccentColor.copy(alpha = 0.9f)
         } else {
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         }
 
     Box {
         Icon(
-            imageVector = Icons.Default.MoreVert,
+            imageVector = Icons.Outlined.MoreVert,
             contentDescription = "More options",
             tint = iconTint,
             modifier = Modifier.size(48.dp).noRippleClickable { expanded = true }.padding(8.dp),

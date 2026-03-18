@@ -205,18 +205,18 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ## Priority Summary
 
-| # | Improvement | Priority | Effort | Status |
-|---|------------|----------|--------|--------|
-| 1 | Play count on `SongListItem` | Medium | Small | ✅ Done (Phase 7) |
-| 2 | History detail screen | Low | Medium | Open |
-| 3 | Slide gesture for rating | Low | Medium | Open |
-| 4 | Consolidate favorite/star rating | Low | Small | Open (needs dogfooding) |
-| 5 | `LibraryViewModel` 7-flow refactor | Medium | Large | ✅ Done (Phase 7) |
-| 6 | Detail screen tests | Medium | Small | ✅ Done (Phase 7) |
-| 7 | Audio focus edge case testing | Medium | Medium | Open |
-| 8 | Expose `clearQueue` on interface | Low | Trivial | ✅ Done (Phase 7) |
-| 9 | Custom notification layout | Low | Medium | Open |
-| 10 | Phase 6 Sync | High | Large | ✅ Done (Phase 6) |
+| #  | Improvement                        | Priority | Effort  | Status                  |
+|----|------------------------------------|----------|---------|-------------------------|
+| 1  | Play count on `SongListItem`       | Medium   | Small   | ✅ Done (Phase 7)        |
+| 2  | History detail screen              | Low      | Medium  | Open                    |
+| 3  | Slide gesture for rating           | Low      | Medium  | Open                    |
+| 4  | Consolidate favorite/star rating   | Low      | Small   | Open (needs dogfooding) |
+| 5  | `LibraryViewModel` 7-flow refactor | Medium   | Large   | ✅ Done (Phase 7)        |
+| 6  | Detail screen tests                | Medium   | Small   | ✅ Done (Phase 7)        |
+| 7  | Audio focus edge case testing      | Medium   | Medium  | Open                    |
+| 8  | Expose `clearQueue` on interface   | Low      | Trivial | ✅ Done (Phase 7)        |
+| 9  | Custom notification layout         | Low      | Medium  | Open                    |
+| 10 | Phase 6 Sync                       | High     | Large   | ✅ Done (Phase 6)        |
 
 ---
 

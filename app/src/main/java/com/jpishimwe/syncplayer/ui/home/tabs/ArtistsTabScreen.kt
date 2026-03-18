@@ -123,8 +123,7 @@ fun ArtistsTabScreen(
 
         // Sticky sort bar spanning full width
         SortFilterBar(
-            sortLabel = selectedSort.label,
-            sortOptions = artistSortOptions,
+            selectedSort = selectedSort,
             onSortClick = { selectedSort = it },
             onShuffle = { onSongClick(libraryUiState.songs.shuffled(), 0) },
             onPlayAll = { onSongClick(libraryUiState.songs, 0) },

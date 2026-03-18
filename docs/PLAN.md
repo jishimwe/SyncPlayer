@@ -245,8 +245,12 @@ Explicitly out of scope for Phase 7. Carries to Phase 8 backlog:
 #### Known gaps from Phase 7
 
 - **Dead code**: `songsFlowOld` and `albumsFlowOld` in `LibraryViewModel` — unused private flows left from an intermediate refactor; no behavioral impact, cleanup deferred
+- **Sort broken end-to-end**: three independent sort states (`SortFilterBar` internal state, `SongsTabScreen` local `remember`, `LibraryViewModel._sortOrder`) are never connected — user changes sort in UI but the list doesn't re-sort. Tracked in [`songs-tab-refactor/plan.md`](features/songs-tab-refactor/plan.md)
 - **Sort for Artists tab**: not implemented — sort dropdown shown only on Songs and Albums tabs
 - **Search test fidelity**: `FakeSongRepository.searchSongs` returns `songsFlow` unfiltered; search filtering is a DAO concern and requires an in-memory Room database to test at that level
+- **`SortFilterBar` ignores `sortLabel` param**: internal `selectedSortOrder` state on line 88 overrides the caller-provided label; the component is uncontrollable
+- **`SongsTabScreen` missing testable composable pattern**: no `SongsTabScreenContent` split per style guide
+- **Duplicate sorting in `LibraryViewModel`**: songs sorted in `songsFlow` (all 6 cases) and again in `uiState` combine (only 3 cases) — inconsistent and wasteful
 
 ---
 
@@ -285,21 +289,22 @@ Before implementing integrations, the following Phase 7 deferred items and backl
 
 | Item                                        | Priority | Effort  | Source                                                         |
 |---------------------------------------------|----------|---------|----------------------------------------------------------------|
+| **Songs tab sort refactor (broken)**        | **High** | Medium  | [`songs-tab-refactor/plan.md`](features/songs-tab-refactor/plan.md) |
+| Audio focus edge case testing (manual)      | Medium   | Medium  | `improvements/plan.md` #7                                      |
 | Listening history detail screen             | Low      | Medium  | `improvements/plan.md` #2                                      |
 | Slide/drag gesture for star rating          | Low      | Medium  | `improvements/plan.md` #3                                      |
 | Consolidate favorite/star rating            | Low      | Small   | `improvements/plan.md` #4 — defer to dogfooding                |
-| Audio focus edge case testing (manual)      | Medium   | Medium  | `improvements/plan.md` #7                                      |
 | Custom notification layout                  | Low      | Medium  | `improvements/plan.md` #9                                      |
-| Dead code cleanup in `LibraryViewModel`     | Low      | Trivial | Phase 7 design doc                                             |
 | Sort for Artists tab                        | Low      | Small   | Phase 7 design doc                                             |
 | Seek bar and star rating Compose UI tests   | Low      | Small   | Testing design doc — deferred pending `semantics` tags         |
 | `LibraryScreenContent` search/sort UI tests | Low      | Small   | Testing design doc — deferred pending Material 3 API stability |
 
 **Recommended order before starting integrations:**
-1. Audio focus manual verification (#7) — find real bugs before complexity grows
-2. Listening history screen (#2) — visible gap users will notice
-3. Notification layout (#9) — polish users see every session
-4. Rating gesture (#3) — quality-of-life, after dogfooding decides #4
+1. **Songs tab sort refactor** — functional bug, sorting is completely broken end-to-end; also cleans up dead code and adds testable composable pattern
+2. Audio focus manual verification (#7) — find real bugs before complexity grows
+3. Listening history screen (#2) — visible gap users will notice
+4. Notification layout (#9) — polish users see every session
+5. Rating gesture (#3) — quality-of-life, after dogfooding decides #4
 
 #### MusicBee (Desktop)
 

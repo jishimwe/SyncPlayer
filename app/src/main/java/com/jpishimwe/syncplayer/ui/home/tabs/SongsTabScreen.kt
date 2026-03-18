@@ -10,12 +10,15 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
@@ -25,14 +28,15 @@ import com.jpishimwe.syncplayer.ui.player.components.SongItem
 import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
 import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
+import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import kotlinx.coroutines.launch
-
-private val songSortOptions = SortOrder.entries.map { it.label }
 
 @Composable
 fun SongsTabScreen(
     libraryUiState: LibraryUiState.Loaded,
     currentSongId: Long?,
+    sortOrder: SortOrder,
+    onSortOrderChanged: (SortOrder) -> Unit,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onNavigateToArtist: (String) -> Unit,
     onNavigateToAlbum: (Long, String) -> Unit,
@@ -41,8 +45,35 @@ fun SongsTabScreen(
     onPlayNow: (Song) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val songs = libraryUiState.songs
+    SongsTabScreenContent(
+        songs = libraryUiState.songs,
+        currentSongId = currentSongId,
+        sortOrder = sortOrder,
+        onSortOrderChanged = onSortOrderChanged,
+        onSongClick = onSongClick,
+        onNavigateToArtist = onNavigateToArtist,
+        onNavigateToAlbum = onNavigateToAlbum,
+        onPlayNext = onPlayNext,
+        onAddToQueue = onAddToQueue,
+        onPlayNow = onPlayNow,
+        modifier = modifier,
+    )
+}
 
+@Composable
+fun SongsTabScreenContent(
+    songs: List<Song>,
+    currentSongId: Long?,
+    sortOrder: SortOrder,
+    onSortOrderChanged: (SortOrder) -> Unit,
+    onSongClick: (songs: List<Song>, index: Int) -> Unit,
+    onNavigateToArtist: (String) -> Unit,
+    onNavigateToAlbum: (Long, String) -> Unit,
+    onPlayNext: (Song) -> Unit,
+    onAddToQueue: (Song) -> Unit,
+    onPlayNow: (Song) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     if (songs.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No songs found")
@@ -50,34 +81,48 @@ fun SongsTabScreen(
         return
     }
 
-    var selectedSort: SortOrder by remember { mutableStateOf(SortOrder.BY_TITLE) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    var sortBarHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val sortBarHeightDp = with(density) { sortBarHeightPx.toDp() }
 
-    // Build A–Z index from first letters of song titles
-    val letters =
-        remember(songs) {
-            songs.map { it.title.first().uppercaseChar() }.distinct().sorted()
+    // Build letter index based on active sort field.
+    // Numeric sorts (duration, date, play count) get an empty map → sidebar hidden.
+    val letterIndexMap: Map<Char, Int> =
+        remember(songs, sortOrder) {
+            val keySelector: ((Song) -> Char)? =
+                when (sortOrder) {
+                    SortOrder.BY_TITLE -> { song -> song.title.first().uppercaseChar() }
+
+                    SortOrder.BY_ARTIST -> { song -> song.artist.first().uppercaseChar() }
+
+                    SortOrder.BY_ALBUM -> { song -> song.album.first().uppercaseChar() }
+
+                    SortOrder.BY_DURATION,
+                    SortOrder.BY_DATE_ADDED,
+                    SortOrder.BY_PLAY_COUNT,
+                    -> null
+                }
+            if (keySelector == null) {
+                emptyMap()
+            } else {
+                buildMap {
+                    songs.forEachIndexed { index, song ->
+                        val letter = keySelector(song)
+                        if (!containsKey(letter)) put(letter, index)
+                    }
+                }
+            }
         }
+    val letters = remember(letterIndexMap) { letterIndexMap.keys.sorted() }
 
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = MiniPlayerPeek),
+            contentPadding = PaddingValues(top = sortBarHeightDp, bottom = MiniPlayerPeek),
         ) {
-            // Sticky sort bar
-            stickyHeader {
-                SortFilterBar(
-                    sortLabel = selectedSort.label,
-                    sortOptions = songSortOptions,
-                    onSortClick = { selectedSort = it },
-                    onShuffle = { onSongClick(songs.shuffled(), 0) },
-                    onPlayAll = { onSongClick(songs, 0) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
             itemsIndexed(songs, key = { _, song -> song.id }) { index, song ->
                 SongItem(
                     song = song,
@@ -89,18 +134,32 @@ fun SongsTabScreen(
                             SongMenuAction.PlayNext,
                             SongMenuAction.PlayNow,
                             SongMenuAction.AddToQueue,
-                            SongMenuAction.AddToPlaylist,
                             SongMenuAction.GoToArtist,
                             SongMenuAction.GoToAlbum,
+                            // TODO: re-add AddToPlaylist when playlist picker is implemented
                         ),
                     onMenuAction = { action ->
                         when (action) {
-                            SongMenuAction.PlayNext -> onPlayNext(song)
-                            SongMenuAction.PlayNow -> onPlayNow(song)
-                            SongMenuAction.AddToQueue -> onAddToQueue(song)
-                            SongMenuAction.GoToArtist -> onNavigateToArtist(song.artist)
-                            SongMenuAction.GoToAlbum -> onNavigateToAlbum(song.albumId, song.album)
-                            SongMenuAction.AddToPlaylist -> {} // Phase 3
+                            SongMenuAction.PlayNext -> {
+                                onPlayNext(song)
+                            }
+
+                            SongMenuAction.PlayNow -> {
+                                onPlayNow(song)
+                            }
+
+                            SongMenuAction.AddToQueue -> {
+                                onAddToQueue(song)
+                            }
+
+                            SongMenuAction.GoToArtist -> {
+                                onNavigateToArtist(song.artist)
+                            }
+
+                            SongMenuAction.GoToAlbum -> {
+                                onNavigateToAlbum(song.albumId, song.album)
+                            }
+
                             else -> {}
                         }
                     },
@@ -112,15 +171,44 @@ fun SongsTabScreen(
         AlphabeticalIndexSidebar(
             letters = letters,
             onLetterSelected = { letter ->
-                val targetIndex =
-                    songs.indexOfFirst {
-                        it.title.first().uppercaseChar() == letter
-                    }
-                if (targetIndex >= 0) {
-                    scope.launch { listState.scrollToItem(targetIndex + 1) } // +1 for sticky header
+                val targetIndex = letterIndexMap[letter]
+                if (targetIndex != null) {
+                    scope.launch { listState.scrollToItem(targetIndex) }
                 }
             },
             modifier = Modifier.align(Alignment.CenterEnd),
+        )
+
+        // Overlay sort bar on top so its dropdown popup is not clipped by LazyColumn bounds
+        SortFilterBar(
+            selectedSort = sortOrder,
+            onSortClick = onSortOrderChanged,
+            onShuffle = { onSongClick(songs.shuffled(), 0) },
+            onPlayAll = { onSongClick(songs, 0) },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopStart)
+                    .onSizeChanged { sortBarHeightPx = it.height },
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+private fun SongsTabScreenPreview() {
+    SyncPlayerTheme(darkTheme = true) {
+        SongsTabScreenContent(
+            songs = emptyList(),
+            currentSongId = null,
+            sortOrder = SortOrder.BY_TITLE,
+            onSortOrderChanged = {},
+            onSongClick = { _, _ -> },
+            onNavigateToArtist = {},
+            onNavigateToAlbum = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
+            onPlayNow = {},
         )
     }
 }

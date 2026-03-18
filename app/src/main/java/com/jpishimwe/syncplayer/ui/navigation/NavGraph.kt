@@ -46,7 +46,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -428,7 +427,6 @@ fun CustomTabRow(
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
-    val coroutineScope = rememberCoroutineScope()
     val activeFontSize = MaterialTheme.typography.displaySmall.fontSize
     val inactiveFontSize = MaterialTheme.typography.headlineMedium.fontSize
     val textHeight = MaterialTheme.typography.displaySmall.lineHeight.value.dp
@@ -488,7 +486,7 @@ fun CustomTabRow(
                     },
                 color =
                     if (selectedTab == tab) {
-                        myAccentColor
+                        MaterialTheme.extendedColorScheme.accentColor.color
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },

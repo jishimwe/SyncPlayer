@@ -84,16 +84,6 @@ class LibraryViewModel
         val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        private val songsFlowOld =
-            _searchQuery.flatMapLatest { query ->
-                if (query.isBlank()) {
-                    songRepository.getAllSongs()
-                } else {
-                    songRepository.searchSongs(query)
-                }
-            }
-
-        @OptIn(ExperimentalCoroutinesApi::class)
         private val songsFlow =
             combine(_searchQuery, _sortOrder) { query, sortOrder ->
                 Pair(query, sortOrder)
@@ -113,16 +103,6 @@ class LibraryViewModel
                         SortOrder.BY_DATE_ADDED -> songs.sortedByDescending { it.dateAdded }
                         SortOrder.BY_PLAY_COUNT -> songs.sortedByDescending { it.playCount }
                     }
-                }
-            }
-
-        @OptIn(ExperimentalCoroutinesApi::class)
-        private val albumsFlowOld =
-            _searchQuery.flatMapLatest { query ->
-                if (query.isBlank()) {
-                    songRepository.getAllAlbums()
-                } else {
-                    songRepository.searchAlbums(query)
                 }
             }
 
@@ -161,27 +141,8 @@ class LibraryViewModel
                 if (error != null && songs.isEmpty()) {
                     return@combine LibraryUiState.Error(error)
                 } else {
-                    val sortOrder = _sortOrder.value
-                    val sortedSongs =
-                        when (sortOrder) {
-                            SortOrder.BY_TITLE -> {
-                                songs.sortedBy { it.title.lowercase() }
-                            }
-
-                            SortOrder.BY_DATE_ADDED -> {
-                                songs.sortedByDescending { it.dateAdded }
-                            }
-
-                            SortOrder.BY_PLAY_COUNT -> {
-                                songs.sortedByDescending { it.playCount }
-                            }
-
-                            else -> {
-                                songs
-                            }
-                        }
                     LibraryUiState.Loaded(
-                        sortedSongs,
+                        songs,
                         albums,
                         artists,
                     )

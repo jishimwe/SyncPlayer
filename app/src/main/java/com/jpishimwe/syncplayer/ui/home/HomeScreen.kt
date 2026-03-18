@@ -40,6 +40,7 @@ import com.jpishimwe.syncplayer.ui.library.LibraryViewModel
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
 import com.jpishimwe.syncplayer.ui.library.MetadataViewModel
 import com.jpishimwe.syncplayer.ui.library.PermissionHandler
+import com.jpishimwe.syncplayer.ui.library.SortOrder
 import com.jpishimwe.syncplayer.ui.navigation.LibraryTab
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
@@ -64,6 +65,7 @@ fun HomeScreen(
         val libraryUiState by libraryViewModel.uiState.collectAsStateWithLifecycle()
         val metadataUiState by metadataViewModel.uiState.collectAsStateWithLifecycle()
         val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
+        val sortOrder by libraryViewModel.sortOrder.collectAsStateWithLifecycle()
 
         LaunchedEffect(Unit) {
             libraryViewModel.refreshLibrary()
@@ -89,6 +91,8 @@ fun HomeScreen(
                 libraryUiState = libraryUiState,
                 metadataUiState = metadataUiState,
                 playerUiState = playerUiState,
+                sortOrder = sortOrder,
+                onSortOrderChanged = libraryViewModel::onSortOrder,
                 onRetry = libraryViewModel::refreshLibrary,
                 onSongClick = { songs, index ->
                     playerViewModel.onEvent(PlayerEvent.PlaySongs(songs, index))
@@ -122,6 +126,8 @@ fun HomeScreenContent(
     libraryUiState: LibraryUiState,
     metadataUiState: MetadataUiState,
     playerUiState: PlayerUiState,
+    sortOrder: SortOrder,
+    onSortOrderChanged: (SortOrder) -> Unit,
     onRetry: () -> Unit,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onAlbumClick: (Long, String) -> Unit,
@@ -201,6 +207,8 @@ fun HomeScreenContent(
                             SongsTabScreen(
                                 libraryUiState = libraryUiState,
                                 currentSongId = currentSongId,
+                                sortOrder = sortOrder,
+                                onSortOrderChanged = onSortOrderChanged,
                                 onSongClick = onSongClick,
                                 onNavigateToArtist = onArtistClick,
                                 onNavigateToAlbum = onAlbumClick,
