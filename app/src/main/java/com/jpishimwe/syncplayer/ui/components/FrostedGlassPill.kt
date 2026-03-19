@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.player.components
+package com.jpishimwe.syncplayer.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,7 +46,6 @@ fun FrostedGlassPill(
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     content: @Composable RowScope.() -> Unit,
 ) {
-
     Box(
         modifier = modifier.clip(shape),
     ) {

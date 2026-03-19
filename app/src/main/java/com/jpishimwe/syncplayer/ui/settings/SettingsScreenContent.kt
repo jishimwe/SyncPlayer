@@ -42,40 +42,48 @@ fun SettingsScreenContent(
                 onSnackbarDismiss()
             }
         }
-        LazyColumn(contentPadding = padding) {
-            item {
-                // Account section
-                when (val auth = uiState.authState) {
-                    is AuthState.SignedOut -> {
-                        ListItem(
-                            headlineContent = { Text("Sign in with Google") },
-                            supportingContent = { Text("Sign in to sync your music library") },
-                            trailingContent = {
-                                Button(onClick = onSignIn) { Text("Sign in") }
-                            },
-                        )
-                    }
-
-                    is AuthState.SignedIn -> {
-                        ListItem(
-                            headlineContent = { Text(auth.displayName ?: "Signed in") },
-                            supportingContent = { Text(auth.email ?: auth.userId) },
-                            trailingContent = {
-                                Button(onClick = onSignOut) { Text("Sign out") }
-                            },
-                        )
-                    }
-                }
+        when (uiState) {
+            is SettingsUiState.Loading -> {
+                // Nothing to show while loading
             }
-            item { HorizontalDivider() }
-            item {
-                // Sync section (only shown when signed in)
-                if (uiState.authState is AuthState.SignedIn) {
-                    SyncStatusCard(
-                        syncStatus = uiState.syncStatus,
-                        lastSyncTime = uiState.lastSyncTime,
-                        onSyncNow = onSyncNow,
-                    )
+
+            is SettingsUiState.Loaded -> {
+                LazyColumn(contentPadding = padding) {
+                    item {
+                        // Account section
+                        when (val auth = uiState.authState) {
+                            is AuthState.SignedOut -> {
+                                ListItem(
+                                    headlineContent = { Text("Sign in with Google") },
+                                    supportingContent = { Text("Sign in to sync your music library") },
+                                    trailingContent = {
+                                        Button(onClick = onSignIn) { Text("Sign in") }
+                                    },
+                                )
+                            }
+
+                            is AuthState.SignedIn -> {
+                                ListItem(
+                                    headlineContent = { Text(auth.displayName ?: "Signed in") },
+                                    supportingContent = { Text(auth.email ?: auth.userId) },
+                                    trailingContent = {
+                                        Button(onClick = onSignOut) { Text("Sign out") }
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    item { HorizontalDivider() }
+                    item {
+                        // Sync section (only shown when signed in)
+                        if (uiState.authState is AuthState.SignedIn) {
+                            SyncStatusCard(
+                                syncStatus = uiState.syncStatus,
+                                lastSyncTime = uiState.lastSyncTime,
+                                onSyncNow = onSyncNow,
+                            )
+                        }
+                    }
                 }
             }
         }

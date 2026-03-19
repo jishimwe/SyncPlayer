@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.player.components
+package com.jpishimwe.syncplayer.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
-import com.jpishimwe.syncplayer.ui.theme.surfaceVariantDark
 
 /**
  * Vertical A–Z sidebar anchored to the right edge of its parent.

@@ -14,10 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
-import com.jpishimwe.syncplayer.ui.player.components.PlaylistItem
-import com.jpishimwe.syncplayer.ui.player.components.PlaylistPlaybackState
-import com.jpishimwe.syncplayer.ui.player.components.PlaylistsActionBar
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
+import com.jpishimwe.syncplayer.ui.components.PlaylistItem
+import com.jpishimwe.syncplayer.ui.components.PlaylistPlaybackState
+import com.jpishimwe.syncplayer.ui.components.PlaylistsActionBar
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistEvent
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistUiState
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistViewModel

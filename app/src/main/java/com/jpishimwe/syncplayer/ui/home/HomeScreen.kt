@@ -27,7 +27,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.home.tabs.AlbumsTabScreen
 import com.jpishimwe.syncplayer.ui.home.tabs.ArtistsTabScreen

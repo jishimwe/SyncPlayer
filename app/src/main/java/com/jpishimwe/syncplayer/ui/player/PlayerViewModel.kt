@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jpishimwe.syncplayer.data.PlayerRepository
 import com.jpishimwe.syncplayer.data.SongRepository
-import com.jpishimwe.syncplayer.model.PlaybackState
-import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.ui.player.PlaybackState
+import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.model.Rating
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi

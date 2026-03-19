@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.player.components
+package com.jpishimwe.syncplayer.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable

@@ -20,14 +20,14 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.components.AlphabeticalIndexSidebar
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
+import com.jpishimwe.syncplayer.ui.components.SongItem
+import com.jpishimwe.syncplayer.ui.components.SongItemVariant
+import com.jpishimwe.syncplayer.ui.components.SongMenuAction
+import com.jpishimwe.syncplayer.ui.components.SortFilterBar
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
-import com.jpishimwe.syncplayer.ui.player.components.AlphabeticalIndexSidebar
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
-import com.jpishimwe.syncplayer.ui.player.components.SongItem
-import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
-import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
-import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import kotlinx.coroutines.launch
 

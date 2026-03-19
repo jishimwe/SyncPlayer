@@ -10,10 +10,10 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.jpishimwe.syncplayer.data.local.QueueDao
 import com.jpishimwe.syncplayer.data.local.QueueEntity
-import com.jpishimwe.syncplayer.model.PlaybackState
-import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.ui.player.PlaybackState
+import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.model.QueueItem
-import com.jpishimwe.syncplayer.model.RepeatMode
+import com.jpishimwe.syncplayer.ui.player.RepeatMode
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.model.toMediaItem
 import com.jpishimwe.syncplayer.model.toSong

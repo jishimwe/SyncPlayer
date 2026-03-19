@@ -1,9 +1,7 @@
 package com.jpishimwe.syncplayer.ui.playlists
 
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,8 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,28 +32,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.components.FrostedGlassPill
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
-import com.jpishimwe.syncplayer.ui.player.components.BlurredBackground
-import com.jpishimwe.syncplayer.ui.player.components.FrostedGlassPill
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
-import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-
-private val BarShape = RoundedCornerShape(8.dp)
 
 // Formats a total playlist duration (ms) as "Xh Ym" or "Ym" for values under an hour
 private fun formatPlaylistTotalDuration(totalMs: Long): String {
@@ -164,54 +153,12 @@ fun PlaylistDetailScreenContent(
                     .padding(top = 56.dp),
         ) {
             // ── Action bar: song count + shuffle + play ──────────────────
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                        .border(BorderStroke(1.dp, accentBorderBrush), BarShape)
-                        .clip(BarShape),
-            ) {
-                // Frosted glass background layer
-                Box(modifier = Modifier.matchParentSize().frostedGlassRendered())
-
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "${playlistSongs.size} songs · ${formatPlaylistTotalDuration(totalDuration)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                    )
-
-                    Spacer(Modifier.weight(1f))
-
-                    // Shuffle button
-                    IconButton(onClick = onShuffleClick) {
-                        Icon(
-                            Icons.Default.Shuffle,
-                            contentDescription = "Shuffle",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-
-                    // Play all button
-                    IconButton(onClick = onPlayAllClick) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = "Play all",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                }
-            }
+            PlaylistActionBar(
+                label = "${playlistSongs.size} songs · ${formatPlaylistTotalDuration(totalDuration)}",
+                accentBorderBrush = accentBorderBrush,
+                onShuffleClick = onShuffleClick,
+                onPlayAllClick = onPlayAllClick,
+            )
 
             // ── Song list (reorderable) ──────────────────────────────────
             LazyColumn(
@@ -329,150 +276,6 @@ fun PlaylistDetailScreenContent(
             onDismiss = { showSongPicker = false },
             onAddSongs = onAddSongs,
             onRemoveSongs = onRemoveSongs,
-        )
-    }
-}
-
-// ── Preview data ───────────────────────────────────────────────────────────────
-
-private val previewPlaylistSongs =
-    listOf(
-        Song(
-            id = 1,
-            title = "Blinding Lights",
-            artist = "The Weeknd",
-            albumArtist = "The Weeknd",
-            album = "After Hours",
-            duration = 200_000L,
-            albumArtUri = null,
-            playCount = 12,
-            rating = Rating.GREAT.value,
-            lastPlayed = 0L,
-            albumId = 1,
-            trackNumber = 1,
-            year = 2020,
-            dateAdded = 1000L,
-            contentUri = null,
-            lastModified = 0L,
-        ),
-        Song(
-            id = 2,
-            title = "Levitating",
-            artist = "Dua Lipa  Feat. DaBaby",
-            albumArtist = "Dua Lipa",
-            album = "Future Nostalgia",
-            duration = 203_000L,
-            albumArtUri = null,
-            playCount = 7,
-            rating = Rating.GOOD.value,
-            lastPlayed = 0L,
-            albumId = 2,
-            trackNumber = 1,
-            year = 2020,
-            dateAdded = 1001L,
-            contentUri = null,
-            lastModified = 0L,
-        ),
-        Song(
-            id = 3,
-            title = "As It Was",
-            artist = "Harry Styles",
-            albumArtist = "Harry Styles",
-            album = "Harry's House",
-            duration = 167_000L,
-            albumArtUri = null,
-            playCount = 4,
-            rating = Rating.NONE.value,
-            lastPlayed = 0L,
-            albumId = 3,
-            trackNumber = 1,
-            year = 2022,
-            dateAdded = 1002L,
-            contentUri = null,
-            lastModified = 0L,
-        ),
-        Song(
-            id = 4,
-            title = "Shivers",
-            artist = "Ed Sheeran",
-            albumArtist = "Ed Sheeran",
-            album = "=",
-            duration = 207_000L,
-            albumArtUri = null,
-            playCount = 2,
-            rating = Rating.NONE.value,
-            lastPlayed = 0L,
-            albumId = 4,
-            trackNumber = 1,
-            year = 2021,
-            dateAdded = 1003L,
-            contentUri = null,
-            lastModified = 0L,
-        ),
-    )
-
-/**
- * Playlist with songs — the reorder drag handle renders but won't respond to drag
- * in preview; that's expected since gesture handling requires a real device/emulator.
- */
-@Preview(showBackground = true, backgroundColor = 0xFF111113, name = "With songs")
-@Composable
-private fun PlaylistDetailWithSongsPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        PlaylistDetailScreenContent(
-            playlistName = "My Favourites",
-            playlistSongs = previewPlaylistSongs,
-            allSongs = previewPlaylistSongs,
-            onSongClick = {},
-            onShuffleClick = {},
-            onPlayAllClick = {},
-            onRemoveSong = {},
-            onRemoveSongs = {},
-            onReorderSongs = {},
-            onAddSongs = {},
-            onNavigateBack = {},
-        )
-    }
-}
-
-/** Empty playlist — just the header/sub-header with no songs. */
-@Preview(showBackground = true, backgroundColor = 0xFF111113, name = "Empty playlist")
-@Composable
-private fun PlaylistDetailEmptyPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        PlaylistDetailScreenContent(
-            playlistName = "New Playlist",
-            playlistSongs = emptyList(),
-            allSongs = previewPlaylistSongs,
-            onSongClick = {},
-            onShuffleClick = {},
-            onPlayAllClick = {},
-            onRemoveSong = {},
-            onRemoveSongs = {},
-            onReorderSongs = {},
-            onAddSongs = {},
-            onNavigateBack = {},
-        )
-    }
-}
-
-/** Long playlist name — verifies single-line truncation in the header. */
-@Preview(showBackground = true, backgroundColor = 0xFF111113, name = "Long name")
-@Composable
-private fun PlaylistDetailLongNamePreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        PlaylistDetailScreenContent(
-            playlistName = "My Very Long and Detailed Playlist Name That Overflows",
-            playlistSongs = previewPlaylistSongs,
-            allSongs = previewPlaylistSongs,
-            onSongClick = {},
-            onShuffleClick = {},
-            onPlayAllClick = {},
-            onRemoveSong = {},
-            onRemoveSongs = {},
-            onReorderSongs = {},
-            onAddSongs = {},
-            onNavigateBack = {},
         )
     }
 }

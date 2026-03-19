@@ -1,4 +1,7 @@
-package com.jpishimwe.syncplayer.model
+package com.jpishimwe.syncplayer.ui.player
+
+import com.jpishimwe.syncplayer.model.QueueItem
+import com.jpishimwe.syncplayer.model.Song
 
 data class PlayerUiState(
     val currentSong: Song? = null,

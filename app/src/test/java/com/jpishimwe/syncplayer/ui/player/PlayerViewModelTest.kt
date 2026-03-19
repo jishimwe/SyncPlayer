@@ -4,8 +4,8 @@ import app.cash.turbine.test
 import com.jpishimwe.syncplayer.MainDispatcherRule
 import com.jpishimwe.syncplayer.data.FakePlayerRepository
 import com.jpishimwe.syncplayer.data.FakeSongRepository
-import com.jpishimwe.syncplayer.model.PlaybackState
-import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.ui.player.PlaybackState
+import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -21,15 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.components.AlbumGridItem
+import com.jpishimwe.syncplayer.ui.components.AlbumPlaybackState
+import com.jpishimwe.syncplayer.ui.components.ArtistItem
+import com.jpishimwe.syncplayer.ui.components.ArtistPlaybackState
+import com.jpishimwe.syncplayer.ui.components.CollapsibleSectionHeader
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
+import com.jpishimwe.syncplayer.ui.components.SongItem
+import com.jpishimwe.syncplayer.ui.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
-import com.jpishimwe.syncplayer.ui.player.components.AlbumGridItem
-import com.jpishimwe.syncplayer.ui.player.components.AlbumPlaybackState
-import com.jpishimwe.syncplayer.ui.player.components.ArtistItem
-import com.jpishimwe.syncplayer.ui.player.components.ArtistPlaybackState
-import com.jpishimwe.syncplayer.ui.player.components.CollapsibleSectionHeader
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
-import com.jpishimwe.syncplayer.ui.player.components.SongItem
-import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
 
 /**
  * History tab: three collapsible sections for recently played songs, albums, and artists.
@@ -90,10 +90,22 @@ fun HistoryTabScreen(
                             ),
                         onMenuAction = { action ->
                             when (action) {
-                                SongMenuAction.PlayNext -> onPlayNext(song)
-                                SongMenuAction.AddToQueue -> onAddToQueue(song)
-                                SongMenuAction.GoToArtist -> onArtistClick(song.artist)
-                                SongMenuAction.GoToAlbum -> onAlbumClick(song.albumId, song.album)
+                                SongMenuAction.PlayNext -> {
+                                    onPlayNext(song)
+                                }
+
+                                SongMenuAction.AddToQueue -> {
+                                    onAddToQueue(song)
+                                }
+
+                                SongMenuAction.GoToArtist -> {
+                                    onArtistClick(song.artist)
+                                }
+
+                                SongMenuAction.GoToAlbum -> {
+                                    onAlbumClick(song.albumId, song.album)
+                                }
+
                                 else -> {}
                             }
                         },

@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.player.components
+package com.jpishimwe.syncplayer.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,10 +33,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.jpishimwe.syncplayer.model.PlaybackState
-import com.jpishimwe.syncplayer.model.PlayerUiState
 import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.player.PlaybackState
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
+import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.frostedGlass
 import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered

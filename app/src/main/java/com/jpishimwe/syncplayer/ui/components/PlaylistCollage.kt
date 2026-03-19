@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.player.components
+package com.jpishimwe.syncplayer.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column

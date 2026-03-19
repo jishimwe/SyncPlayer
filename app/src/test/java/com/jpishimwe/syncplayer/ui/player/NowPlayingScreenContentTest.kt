@@ -3,7 +3,7 @@ package com.jpishimwe.syncplayer.ui.player
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
-import com.jpishimwe.syncplayer.model.PlayerUiState
+import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.model.Rating
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue

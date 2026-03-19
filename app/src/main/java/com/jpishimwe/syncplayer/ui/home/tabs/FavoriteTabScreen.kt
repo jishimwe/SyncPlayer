@@ -15,13 +15,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
+import com.jpishimwe.syncplayer.ui.components.SongItem
+import com.jpishimwe.syncplayer.ui.components.SongItemVariant
+import com.jpishimwe.syncplayer.ui.components.SongMenuAction
+import com.jpishimwe.syncplayer.ui.components.SortFilterBar
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
-import com.jpishimwe.syncplayer.ui.player.components.SongItem
-import com.jpishimwe.syncplayer.ui.player.components.SongItemVariant
-import com.jpishimwe.syncplayer.ui.player.components.SongMenuAction
-import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
 
 private val faveSortOptions = listOf("Title", "Artist", "Rating")
 

@@ -50,6 +50,8 @@ class SettingsViewModelTest {
         runTest {
             viewModel.uiState.test {
                 val state = awaitItem()
+                assert(state is SettingsUiState.Loaded)
+                state as SettingsUiState.Loaded
                 assertEquals(AuthState.SignedOut, state.authState)
                 assertEquals(SyncStatus.Idle, state.syncStatus)
             }
@@ -60,7 +62,7 @@ class SettingsViewModelTest {
         runTest {
             // lastSyncTime prefs = 0L, takeIf { > 0 } = null; syncStatus not Success → null
             viewModel.uiState.test {
-                val state = awaitItem()
+                val state = awaitItem() as SettingsUiState.Loaded
                 assertNull(state.lastSyncTime)
             }
         }
@@ -71,7 +73,7 @@ class SettingsViewModelTest {
             viewModel.uiState.test {
                 awaitItem() // initial state
                 fakeAuthRepository.emitSignedIn(userId = "user-1", displayName = "Alice")
-                val state = awaitItem()
+                val state = awaitItem() as SettingsUiState.Loaded
                 assertEquals(AuthState.SignedIn("user-1", "Alice", "test@example.com", null), state.authState)
             }
         }
@@ -83,7 +85,7 @@ class SettingsViewModelTest {
             viewModel.uiState.test {
                 awaitItem() // signed-in state
                 fakeAuthRepository.emitSignedOut()
-                val state = awaitItem()
+                val state = awaitItem() as SettingsUiState.Loaded
                 assertEquals(AuthState.SignedOut, state.authState)
             }
         }
@@ -94,7 +96,7 @@ class SettingsViewModelTest {
             viewModel.uiState.test {
                 awaitItem() // initial
                 syncStatusFlow.value = SyncStatus.Syncing
-                val state = awaitItem()
+                val state = awaitItem() as SettingsUiState.Loaded
                 assertEquals(SyncStatus.Syncing, state.syncStatus)
             }
         }
@@ -106,7 +108,7 @@ class SettingsViewModelTest {
             viewModel.uiState.test {
                 awaitItem() // initial
                 syncStatusFlow.value = SyncStatus.Success(syncedAt = syncedAt)
-                val state = awaitItem()
+                val state = awaitItem() as SettingsUiState.Loaded
                 assertEquals(SyncStatus.Success(syncedAt), state.syncStatus)
                 assertEquals(syncedAt, state.lastSyncTime)
             }
@@ -118,7 +120,7 @@ class SettingsViewModelTest {
             viewModel.uiState.test {
                 awaitItem() // initial
                 syncStatusFlow.value = SyncStatus.Error("Firestore unavailable")
-                val state = awaitItem()
+                val state = awaitItem() as SettingsUiState.Loaded
                 assertEquals(SyncStatus.Error("Firestore unavailable"), state.syncStatus)
             }
         }

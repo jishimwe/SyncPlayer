@@ -3,7 +3,6 @@ package com.jpishimwe.syncplayer.ui.player
 import android.graphics.Bitmap
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,16 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,28 +37,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
-import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.toBitmap
-import com.jpishimwe.syncplayer.R
-import com.jpishimwe.syncplayer.model.PlayerUiState
 import com.jpishimwe.syncplayer.model.Rating
-import com.jpishimwe.syncplayer.model.Song
-import com.jpishimwe.syncplayer.ui.player.components.BlurredBackground
-import com.jpishimwe.syncplayer.ui.player.components.PlayerControls
-import com.jpishimwe.syncplayer.ui.player.components.QueueSheet
-import com.jpishimwe.syncplayer.ui.player.components.SeekBar
-import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
-import com.jpishimwe.syncplayer.ui.theme.myAccentColor
+import com.jpishimwe.syncplayer.ui.components.PlayerControls
+import com.jpishimwe.syncplayer.ui.components.QueueSheet
+import com.jpishimwe.syncplayer.ui.components.SeekBar
+import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
 
 @Composable
 fun NowPlayingScreenContent(
@@ -266,241 +248,5 @@ fun NowPlayingScreenContent(
 
             Spacer(Modifier.height(32.dp))
         }
-    }
-}
-
-@Composable
-fun FavoriteButton(
-    rating: Rating,
-    onClick: () -> Unit,
-) {
-    val isFavorite = rating == Rating.FAVORITE
-    IconButton(onClick = onClick, modifier = Modifier.size(48.dp)) {
-        Icon(
-            if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-            tint = myAccentColor,
-            modifier = Modifier.size(40.dp),
-        )
-    }
-}
-
-@Composable
-fun StarRating(
-    rating: Rating,
-    onSetRating: (stars: Rating) -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Rating.entries
-            .filter { it != Rating.NONE }
-            .forEach { star ->
-                IconButton(onClick = { onSetRating(if (rating == star) Rating.NONE else star) }) {
-                    Icon(
-                        if (star.value <= rating.value) Icons.Default.Star else Icons.Default.StarBorder,
-                        contentDescription = "${star.value} stars",
-                        tint = myAccentColor,
-                    )
-                }
-            }
-    }
-}
-
-@Composable
-fun TrackInfo(song: Song?) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        val titleShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
-        val albumShape = RoundedCornerShape(4.dp)
-        val artistShape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(titleShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = song?.title ?: "",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(albumShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = song?.album ?: "-",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(artistShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = song?.artist ?: "",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-@Composable
-fun AlbumArtwork(
-    song: Song?,
-    modifier: Modifier = Modifier,
-) {
-    SubcomposeAsyncImage(
-        model = song?.albumArtUri,
-        contentDescription = "Album art",
-        contentScale = ContentScale.Crop,
-        modifier = modifier,
-        loading = {
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-                Image(
-                    painter = painterResource(R.drawable.album_default_foreground),
-                    contentDescription = "Loading album art",
-                )
-            }
-        },
-        error = {
-            Image(
-                painter = painterResource(R.drawable.album_default_foreground),
-                contentDescription = "No album art",
-            )
-        },
-    )
-}
-
-// region Previews
-
-private val previewSong =
-    Song(
-        id = 1L,
-        title = "Fe3O4: FORWARD",
-        artist = "NMIXX",
-        albumArtist = "NMIXX",
-        album = "Fe3O4",
-        albumId = 1L,
-        duration = 213000L,
-        trackNumber = 1,
-        year = 2024,
-        dateAdded = 0L,
-        contentUri = null,
-        albumArtUri = null,
-    )
-
-@Preview(showBackground = true, backgroundColor = 0xFF111113)
-@Composable
-private fun NowPlayingScreenContentPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        NowPlayingScreenContent(
-            uiState =
-                PlayerUiState(
-                    currentSong = previewSong,
-                    playbackState = com.jpishimwe.syncplayer.model.PlaybackState.PLAYING,
-                    currentPosition = 65000L,
-                    duration = 213000L,
-                ),
-            onEvent = {},
-            onNavigateBack = {},
-            formatTime = { ms -> "%d:%02d".format(ms / 60000, (ms / 1000) % 60) },
-            rating = Rating.GOOD,
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF111113)
-@Composable
-private fun NowPlayingScreenContentEmptyPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        NowPlayingScreenContent(
-            uiState = PlayerUiState(),
-            onEvent = {},
-            onNavigateBack = {},
-            formatTime = { ms -> "%d:%02d".format(ms / 60000, (ms / 1000) % 60) },
-            rating = Rating.NONE,
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF111113)
-@Composable
-private fun FavoriteButtonPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(8.dp)) {
-            FavoriteButton(rating = Rating.NONE, onClick = {})
-            FavoriteButton(rating = Rating.FAVORITE, onClick = {})
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF111113)
-@Composable
-private fun StarRatingPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(8.dp)) {
-            StarRating(rating = Rating.NONE, onSetRating = {})
-            StarRating(rating = Rating.FAIR, onSetRating = {})
-            StarRating(rating = Rating.FAVORITE, onSetRating = {})
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF111113)
-@Composable
-private fun TrackInfoPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(8.dp)) {
-            TrackInfo(song = previewSong)
-            Spacer(Modifier.height(8.dp))
-            TrackInfo(song = null)
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF111113)
-@Composable
-private fun AlbumArtworkPreview() {
-    SyncPlayerTheme(darkTheme = true) {
-        AlbumArtwork(
-            song = previewSong,
-            modifier =
-                Modifier
-                    .size(300.dp)
-                    .clip(MaterialTheme.shapes.medium),
-        )
     }
 }

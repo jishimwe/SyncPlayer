@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.model
+package com.jpishimwe.syncplayer.ui.player
 
 enum class PlaybackState {
     IDLE,

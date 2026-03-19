@@ -27,13 +27,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.model.Song
+import com.jpishimwe.syncplayer.ui.components.AlphabeticalIndexSidebar
+import com.jpishimwe.syncplayer.ui.components.ArtistItem
+import com.jpishimwe.syncplayer.ui.components.ArtistPlaybackState
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
+import com.jpishimwe.syncplayer.ui.components.SortFilterBar
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
-import com.jpishimwe.syncplayer.ui.player.components.AlphabeticalIndexSidebar
-import com.jpishimwe.syncplayer.ui.player.components.ArtistItem
-import com.jpishimwe.syncplayer.ui.player.components.ArtistPlaybackState
-import com.jpishimwe.syncplayer.ui.player.components.MiniPlayerPeek
-import com.jpishimwe.syncplayer.ui.player.components.SortFilterBar
 import kotlinx.coroutines.launch
 
 private val artistSortOptions = listOf(SortOrder.BY_ARTIST.label)

@@ -1,5 +1,8 @@
-package com.jpishimwe.syncplayer.ui.player.components
+package com.jpishimwe.syncplayer.ui.theme
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.HardwareRenderer
 import android.graphics.PixelFormat
@@ -8,9 +11,12 @@ import android.graphics.RenderNode
 import android.graphics.Shader
 import android.hardware.HardwareBuffer
 import android.media.ImageReader
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.view.PixelCopy
 import android.view.View
+import android.view.Window
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Singleton that holds a screenshot bitmap captured before navigating to a detail screen.
@@ -44,11 +52,11 @@ object ScreenshotHolder {
                 // PixelCopy.request posts the callback to the provided Handler.
                 // If that Handler is on the main thread, and we block the main thread
                 // with latch.await(), the callback can never run → deadlock.
-                val handlerThread = android.os.HandlerThread("PixelCopyThread")
+                val handlerThread = HandlerThread("PixelCopyThread")
                 handlerThread.start()
-                val handler = android.os.Handler(handlerThread.looper)
+                val handler = Handler(handlerThread.looper)
 
-                val latch = java.util.concurrent.CountDownLatch(1)
+                val latch = CountDownLatch(1)
                 var copyResult = PixelCopy.ERROR_UNKNOWN
                 PixelCopy.request(
                     window,
@@ -59,7 +67,7 @@ object ScreenshotHolder {
                     },
                     handler,
                 )
-                latch.await(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                latch.await(1000, TimeUnit.MILLISECONDS)
                 handlerThread.quitSafely()
 
                 if (copyResult == PixelCopy.SUCCESS) {
@@ -85,10 +93,10 @@ object ScreenshotHolder {
 }
 
 /** Helper to get the Activity's Window from a Context */
-private fun android.content.Context.getActivityWindow(): android.view.Window? {
+private fun Context.getActivityWindow(): Window? {
     var ctx = this
-    while (ctx is android.content.ContextWrapper) {
-        if (ctx is android.app.Activity) return ctx.window
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx.window
         ctx = ctx.baseContext
     }
     return null

@@ -34,6 +34,8 @@ Local audio player for Android that syncs metadata (play counts, playlists, favo
 
 ## Build Commands
 
+This is a Kotlin/Android music player project. When making UI or animation changes, always verify with a clean build (`./gradlew assembleDebug`) before reporting success.
+
 ```bash
 .\gradlew.bat assembleDebug        # Build debug APK
 .\gradlew.bat test                 # Unit tests

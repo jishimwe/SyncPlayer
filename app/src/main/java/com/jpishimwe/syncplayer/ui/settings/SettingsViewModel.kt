@@ -31,12 +31,12 @@ class SettingsViewModel
                 authRepository.authState,
                 syncOrchestrator.syncStatus,
             ) { authState, syncStatus ->
-                SettingsUiState(
+                SettingsUiState.Loaded(
                     authState = authState,
                     syncStatus = syncStatus,
                     lastSyncTime = (syncStatus as? SyncStatus.Success)?.syncedAt ?: syncOrchestrator.lastSyncTime.takeIf { it > 0L },
                 )
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SettingsUiState())
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SettingsUiState.Loading)
 
         fun onEvent(event: SettingsEvent) {
             when (event) {
