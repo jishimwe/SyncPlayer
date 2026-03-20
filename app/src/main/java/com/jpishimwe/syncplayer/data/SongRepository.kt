@@ -17,6 +17,8 @@ interface SongRepository {
 
     fun getAllArtists(): Flow<List<Artist>>
 
+    fun getArtistByName(name: String): Flow<Artist?>
+
     fun getSongsByAlbum(albumId: Long): Flow<List<Song>>
 
     fun getSongsByArtist(artist: String): Flow<List<Song>>

@@ -9,6 +9,7 @@ import com.jpishimwe.syncplayer.data.local.PlaylistEntity
 import com.jpishimwe.syncplayer.data.local.PlaylistSongCrossRef
 import com.jpishimwe.syncplayer.data.local.SongDao
 import com.jpishimwe.syncplayer.model.Song
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,7 +55,12 @@ class SyncOrchestrator
 
         /** Full bi-directional sync: push local changes, then pull remote changes. */
         suspend fun sync() {
-            val userId = authRepository.currentUserId ?: return
+            val userId = authRepository.currentUserId
+            if (userId == null) {
+                Log.d(TAG, "sync() aborted — userId is null (not signed in)")
+                return
+            }
+            Log.d(TAG, "sync() starting for userId=$userId, lastSyncTime=$lastSyncTime")
             _syncStatus.value = SyncStatus.Syncing
 
             try {
@@ -62,8 +68,10 @@ class SyncOrchestrator
                 pull(userId)
                 val now = System.currentTimeMillis()
                 prefs.edit().putLong(KEY_LAST_SYNC_TIME, now).apply()
+                Log.d(TAG, "sync() completed successfully at $now")
                 _syncStatus.value = SyncStatus.Success(syncedAt = now)
             } catch (e: Exception) {
+                Log.e(TAG, "sync() failed", e)
                 _syncStatus.value = SyncStatus.Error(e.message ?: "Sync failed")
             }
         }
@@ -72,6 +80,7 @@ class SyncOrchestrator
         private suspend fun push(userId: String) {
             val allSongs = songDao.getAllSongsList()
             val lastSync = lastSyncTime
+            Log.d(TAG, "push(): ${allSongs.size} songs total, lastSync=$lastSync")
 
             // Build fingerprint lookup (songId → fingerprint) for history push
             val fingerprintMap: Map<Long, String> =
@@ -80,14 +89,22 @@ class SyncOrchestrator
                 }
 
             // Push song metadata modified since last sync
-            for (song in allSongs.filter { it.lastModified > lastSync }) {
+            // On first sync (lastSync == 0), also push songs with lastModified == 0
+            // (pre-migration songs that were never touched)
+            val songsToSync =
+                allSongs.filter { it.lastModified > lastSync || (lastSync == 0L && it.lastModified == 0L) }
+            Log.d(TAG, "push(): ${songsToSync.size} songs to push")
+            for (song in songsToSync) {
                 val fingerprint = fingerprintMap[song.id] ?: continue
                 syncRepository.pushSongMetadata(userId, fingerprint, song)
             }
 
             // Push playlists modified since last sync
             val allPlaylists = playlistDao.getAllPlaylistsList()
-            for (playlist in allPlaylists.filter { it.lastModified > lastSync }) {
+            val playlistsToSync =
+                allPlaylists.filter { it.lastModified > lastSync || (lastSync == 0L && it.lastModified == 0L) }
+            Log.d(TAG, "push(): ${playlistsToSync.size} playlists to push")
+            for (playlist in playlistsToSync) {
                 val songs = playlistDao.getSongsForPlaylistList(playlist.id)
                 val remoteId = syncRepository.pushPlaylist(userId, playlist, songs)
                 if (playlist.remoteId == null) {
@@ -97,6 +114,7 @@ class SyncOrchestrator
             }
             // Push listening history events since last sync
             val newHistory = listeningHistoryDao.getHistorySince(lastSync)
+            Log.d(TAG, "push(): ${newHistory.size} history events to push")
             if (newHistory.isNotEmpty()) {
                 syncRepository.pushHistoryEvents(userId, newHistory, fingerprintMap)
             }
@@ -104,6 +122,7 @@ class SyncOrchestrator
 
         // ── Pull ──────────────────────────────────────────────────────────────
         private suspend fun pull(userId: String) {
+            Log.d(TAG, "pull(): starting for userId=$userId")
             val allSongs = songDao.getAllSongsList()
             val fingerprintToSong: Map<String, Song> =
                 allSongs.associateBy { song -> SongFingerprint.compute(song.title, song.artist, song.album, song.duration) }
@@ -183,6 +202,7 @@ class SyncOrchestrator
         }
 
         companion object {
+            private const val TAG = "SyncOrchestrator"
             private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         }
     }

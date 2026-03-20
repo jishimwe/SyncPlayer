@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import javax.inject.Inject
@@ -75,13 +76,17 @@ class LibraryViewModel
         private val _isRefreshing = MutableStateFlow(false)
         private val _searchQuery = MutableStateFlow("")
         private val _sortOrder = MutableStateFlow(SortOrder.BY_TITLE)
-        private val lastScanTimestamp = MutableStateFlow(0L)
+        private val _albumSortOrder = MutableStateFlow(SortOrder.BY_ALBUM)
+        private val _artistSortOrder = MutableStateFlow(SortOrder.BY_ARTIST)
+        private val lastScanTimestamp = MutableStateFlow(System.currentTimeMillis())
         private val refreshError = MutableStateFlow<String?>(null)
 
         val selectedTab: StateFlow<LibraryTab> = _selectedTab.asStateFlow()
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
         val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
         val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
+        val albumSortOrder: StateFlow<SortOrder> = _albumSortOrder.asStateFlow()
+        val artistSortOrder: StateFlow<SortOrder> = _artistSortOrder.asStateFlow()
 
         @OptIn(ExperimentalCoroutinesApi::class)
         private val songsFlow =
@@ -108,7 +113,7 @@ class LibraryViewModel
 
         @OptIn(ExperimentalCoroutinesApi::class)
         private val albumsFlow =
-            combine(_searchQuery, _sortOrder) { query, sortOrder ->
+            combine(_searchQuery, _albumSortOrder) { query, sortOrder ->
                 Pair(query, sortOrder)
             }.flatMapLatest { (query, sortOrder) ->
                 val flow = if (query.isBlank()) songRepository.getAllAlbums() else songRepository.searchAlbums(query)
@@ -123,11 +128,16 @@ class LibraryViewModel
 
         @OptIn(ExperimentalCoroutinesApi::class)
         private val artistsFlow =
-            _searchQuery.flatMapLatest { query ->
-                if (query.isBlank()) {
-                    songRepository.getAllArtists()
-                } else {
-                    songRepository.searchArtists(query)
+            combine(_searchQuery, _artistSortOrder) { query, sortOrder ->
+                Pair(query, sortOrder)
+            }.flatMapLatest { (query, sortOrder) ->
+                val flow = if (query.isBlank()) songRepository.getAllArtists() else songRepository.searchArtists(query)
+                flow.map { artists ->
+                    when (sortOrder) {
+                        SortOrder.BY_ARTIST -> artists.sortedBy { it.name }
+                        SortOrder.BY_PLAY_COUNT -> artists.sortedByDescending { it.songCount }
+                        else -> artists
+                    }
                 }
             }
 
@@ -188,7 +198,7 @@ class LibraryViewModel
         fun getAlbumsByArtist(artist: String): Flow<List<Album>> = songRepository.getAlbumsByArtist(artist)
 
         fun getArtistByName(artistName: String): Flow<Artist?> =
-            songRepository.getAllArtists().map { list -> list.find { it.name == artistName } }
+            songRepository.getArtistByName(artistName)
 
         fun onSearchQueryChanged(query: String) {
             _searchQuery.value = query
@@ -202,15 +212,30 @@ class LibraryViewModel
             _sortOrder.value = order
         }
 
+        fun onAlbumSortOrder(order: SortOrder) {
+            _albumSortOrder.value = order
+        }
+
+        fun onArtistSortOrder(order: SortOrder) {
+            _artistSortOrder.value = order
+        }
+
+        private var fetchArtistImagesJob: Job? = null
+
         fun fetchMissingArtistImages() {
-            viewModelScope.launch {
+            fetchArtistImagesJob?.cancel()
+            fetchArtistImagesJob = viewModelScope.launch {
                 // Wait until artists are actually loaded (non-empty after scan)
                 val artists = songRepository.getAllArtists()
                     .filter { it.isNotEmpty() }
                     .first()
                 // Call repo for every artist — it returns immediately for cached entries
                 for (artist in artists) {
-                    artistImageRepository.getArtistImageUrl(artist.name)
+                    try {
+                        artistImageRepository.getArtistImageUrl(artist.name)
+                    } catch (_: Exception) {
+                        // Skip failed fetches — don't abort remaining artists
+                    }
                     delay(1_000) // throttle: 1 req/sec to respect Deezer rate limits
                 }
             }

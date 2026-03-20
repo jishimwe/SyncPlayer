@@ -6,9 +6,13 @@ import com.jpishimwe.syncplayer.data.PlaylistRepository
 import com.jpishimwe.syncplayer.data.SongRepository
 import com.jpishimwe.syncplayer.model.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,10 +33,26 @@ class PlaylistViewModel
         private val playlistRepository: PlaylistRepository,
         private val songRepository: SongRepository,
     ) : ViewModel() {
+        @OptIn(ExperimentalCoroutinesApi::class)
         val uiState: StateFlow<PlaylistUiState> =
             playlistRepository
                 .getAllPlaylists()
-                .map { PlaylistUiState.Loaded(it) }
+                .flatMapLatest { playlists ->
+                    if (playlists.isEmpty()) {
+                        flowOf(PlaylistUiState.Loaded(playlists))
+                    } else {
+                        val artFlows = playlists.map { playlist ->
+                            playlistRepository.getArtUrisForPlaylist(playlist.id)
+                                .map { uris -> playlist.id to uris }
+                        }
+                        combine(artFlows) { artPairs ->
+                            PlaylistUiState.Loaded(
+                                playlists = playlists,
+                                playlistArtUris = artPairs.toMap(),
+                            )
+                        }
+                    }
+                }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistUiState.Loading)
 
         fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = playlistRepository.getSongsForPlaylist(playlistId)

@@ -22,6 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -111,6 +114,11 @@ fun ArtistItem(
         ) {
             // Play/Pause icon — shown for all states except Default
             if (playbackState != ArtistPlaybackState.Default) {
+                val playDesc = if (playbackState is ArtistPlaybackState.Playing) {
+                    stringResource(R.string.cd_pause_artist, artistName)
+                } else {
+                    stringResource(R.string.cd_play_artist, artistName)
+                }
                 Icon(
                     imageVector =
                         if (playbackState is ArtistPlaybackState.Playing) {
@@ -118,12 +126,7 @@ fun ArtistItem(
                         } else {
                             Icons.Default.PlayArrow
                         },
-                    contentDescription =
-                        if (playbackState is ArtistPlaybackState.Playing) {
-                            "Pause"
-                        } else {
-                            "Play"
-                        },
+                    contentDescription = playDesc,
                     tint = iconTint,
                     modifier =
                         Modifier
@@ -148,7 +151,7 @@ fun ArtistItem(
             // Overflow menu
             Icon(
                 imageVector = Icons.Default.MoreVert,
-                contentDescription = "More options",
+                contentDescription = stringResource(R.string.cd_artist_options, artistName),
                 tint = iconTint,
                 modifier =
                     Modifier

@@ -337,6 +337,7 @@ class PlayerRepositoryImpl
 
         override fun seekToQueueItem(index: Int) {
             mediaController?.seekToDefaultPosition(index)
+            mediaController?.play()
         }
 
         fun moveUp(
@@ -392,8 +393,16 @@ class PlayerRepositoryImpl
         }
 
         override suspend fun clearQueue() {
-            mediaController?.clearMediaItems()
-            queueDao.clearQueue()
+            val controller = mediaController ?: return
+            val currentIndex = controller.currentMediaItemIndex
+
+            // Remove items after the current song (in reverse to keep indices stable)
+            for (i in controller.mediaItemCount - 1 downTo currentIndex + 1) {
+                controller.removeMediaItem(i)
+            }
+
+            queueDao.clearUpcoming(currentIndex)
+            syncQueueState()
         }
 
         private fun syncQueueState() {

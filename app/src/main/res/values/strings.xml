@@ -1,4 +1,53 @@
 <resources>
     <string name="app_name">Sync Player</string>
     <string name="default_web_client_id" translatable="false">721103707838-9p1t18dosnak2pkoaj2es0dlndkacuog.apps.googleusercontent.com</string>
+
+    <!-- Tab empty states -->
+    <string name="empty_songs">No songs found</string>
+    <string name="empty_albums">No albums found</string>
+    <string name="empty_artists">No artists found</string>
+    <string name="empty_favorites">No favourites yet — rate a song 4 stars or higher</string>
+    <string name="empty_history">No listening history yet</string>
+
+    <!-- History section headers -->
+    <string name="history_recently_played">Recently played</string>
+    <string name="history_recently_played_albums">Recently played albums</string>
+    <string name="history_recently_played_artists">Recently Played Artists</string>
+
+    <!-- Playlist picker -->
+    <string name="playlist_picker_title">Add to playlist</string>
+    <string name="playlist_picker_create_new">Create new playlist</string>
+    <string name="playlist_picker_create">Create</string>
+    <string name="playlist_picker_name_hint">Playlist name</string>
+    <string name="playlist_song_count">%d songs</string>
+
+    <!-- Rename dialog -->
+    <string name="rename_playlist_title">Rename playlist</string>
+    <string name="rename_playlist_confirm">Rename</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Accessibility -->
+    <string name="cd_jump_to_letter">Jump to %1$s</string>
+    <string name="cd_play_album">Play %1$s</string>
+    <string name="cd_pause_album">Pause %1$s</string>
+    <string name="cd_album_options">Options for %1$s</string>
+    <string name="cd_album_art">Album art for %1$s</string>
+    <string name="cd_play_artist">Play %1$s</string>
+    <string name="cd_pause_artist">Pause %1$s</string>
+    <string name="cd_artist_options">Options for %1$s</string>
+    <string name="cd_now_playing">Now playing</string>
+    <string name="cd_rating">Rating: %1$d out of 5</string>
+    <string name="cd_song_options">Options for %1$s</string>
+    <string name="cd_remove_song">Remove %1$s</string>
+    <string name="cd_reorder_song">Reorder %1$s</string>
+
+    <!-- Queue sheet -->
+    <string name="queue_title">Queue</string>
+    <string name="queue_title_count">Queue (%d songs)</string>
+    <string name="queue_empty">Your queue is empty</string>
+    <string name="cd_clear_queue">Clear queue</string>
+    <string name="cd_collapse_queue">Collapse queue</string>
+    <string name="cd_remove_from_queue">Remove from queue</string>
+    <string name="cd_playing">Playing</string>
+    <string name="cd_reorder">Reorder</string>
 </resources>

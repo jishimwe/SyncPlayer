@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.data.sync
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.jpishimwe.syncplayer.data.local.ListeningHistoryEntity
@@ -15,6 +16,10 @@ class SyncRepositoryImpl
     constructor(
         private val db: FirebaseFirestore,
     ) : SyncRepository {
+        companion object {
+            private const val TAG = "SyncRepository"
+        }
+
         override suspend fun pushSongMetadata(
             userId: String,
             fingerprint: String,
@@ -27,6 +32,8 @@ class SyncRepositoryImpl
                     "lastPlayed" to song.lastPlayed,
                     "lastModified" to song.lastModified,
                 )
+            val path = "users/$userId/songs/$fingerprint"
+            Log.d(TAG, "pushSongMetadata: $path data=$data")
             db
                 .collection("users")
                 .document(userId)
@@ -34,6 +41,7 @@ class SyncRepositoryImpl
                 .document(fingerprint)
                 .set(data, SetOptions.merge())
                 .await()
+            Log.d(TAG, "pushSongMetadata: $path written successfully")
         }
 
         override suspend fun pullAllSongMetadata(userId: String): Map<String, FirestoreSongMetadata> {
@@ -44,6 +52,7 @@ class SyncRepositoryImpl
                     .collection("songs")
                     .get()
                     .await()
+            Log.d(TAG, "pullAllSongMetadata: fetched ${snapshot.documents.size} documents")
             return snapshot.documents.associate { doc ->
                 doc.id to doc.toObject(FirestoreSongMetadata::class.java)!!
             }
@@ -79,6 +88,8 @@ class SyncRepositoryImpl
                     .document()
                     .id
 
+            val path = "users/$userId/playlists/$remoteId"
+            Log.d(TAG, "pushPlaylist: $path name=${playlist.name}")
             db
                 .collection("users")
                 .document(userId)
@@ -86,6 +97,7 @@ class SyncRepositoryImpl
                 .document(remoteId)
                 .set(data)
                 .await()
+            Log.d(TAG, "pushPlaylist: $path written successfully")
 
             return remoteId
         }
@@ -99,6 +111,7 @@ class SyncRepositoryImpl
                     .get()
                     .await()
 
+            Log.d(TAG, "pullAllPlaylists: fetched ${snapshot.documents.size} documents")
             return snapshot.documents.associate { doc ->
                 doc.id to doc.toObject(FirestorePlaylist::class.java)!!
             }
@@ -120,7 +133,9 @@ class SyncRepositoryImpl
                         .document()
                 batch.set(ref, FirestoreHistoryEvent(fingerprint, event.playedAt))
             }
+            Log.d(TAG, "pushHistoryEvents: committing batch of ${events.size} events")
             batch.commit().await()
+            Log.d(TAG, "pushHistoryEvents: batch committed successfully")
         }
 
         override suspend fun pullHistoryEvents(
@@ -135,6 +150,7 @@ class SyncRepositoryImpl
                     .whereGreaterThanOrEqualTo("playedAt", since)
                     .get()
                     .await()
+            Log.d(TAG, "pullHistoryEvents: fetched ${snapshot.documents.size} events since $since")
             return snapshot.documents.mapNotNull { it.toObject(FirestoreHistoryEvent::class.java) }
         }
     }

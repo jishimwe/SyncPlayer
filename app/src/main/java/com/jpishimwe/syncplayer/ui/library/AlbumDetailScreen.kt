@@ -62,6 +62,7 @@ fun AlbumDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
     onNavigateToArtistDetail: (String) -> Unit = {},
+    onAddToPlaylist: (songIds: List<Long>) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
@@ -82,6 +83,7 @@ fun AlbumDetailScreen(
         },
         onPlayNext = { playerViewModel.onEvent(PlayerEvent.PlayNext(it)) },
         onAddToQueue = { playerViewModel.onEvent(PlayerEvent.AddToQueue(it)) },
+        onAddToPlaylist = onAddToPlaylist,
         onNavigateToArtist = onNavigateToArtistDetail,
         onNavigateBack = onNavigateBack,
         sharedTransitionScope = sharedTransitionScope,
@@ -99,6 +101,7 @@ fun AlbumDetailScreenContent(
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onPlayNext: (Song) -> Unit,
     onAddToQueue: (Song) -> Unit,
+    onAddToPlaylist: (songIds: List<Long>) -> Unit = {},
     onNavigateToArtist: (String) -> Unit,
     onNavigateBack: () -> Unit,
     albumId: Long = 0L,
@@ -245,9 +248,10 @@ fun AlbumDetailScreenContent(
                                     onNavigateToArtist(song.artist)
                                 }
 
-                                SongMenuAction.AddToPlaylist -> {}
+                                SongMenuAction.AddToPlaylist -> {
+                                    onAddToPlaylist(listOf(song.id))
+                                }
 
-                                // Phase 3
                                 else -> {}
                             }
                         },
@@ -275,6 +279,7 @@ fun AlbumDetailScreenContent(
                 artist = artist,
                 songCount = songCount,
                 onNavigateBack = onNavigateBack,
+                onAddAllToPlaylist = { onAddToPlaylist(songs.map { it.id }) },
                 contentAlpha = contentAlpha.value,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,

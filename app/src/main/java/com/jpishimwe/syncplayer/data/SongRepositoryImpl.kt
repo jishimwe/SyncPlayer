@@ -28,6 +28,8 @@ class SongRepositoryImpl
 
         override fun getAllArtists(): Flow<List<Artist>> = songDao.getAllArtists()
 
+        override fun getArtistByName(name: String): Flow<Artist?> = songDao.getArtistByName(name)
+
         override fun getSongsByAlbum(albumId: Long): Flow<List<Song>> = songDao.getSongsByAlbum(albumId)
 
         override fun getSongsByArtist(artist: String): Flow<List<Song>> = songDao.getSongsByArtist(artist)

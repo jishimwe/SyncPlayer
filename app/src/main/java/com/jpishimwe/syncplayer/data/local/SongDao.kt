@@ -48,6 +48,21 @@ interface SongDao {
     )
     fun getAllArtists(): Flow<List<Artist>>
 
+    @Query(
+        """
+        SELECT albumArtist AS name, COUNT(*) AS songCount, COUNT(DISTINCT albumId) AS albumCount,
+               COALESCE(ai.imageUrl,
+                   (SELECT albumArtUri FROM songs s2 WHERE s2.artist = songs.artist AND s2.albumArtUri IS NOT NULL ORDER BY s2.dateAdded DESC LIMIT 1)
+               ) AS artUri
+        FROM songs
+        LEFT JOIN artist_images ai ON ai.artistName = songs.albumArtist
+        WHERE albumArtist = :name
+        GROUP BY name
+        LIMIT 1
+        """,
+    )
+    fun getArtistByName(name: String): Flow<Artist?>
+
     @Query("SELECT * FROM songs WHERE albumId = :albumId ORDER BY trackNumber ASC")
     fun getSongsByAlbum(albumId: Long): Flow<List<Song>>
 

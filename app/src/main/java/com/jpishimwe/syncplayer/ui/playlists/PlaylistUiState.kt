@@ -7,5 +7,6 @@ sealed interface PlaylistUiState {
 
     data class Loaded(
         val playlists: List<Playlist>,
+        val playlistArtUris: Map<Long, List<String>> = emptyMap(),
     ) : PlaylistUiState
 }

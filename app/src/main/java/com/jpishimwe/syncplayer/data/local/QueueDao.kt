@@ -30,4 +30,7 @@ interface QueueDao {
 
     @Query("DELETE FROM queue")
     suspend fun clearQueue()
+
+    @Query("DELETE FROM queue WHERE position > :currentPosition")
+    suspend fun clearUpcoming(currentPosition: Int)
 }

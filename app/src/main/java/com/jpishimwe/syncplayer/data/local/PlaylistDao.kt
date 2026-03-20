@@ -96,6 +96,17 @@ interface PlaylistDao {
     )
     suspend fun getSongsForPlaylistList(playlistId: Long): List<Song>
 
+    @Query(
+        """
+        SELECT DISTINCT s.albumArtUri FROM songs s
+        INNER JOIN playlist_songs ps ON s.id = ps.songId
+        WHERE ps.playlistId = :playlistId AND s.albumArtUri IS NOT NULL
+        ORDER BY ps.position ASC
+        LIMIT 4
+    """,
+    )
+    fun getArtUrisForPlaylist(playlistId: Long): Flow<List<String>>
+
     @Query("UPDATE playlists SET deletedAt = :deletedAt, lastModified = :deletedAt WHERE id = :playlistId")
     suspend fun softDeletePlaylist(
         playlistId: Long,

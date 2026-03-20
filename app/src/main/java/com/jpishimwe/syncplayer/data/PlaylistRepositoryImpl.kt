@@ -27,6 +27,8 @@ class PlaylistRepositoryImpl
 
         override fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = playlistDao.getSongsForPlaylist(playlistId)
 
+        override fun getArtUrisForPlaylist(playlistId: Long): Flow<List<String>> = playlistDao.getArtUrisForPlaylist(playlistId)
+
         override suspend fun createPlaylist(name: String): Long {
             val now = System.currentTimeMillis()
             return playlistDao.insertPlaylist(

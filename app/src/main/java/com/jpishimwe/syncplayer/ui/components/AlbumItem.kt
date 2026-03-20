@@ -29,6 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
+import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
@@ -85,7 +89,7 @@ fun AlbumGridItem(
             ) {
                 SubcomposeAsyncImage(
                     model = album.albumArtUri,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_album_art, album.name),
                     contentScale = ContentScale.Crop,
                     modifier =
                         Modifier
@@ -124,43 +128,61 @@ fun AlbumGridItem(
                         AlbumPlaybackState.Paused -> Icons.Default.Pause
                         AlbumPlaybackState.Default -> Icons.Default.PlayArrow // unreachable
                     }
+                val playDesc = if (playbackState is AlbumPlaybackState.Playing) {
+                    stringResource(R.string.cd_pause_album, album.name)
+                } else {
+                    stringResource(R.string.cd_play_album, album.name)
+                }
                 Box(
                     modifier =
                         Modifier
-                            .padding(8.dp)
-                            .size(32.dp)
+                            .padding(4.dp)
+                            .size(48.dp)
                             .align(Alignment.BottomStart)
-                            .background(
-                                color = Color.Black.copy(alpha = 0.45f),
-                                shape = CircleShape,
-                            ).noRippleClickable { onPlayClick() },
+                            .noRippleClickable { onPlayClick() }
+                            .semantics { contentDescription = playDesc },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = if (isActive) myAccentColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.Black.copy(alpha = 0.45f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isActive) myAccentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
 
                 // Menu — top-right, always visible
+                val menuDesc = stringResource(R.string.cd_album_options, album.name)
                 Box(
                     modifier =
                         Modifier
-                            .padding(8.dp)
-                            .size(32.dp)
+                            .padding(4.dp)
+                            .size(48.dp)
                             .align(Alignment.TopEnd)
-                            .background(Color.Black.copy(alpha = 0.45f), CircleShape)
-                            .noRippleClickable { onMenuClick() },
+                            .noRippleClickable { onMenuClick() }
+                            .semantics { contentDescription = menuDesc },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More options",
-                        tint = if (isActive) myAccentColor else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.Black.copy(alpha = 0.45f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = null,
+                            tint = if (isActive) myAccentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 }
             }
 

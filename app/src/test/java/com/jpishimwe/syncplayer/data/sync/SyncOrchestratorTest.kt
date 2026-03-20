@@ -38,6 +38,7 @@ class SyncOrchestratorTest {
     private lateinit var songDao: FakeSongDao
     private lateinit var playlistDao: FakePlaylistDao
     private lateinit var historyDao: FakeListeningHistoryDao
+    private lateinit var prefs: SharedPreferences
     private lateinit var orchestrator: SyncOrchestrator
 
     @BeforeEach
@@ -49,7 +50,7 @@ class SyncOrchestratorTest {
         historyDao = FakeListeningHistoryDao()
 
         // Mock Context + SharedPreferences so SyncOrchestrator can be instantiated in unit tests
-        val prefs = mockk<SharedPreferences>(relaxed = true)
+        prefs = mockk<SharedPreferences>(relaxed = true)
         every { prefs.getLong(any(), any()) } returns 0L
         val editor = mockk<SharedPreferences.Editor>(relaxed = true)
         every { prefs.edit() } returns editor
@@ -101,7 +102,9 @@ class SyncOrchestratorTest {
     @Test
     fun `sync does not push unmodified songs`() = runTest {
         authRepository.emitSignedIn()
-        songDao.songs = listOf(testSong(1, lastModified = 0L)) // = lastSync
+        // Simulate a second sync: lastSync = 1000, song lastModified = 500 (older → skip)
+        every { prefs.getLong(any(), any()) } returns 1000L
+        songDao.songs = listOf(testSong(1, lastModified = 500L))
 
         orchestrator.sync()
         advanceUntilIdle()
@@ -298,6 +301,7 @@ class FakeSongDao : SongDao {
     override suspend fun getAllSongsList(): List<Song> = songs
     override fun getAllAlbums(): Flow<List<Album>> = MutableStateFlow(emptyList())
     override fun getAllArtists(): Flow<List<Artist>> = MutableStateFlow(emptyList())
+    override fun getArtistByName(name: String): Flow<Artist?> = MutableStateFlow(null)
     override fun getSongsByAlbum(albumId: Long): Flow<List<Song>> = MutableStateFlow(emptyList())
     override fun getSongsByArtist(artist: String): Flow<List<Song>> = MutableStateFlow(emptyList())
     override suspend fun insertAll(songs: List<Song>) {}
@@ -344,6 +348,7 @@ class FakePlaylistDao : PlaylistDao {
     override suspend fun getSongsForPlaylistList(playlistId: Long): List<Song> = emptyList()
     override suspend fun softDeletePlaylist(playlistId: Long, deletedAt: Long) {}
     override fun getAllPlaylistsWithCount(): Flow<List<com.jpishimwe.syncplayer.model.Playlist>> = MutableStateFlow(emptyList())
+    override fun getArtUrisForPlaylist(playlistId: Long): Flow<List<String>> = MutableStateFlow(emptyList())
 }
 
 class FakeListeningHistoryDao : ListeningHistoryDao {

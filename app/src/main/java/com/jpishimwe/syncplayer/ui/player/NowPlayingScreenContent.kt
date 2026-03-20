@@ -65,8 +65,11 @@ fun NowPlayingScreenContent(
             currentIndex = uiState.currentQueueIndex,
             onDismiss = { showQueue = false },
             onSongClick = { index ->
-                onEvent(PlayerEvent.SeekToQueueItem(index))
-                onEvent(PlayerEvent.PlayPause)
+                if (index == uiState.currentQueueIndex) {
+                    showQueue = false
+                } else {
+                    onEvent(PlayerEvent.SeekToQueueItem(index))
+                }
             },
             onRemove = { id -> onEvent(PlayerEvent.RemoveFromQueue(id)) },
             onReorder = { id, position -> onEvent(PlayerEvent.ReorderQueue(id, position)) },

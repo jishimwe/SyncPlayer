@@ -27,6 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.SubcomposeAsyncImage
+import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.library.formatDuration
@@ -146,10 +150,17 @@ fun SongItem(
 
     Row(modifier = itemModifier, verticalAlignment = Alignment.CenterVertically) {
         // Album art
-        Box {
+        Box(
+            modifier = if (isPlaying) {
+                Modifier.semantics { contentDescription = "" }
+            } else {
+                Modifier
+            },
+        ) {
+            val nowPlayingDesc = stringResource(R.string.cd_now_playing)
             AsyncImage(
                 model = song.albumArtUri,
-                contentDescription = "Album art for ${song.album}",
+                contentDescription = if (isPlaying) nowPlayingDesc else null,
                 contentScale = ContentScale.Crop,
                 error = rememberVectorPainter(Icons.Default.Album),
                 modifier =
@@ -213,7 +224,11 @@ fun SongItem(
         // Optional star rating display (non-interactive)
         if (showRating && song.rating > 0) {
             Spacer(Modifier.width(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            val ratingDesc = stringResource(R.string.cd_rating, song.rating)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.semantics { contentDescription = ratingDesc },
+            ) {
                 repeat(song.rating) {
                     Icon(
                         imageVector = Icons.Default.Star,
@@ -251,7 +266,7 @@ fun SongItem(
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Remove",
+                        contentDescription = stringResource(R.string.cd_remove_song, song.title),
                         tint = if (isPlaying) myAccentColor else MaterialTheme.colorScheme.onSurface,
                         modifier =
                             Modifier
@@ -274,7 +289,7 @@ fun SongItem(
                 // Drag handle — scope must be provided by ReorderableLazyColumn caller
                 Icon(
                     imageVector = Icons.Default.DragIndicator,
-                    contentDescription = "Reorder",
+                    contentDescription = stringResource(R.string.cd_reorder_song, song.title),
                     tint = if (isPlaying) myAccentColor else MaterialTheme.colorScheme.onSurface,
                     modifier =
                         Modifier.size(48.dp).padding(12.dp).then(

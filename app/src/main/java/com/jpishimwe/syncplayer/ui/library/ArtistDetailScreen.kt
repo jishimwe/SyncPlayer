@@ -67,8 +67,8 @@ fun ArtistDetailScreen(
     artistName: String,
     onNavigateBack: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
-    // Defaulted so NavGraph doesn't need updating until Phase 6
     onNavigateToAlbumDetail: (Long, String) -> Unit = { _, _ -> },
+    onAddToPlaylist: (songIds: List<Long>) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
@@ -95,6 +95,7 @@ fun ArtistDetailScreen(
         onAlbumClick = onNavigateToAlbumDetail,
         onPlayNext = { playerViewModel.onEvent(PlayerEvent.PlayNext(it)) },
         onAddToQueue = { playerViewModel.onEvent(PlayerEvent.AddToQueue(it)) },
+        onAddToPlaylist = onAddToPlaylist,
         onNavigateBack = onNavigateBack,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
@@ -115,6 +116,7 @@ fun ArtistDetailScreenContent(
     onAlbumClick: (Long, String) -> Unit,
     onPlayNext: (Song) -> Unit,
     onAddToQueue: (Song) -> Unit,
+    onAddToPlaylist: (songIds: List<Long>) -> Unit = {},
     onNavigateBack: () -> Unit,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -236,9 +238,10 @@ fun ArtistDetailScreenContent(
                                             onAlbumClick(song.albumId, song.album)
                                         }
 
-                                        SongMenuAction.AddToPlaylist -> {}
+                                        SongMenuAction.AddToPlaylist -> {
+                                            onAddToPlaylist(listOf(song.id))
+                                        }
 
-                                        // Phase 3
                                         else -> {}
                                     }
                                 },
@@ -301,6 +304,7 @@ fun ArtistDetailScreenContent(
                 albumCount = albums.size,
                 songCount = songs.size,
                 onNavigateBack = onNavigateBack,
+                onAddAllToPlaylist = { onAddToPlaylist(songs.map { it.id }) },
                 contentAlpha = contentAlpha.value,
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,

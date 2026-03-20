@@ -42,6 +42,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.jpishimwe.syncplayer.ui.components.MiniPlayer
+import com.jpishimwe.syncplayer.ui.components.PlaylistPickerSheet
 import com.jpishimwe.syncplayer.ui.home.HomeScreen
 import com.jpishimwe.syncplayer.ui.library.AlbumDetailScreen
 import com.jpishimwe.syncplayer.ui.library.ArtistDetailScreen
@@ -49,6 +50,9 @@ import com.jpishimwe.syncplayer.ui.library.LibraryViewModel
 import com.jpishimwe.syncplayer.ui.player.NowPlayingScreen
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistDetailScreen
+import com.jpishimwe.syncplayer.ui.playlists.PlaylistEvent
+import com.jpishimwe.syncplayer.ui.playlists.PlaylistUiState
+import com.jpishimwe.syncplayer.ui.playlists.PlaylistViewModel
 import com.jpishimwe.syncplayer.ui.settings.SettingsScreen
 import com.jpishimwe.syncplayer.ui.theme.ScreenshotHolder
 
@@ -81,6 +85,11 @@ fun NavGraph(
 
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.SONGS) }
     var searchActive by rememberSaveable { mutableStateOf(false) }
+
+    // --- Playlist picker state (shared across detail screens) ---
+    val playlistViewModel: PlaylistViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner)
+    val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
+    var pendingSongIds by remember { mutableStateOf<List<Long>?>(null) }
 
     // Measured at runtime — no hardcoding
     var overlayHeightPx by remember { mutableIntStateOf(0) }
@@ -136,6 +145,7 @@ fun NavGraph(
                             ScreenshotHolder.capture(view)
                             navController.navigate(Screen.ArtistDetail.createRoute(name))
                         },
+                        onAddToPlaylist = { songIds -> pendingSongIds = songIds },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
                     )
@@ -152,6 +162,7 @@ fun NavGraph(
                         artistName = backStackEntry.arguments?.getString("artistName") ?: "",
                         onNavigateBack = { navController.navigateUp() },
                         onNavigateToNowPlaying = expandNowPlaying,
+                        onAddToPlaylist = { songIds -> pendingSongIds = songIds },
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable,
                     )
@@ -252,6 +263,22 @@ fun NavGraph(
         ) {
             NowPlayingScreen(
                 onNavigateBack = collapseNowPlaying,
+            )
+        }
+
+        // --- Playlist picker bottom sheet (shared across detail screens) ---
+        val playlists = (playlistUiState as? PlaylistUiState.Loaded)?.playlists ?: emptyList()
+        pendingSongIds?.let { songIds ->
+            PlaylistPickerSheet(
+                playlists = playlists,
+                onPlaylistSelected = { playlistId ->
+                    playlistViewModel.onEvent(PlaylistEvent.AddSongsToPlaylist(playlistId, songIds))
+                    pendingSongIds = null
+                },
+                onCreatePlaylist = { name ->
+                    playlistViewModel.onEvent(PlaylistEvent.CreatePlaylist(name))
+                },
+                onDismiss = { pendingSongIds = null },
             )
         }
     }

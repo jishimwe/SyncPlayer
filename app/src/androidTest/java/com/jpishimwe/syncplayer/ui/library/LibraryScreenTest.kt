@@ -20,6 +20,8 @@ class LibraryScreenTest {
         favorites = emptyList(),
         mostPlayed = emptyList(),
         recentlyPlayed = emptyList(),
+        recentlyPlayedAlbums = emptyList(),
+        recentlyPlayedArtists = emptyList(),
     )
 
     @Test
@@ -36,7 +38,9 @@ class LibraryScreenTest {
                 onArtistClick = {},
                 onQueryChanged = {},
                 onClearSearchQuery = {},
-                onSortOrderChanged = {},
+                onSongSortOrderChanged = {},
+                onAlbumSortOrderChanged = {},
+                onArtistSortOrderChanged = {},
                 modifier = Modifier,
             )
         }
@@ -63,7 +67,9 @@ class LibraryScreenTest {
                 onArtistClick = {},
                 onQueryChanged = {},
                 onClearSearchQuery = {},
-                onSortOrderChanged = {},
+                onSongSortOrderChanged = {},
+                onAlbumSortOrderChanged = {},
+                onArtistSortOrderChanged = {},
                 modifier = Modifier,
             )
         }
@@ -91,7 +97,9 @@ class LibraryScreenTest {
                 onArtistClick = {},
                 onQueryChanged = {},
                 onClearSearchQuery = {},
-                onSortOrderChanged = {},
+                onSongSortOrderChanged = {},
+                onAlbumSortOrderChanged = {},
+                onArtistSortOrderChanged = {},
                 modifier = Modifier,
             )
         }
@@ -117,7 +125,9 @@ class LibraryScreenTest {
                 onArtistClick = {},
                 onQueryChanged = {},
                 onClearSearchQuery = {},
-                onSortOrderChanged = {},
+                onSongSortOrderChanged = {},
+                onAlbumSortOrderChanged = {},
+                onArtistSortOrderChanged = {},
                 modifier = Modifier,
             )
         }
@@ -139,7 +149,9 @@ class LibraryScreenTest {
                 onArtistClick = {},
                 onQueryChanged = {},
                 onClearSearchQuery = {},
-                onSortOrderChanged = {},
+                onSongSortOrderChanged = {},
+                onAlbumSortOrderChanged = {},
+                onArtistSortOrderChanged = {},
                 modifier = Modifier,
             )
         }

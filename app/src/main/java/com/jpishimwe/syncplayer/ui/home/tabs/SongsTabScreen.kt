@@ -18,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.components.AlphabeticalIndexSidebar
 import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
@@ -43,6 +45,7 @@ fun SongsTabScreen(
     onPlayNext: (Song) -> Unit,
     onAddToQueue: (Song) -> Unit,
     onPlayNow: (Song) -> Unit,
+    onAddToPlaylist: (songIds: List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SongsTabScreenContent(
@@ -56,6 +59,7 @@ fun SongsTabScreen(
         onPlayNext = onPlayNext,
         onAddToQueue = onAddToQueue,
         onPlayNow = onPlayNow,
+        onAddToPlaylist = onAddToPlaylist,
         modifier = modifier,
     )
 }
@@ -72,11 +76,12 @@ fun SongsTabScreenContent(
     onPlayNext: (Song) -> Unit,
     onAddToQueue: (Song) -> Unit,
     onPlayNow: (Song) -> Unit,
+    onAddToPlaylist: (songIds: List<Long>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     if (songs.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No songs found")
+            Text(stringResource(R.string.empty_songs))
         }
         return
     }
@@ -134,9 +139,9 @@ fun SongsTabScreenContent(
                             SongMenuAction.PlayNext,
                             SongMenuAction.PlayNow,
                             SongMenuAction.AddToQueue,
+                            SongMenuAction.AddToPlaylist,
                             SongMenuAction.GoToArtist,
                             SongMenuAction.GoToAlbum,
-                            // TODO: re-add AddToPlaylist when playlist picker is implemented
                         ),
                     onMenuAction = { action ->
                         when (action) {
@@ -154,6 +159,10 @@ fun SongsTabScreenContent(
 
                             SongMenuAction.GoToArtist -> {
                                 onNavigateToArtist(song.artist)
+                            }
+
+                            SongMenuAction.AddToPlaylist -> {
+                                onAddToPlaylist(listOf(song.id))
                             }
 
                             SongMenuAction.GoToAlbum -> {

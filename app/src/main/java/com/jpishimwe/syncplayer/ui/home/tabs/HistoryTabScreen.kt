@@ -19,7 +19,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.components.AlbumGridItem
 import com.jpishimwe.syncplayer.ui.components.AlbumPlaybackState
@@ -30,6 +32,8 @@ import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.components.SongItem
 import com.jpishimwe.syncplayer.ui.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
+import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
+import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * History tab: three collapsible sections for recently played songs, albums, and artists.
@@ -40,11 +44,14 @@ import com.jpishimwe.syncplayer.ui.library.MetadataUiState
 @Composable
 fun HistoryTabScreen(
     metadataUiState: MetadataUiState.Loaded,
+    currentSongId: Long?,
+    isPlaying: Boolean,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onAlbumClick: (albumId: Long, albumName: String) -> Unit,
     onArtistClick: (artistName: String) -> Unit,
     onPlayNext: (Song) -> Unit,
     onAddToQueue: (Song) -> Unit,
+    onAddToPlaylist: (songIds: List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val recentSongs = metadataUiState.recentlyPlayed
@@ -53,7 +60,7 @@ fun HistoryTabScreen(
 
     if (recentSongs.isEmpty() && recentAlbums.isEmpty() && recentArtists.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No listening history yet", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.empty_history), style = MaterialTheme.typography.titleLarge)
         }
         return
     }
@@ -67,7 +74,7 @@ fun HistoryTabScreen(
         if (recentSongs.isNotEmpty()) {
             stickyHeader(key = "header_songs") {
                 CollapsibleSectionHeader(
-                    title = "Recently played",
+                    title = stringResource(R.string.history_recently_played),
                     isExpanded = songsExpanded,
                     onToggle = { songsExpanded = !songsExpanded },
                     onShuffle = { onSongClick(recentSongs.shuffled(), 0) },
@@ -80,11 +87,12 @@ fun HistoryTabScreen(
                     SongItem(
                         song = song,
                         onClick = { onSongClick(recentSongs, index) },
-                        isPlaying = false,
+                        isPlaying = song.id == currentSongId && isPlaying,
                         menuActions =
                             listOf(
                                 SongMenuAction.PlayNext,
                                 SongMenuAction.AddToQueue,
+                                SongMenuAction.AddToPlaylist,
                                 SongMenuAction.GoToArtist,
                                 SongMenuAction.GoToAlbum,
                             ),
@@ -96,6 +104,10 @@ fun HistoryTabScreen(
 
                                 SongMenuAction.AddToQueue -> {
                                     onAddToQueue(song)
+                                }
+
+                                SongMenuAction.AddToPlaylist -> {
+                                    onAddToPlaylist(listOf(song.id))
                                 }
 
                                 SongMenuAction.GoToArtist -> {
@@ -115,14 +127,15 @@ fun HistoryTabScreen(
         }
 
         // ── Albums ─────────────────────────────────────────────────────────
-        if (recentSongs.isNotEmpty()) {
+        if (recentAlbums.isNotEmpty()) {
             stickyHeader(key = "header_albums") {
+                val albumSongs = recentSongs.filter { song -> recentAlbums.any { it.id == song.albumId } }
                 CollapsibleSectionHeader(
-                    title = "Recently played albums",
+                    title = stringResource(R.string.history_recently_played_albums),
                     isExpanded = albumsExpanded,
                     onToggle = { albumsExpanded = !albumsExpanded },
-                    onShuffle = { },
-                    onPlayAll = { },
+                    onShuffle = { if (albumSongs.isNotEmpty()) onSongClick(albumSongs.shuffled(), 0) },
+                    onPlayAll = { if (albumSongs.isNotEmpty()) onSongClick(albumSongs, 0) },
                 )
             }
 
@@ -144,7 +157,7 @@ fun HistoryTabScreen(
                                 playbackState = AlbumPlaybackState.Default,
                                 onClick = { onAlbumClick(album.id, album.name) },
                                 onPlayClick = { onAlbumClick(album.id, album.name) },
-                                onMenuClick = {},
+                                onMenuClick = { onAlbumClick(album.id, album.name) },
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -158,12 +171,13 @@ fun HistoryTabScreen(
         // ── Artists ────────────────────────────────────────────────────────
         if (recentArtists.isNotEmpty()) {
             stickyHeader(key = "header_artists") {
+                val artistSongs = recentSongs.filter { song -> recentArtists.any { it.name == song.artist } }
                 CollapsibleSectionHeader(
-                    title = "Recently Played Artists",
+                    title = stringResource(R.string.history_recently_played_artists),
                     isExpanded = artistsExpanded,
                     onToggle = { artistsExpanded = !artistsExpanded },
-                    onShuffle = {},
-                    onPlayAll = {},
+                    onShuffle = { if (artistSongs.isNotEmpty()) onSongClick(artistSongs.shuffled(), 0) },
+                    onPlayAll = { if (artistSongs.isNotEmpty()) onSongClick(artistSongs, 0) },
                 )
             }
             if (artistsExpanded) {
@@ -185,7 +199,7 @@ fun HistoryTabScreen(
                                 modifier = Modifier.weight(1f),
                                 imageUri = artist.artUri,
                                 onPlayPause = { onArtistClick(artist.name) },
-                                onMenuClick = {},
+                                onMenuClick = { onArtistClick(artist.name) },
                             )
                         }
                         if (rowArtists.size < 2) Spacer(Modifier.weight(1f))
@@ -193,5 +207,35 @@ fun HistoryTabScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+private fun HistoryTabScreenPreview() {
+    SyncPlayerTheme(darkTheme = true) {
+        HistoryTabScreen(
+            metadataUiState = MetadataUiState.Loaded(
+                favorites = emptyList(),
+                mostPlayed = emptyList(),
+                recentlyPlayed = listOf(
+                    Song(
+                        id = 1, title = "Bohemian Rhapsody", artist = "Queen", albumArtist = "Queen",
+                        album = "A Night at the Opera", albumId = 1, duration = 355000, trackNumber = 1,
+                        year = 1975, dateAdded = 0, contentUri = null, albumArtUri = null,
+                    ),
+                ),
+                recentlyPlayedAlbums = emptyList(),
+                recentlyPlayedArtists = emptyList(),
+            ),
+            currentSongId = null,
+            isPlaying = false,
+            onSongClick = { _, _ -> },
+            onAlbumClick = { _, _ -> },
+            onArtistClick = {},
+            onPlayNext = {},
+            onAddToQueue = {},
+            onAddToPlaylist = {},
+        )
     }
 }

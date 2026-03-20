@@ -69,7 +69,7 @@ fun PermissionHandler(onPermissionGranted: @Composable () -> Unit) {
                 }
         }
 
-    val activity = LocalContext.current
+    val activity = context as Activity
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -80,12 +80,10 @@ fun PermissionHandler(onPermissionGranted: @Composable () -> Unit) {
                     PermissionState.Granted
                 } else {
                     val shouldShowRationale =
-                        activity.let {
-                            ActivityCompat.shouldShowRequestPermissionRationale(
-                                it as Activity,
-                                Manifest.permission.READ_MEDIA_AUDIO,
-                            )
-                        }
+                        ActivityCompat.shouldShowRequestPermissionRationale(
+                            activity,
+                            Manifest.permission.READ_MEDIA_AUDIO,
+                        )
 
                     if (shouldShowRationale) {
                         PermissionState.Denied

@@ -9,15 +9,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.jpishimwe.syncplayer.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.model.Artist
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.components.AlphabeticalIndexSidebar
 import com.jpishimwe.syncplayer.ui.components.ArtistItem
@@ -34,15 +35,17 @@ import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.components.SortFilterBar
 import com.jpishimwe.syncplayer.ui.library.LibraryUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
+import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
+import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.launch
-
-private val artistSortOptions = listOf(SortOrder.BY_ARTIST.label)
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ArtistsTabScreen(
     libraryUiState: LibraryUiState.Loaded,
     currentArtistName: String?,
+    sortOrder: SortOrder,
+    onSortOrderChanged: (SortOrder) -> Unit,
     onArtistClick: (String) -> Unit,
     onSongClick: (List<Song>, Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -53,12 +56,10 @@ fun ArtistsTabScreen(
 
     if (artists.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No artists found")
+            Text(stringResource(R.string.empty_artists))
         }
         return
     }
-
-    var selectedSort by remember { mutableStateOf(SortOrder.BY_ARTIST) }
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
 
@@ -85,9 +86,6 @@ fun ArtistsTabScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-            }
-
             items(artists, key = { it.name }) { artist ->
                 val playbackState =
                     when (artist.name) {
@@ -100,7 +98,7 @@ fun ArtistsTabScreen(
                     playbackState = playbackState,
                     onClick = { onArtistClick(artist.name) },
                     onPlayPause = { onArtistClick(artist.name) },
-                    onMenuClick = {},
+                    onMenuClick = { onArtistClick(artist.name) },
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -115,7 +113,7 @@ fun ArtistsTabScreen(
                         it.name.first().uppercaseChar() == letter
                     }
                 if (targetIndex >= 0) {
-                    scope.launch { gridState.scrollToItem(targetIndex + 1) }
+                    scope.launch { gridState.scrollToItem(targetIndex) }
                 }
             },
             modifier = Modifier.align(Alignment.CenterEnd),
@@ -123,14 +121,37 @@ fun ArtistsTabScreen(
 
         // Sticky sort bar spanning full width
         SortFilterBar(
-            selectedSort = selectedSort,
-            onSortClick = { selectedSort = it },
+            selectedSort = sortOrder,
+            sortOptions = listOf(SortOrder.BY_ARTIST, SortOrder.BY_PLAY_COUNT),
+            onSortClick = onSortOrderChanged,
             onShuffle = { onSongClick(libraryUiState.songs.shuffled(), 0) },
             onPlayAll = { onSongClick(libraryUiState.songs, 0) },
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .onSizeChanged { barHeightPx = it.height },
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+private fun ArtistsTabScreenPreview() {
+    SyncPlayerTheme(darkTheme = true) {
+        ArtistsTabScreen(
+            libraryUiState = LibraryUiState.Loaded(
+                songs = emptyList(),
+                albums = emptyList(),
+                artists = listOf(
+                    Artist(name = "The Beatles", songCount = 30, albumCount = 5, artUri = null),
+                    Artist(name = "Pink Floyd", songCount = 20, albumCount = 3, artUri = null),
+                ),
+            ),
+            currentArtistName = null,
+            sortOrder = SortOrder.BY_ARTIST,
+            onSortOrderChanged = {},
+            onArtistClick = {},
+            onSongClick = { _, _ -> },
         )
     }
 }

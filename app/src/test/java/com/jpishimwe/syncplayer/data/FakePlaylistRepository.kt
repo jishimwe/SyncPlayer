@@ -31,6 +31,11 @@ class FakePlaylistRepository : PlaylistRepository {
 
     override fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = songsForPlaylistFlow
 
+    val artUrisMap = MutableStateFlow<Map<Long, List<String>>>(emptyMap())
+
+    override fun getArtUrisForPlaylist(playlistId: Long): Flow<List<String>> =
+        artUrisMap.map { it[playlistId] ?: emptyList() }
+
     override suspend fun createPlaylist(name: String): Long {
         createCallCount++
         lastCreatedName = name

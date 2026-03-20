@@ -53,6 +53,8 @@ class FakeSongRepository : SongRepository {
 
     override fun getAllArtists(): Flow<List<Artist>> = artistsFlow
 
+    override fun getArtistByName(name: String): Flow<Artist?> = artistsFlow.map { list -> list.find { it.name == name } }
+
     override fun getSongsByAlbum(albumId: Long): Flow<List<Song>> = MutableStateFlow(songsFlow.value.filter { it.albumId == albumId })
 
     override fun getSongsByArtist(artist: String): Flow<List<Song>> = MutableStateFlow(songsFlow.value.filter { it.artist == artist })

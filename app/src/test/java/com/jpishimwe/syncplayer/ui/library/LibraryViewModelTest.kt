@@ -259,12 +259,12 @@ class LibraryViewModelTest {
     // ── onAppResumed ──────────────────────────────────────────────────────────
 
     @Test
-    fun `onAppResumed triggers refresh when never scanned before`() =
+    fun `onAppResumed does not trigger refresh on fresh ViewModel`() =
         runTest {
-            // lastScanTimestamp starts at 0 — 24-hour window always elapsed
+            // lastScanTimestamp starts at current time — 24-hour window not elapsed
             viewModel.onAppResumed()
             advanceUntilIdle()
-            assertEquals(1, repository.refreshCallCount)
+            assertEquals(0, repository.refreshCallCount)
         }
 
     @Test
@@ -277,6 +277,93 @@ class LibraryViewModelTest {
             viewModel.onAppResumed() // immediately after — window not elapsed
             advanceUntilIdle()
             assertEquals(countAfterFirstRefresh, repository.refreshCallCount)
+        }
+
+    // ── Album Sort ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `album sort by name orders albums alphabetically`() =
+        runTest {
+            repository.albumsFlow.value =
+                listOf(
+                    testAlbum(1).copy(name = "Thriller"),
+                    testAlbum(2).copy(name = "Abbey Road"),
+                    testAlbum(3).copy(name = "Kind of Blue"),
+                )
+            viewModel.onAlbumSortOrder(SortOrder.BY_ALBUM)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf("Abbey Road", "Kind of Blue", "Thriller"), state.albums.map { it.name })
+            }
+        }
+
+    @Test
+    fun `album sort by artist orders albums by artist name`() =
+        runTest {
+            repository.albumsFlow.value =
+                listOf(
+                    testAlbum(1).copy(name = "Thriller", artist = "Michael Jackson"),
+                    testAlbum(2).copy(name = "Abbey Road", artist = "The Beatles"),
+                    testAlbum(3).copy(name = "Kind of Blue", artist = "Miles Davis"),
+                )
+            viewModel.onAlbumSortOrder(SortOrder.BY_ARTIST)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(
+                    listOf("Michael Jackson", "Miles Davis", "The Beatles"),
+                    state.albums.map { it.artist },
+                )
+            }
+        }
+
+    @Test
+    fun `albumSortOrder StateFlow updates when changed`() =
+        runTest {
+            assertEquals(SortOrder.BY_ALBUM, viewModel.albumSortOrder.value)
+            viewModel.onAlbumSortOrder(SortOrder.BY_ARTIST)
+            assertEquals(SortOrder.BY_ARTIST, viewModel.albumSortOrder.value)
+        }
+
+    // ── Artist Sort ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `artist sort by name orders artists alphabetically`() =
+        runTest {
+            repository.artistsFlow.value =
+                listOf(
+                    testArtist("ZZ Top"),
+                    testArtist("ABBA"),
+                    testArtist("Migos"),
+                )
+            viewModel.onArtistSortOrder(SortOrder.BY_ARTIST)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf("ABBA", "Migos", "ZZ Top"), state.artists.map { it.name })
+            }
+        }
+
+    @Test
+    fun `artist sort by play count orders artists by songCount descending`() =
+        runTest {
+            repository.artistsFlow.value =
+                listOf(
+                    testArtist("Low").copy(songCount = 3),
+                    testArtist("High").copy(songCount = 10),
+                    testArtist("Mid").copy(songCount = 5),
+                )
+            viewModel.onArtistSortOrder(SortOrder.BY_PLAY_COUNT)
+            viewModel.uiState.test {
+                val state = awaitItem() as LibraryUiState.Loaded
+                assertEquals(listOf("High", "Mid", "Low"), state.artists.map { it.name })
+            }
+        }
+
+    @Test
+    fun `artistSortOrder StateFlow updates when changed`() =
+        runTest {
+            assertEquals(SortOrder.BY_ARTIST, viewModel.artistSortOrder.value)
+            viewModel.onArtistSortOrder(SortOrder.BY_PLAY_COUNT)
+            assertEquals(SortOrder.BY_PLAY_COUNT, viewModel.artistSortOrder.value)
         }
 
     private fun testSong(id: Long) =

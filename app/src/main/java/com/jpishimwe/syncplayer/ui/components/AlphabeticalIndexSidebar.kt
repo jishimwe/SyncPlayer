@@ -23,7 +23,11 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import com.jpishimwe.syncplayer.R
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -89,6 +93,7 @@ fun AlphabeticalIndexSidebar(
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
             letters.forEach { letter ->
+                val desc = stringResource(R.string.cd_jump_to_letter, letter.toString())
                 Text(
                     text = letter.toString(),
                     fontSize = 9.sp,
@@ -96,6 +101,7 @@ fun AlphabeticalIndexSidebar(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.semantics { contentDescription = desc },
                 )
             }
         }

@@ -8,11 +8,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
+import com.jpishimwe.syncplayer.R
 import androidx.compose.ui.Modifier
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
@@ -22,15 +21,22 @@ import com.jpishimwe.syncplayer.ui.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.components.SortFilterBar
 import com.jpishimwe.syncplayer.ui.library.MetadataUiState
 import com.jpishimwe.syncplayer.ui.library.SortOrder
+import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
+import androidx.compose.ui.tooling.preview.Preview
 
-private val faveSortOptions = listOf("Title", "Artist", "Rating")
+private val faveSortOptions = listOf(SortOrder.BY_TITLE, SortOrder.BY_ARTIST, SortOrder.BY_PLAY_COUNT)
 
 @Composable
 fun FavoriteTabScreen(
     metadataUiState: MetadataUiState.Loaded,
+    currentSongId: Long?,
+    isPlaying: Boolean,
+    sortOrder: SortOrder,
+    onSortOrderChanged: (SortOrder) -> Unit,
     onSongClick: (songs: List<Song>, index: Int) -> Unit,
     onPlayNext: (Song) -> Unit,
     onAddToQueue: (Song) -> Unit,
+    onAddToPlaylist: (songIds: List<Long>) -> Unit,
     onNavigateToArtist: (String) -> Unit,
     onNavigateToAlbum: (Long, String) -> Unit,
     modifier: Modifier = Modifier,
@@ -39,19 +45,16 @@ fun FavoriteTabScreen(
 
     if (songs.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No favourites yet — rate a song 4 stars or higher")
+            Text(stringResource(R.string.empty_favorites))
         }
         return
     }
 
-    var selectedSort by remember { mutableStateOf(faveSortOptions.first()) }
-
-    // Sort locally so the list stays reactive without a ViewModel round-trip
     val sorted =
-        remember(songs, selectedSort) {
-            when (selectedSort) {
-                "Artist" -> songs.sortedBy { it.artist }
-                "Rating" -> songs.sortedByDescending { it.rating }
+        remember(songs, sortOrder) {
+            when (sortOrder) {
+                SortOrder.BY_ARTIST -> songs.sortedBy { it.artist }
+                SortOrder.BY_PLAY_COUNT -> songs.sortedByDescending { it.rating }
                 else -> songs.sortedBy { it.title }
             }
         }
@@ -59,8 +62,9 @@ fun FavoriteTabScreen(
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = MiniPlayerPeek)) {
         stickyHeader {
             SortFilterBar(
-                selectedSort = SortOrder.BY_ARTIST,
-                onSortClick = { selectedSort = it.label },
+                selectedSort = sortOrder,
+                sortOptions = faveSortOptions,
+                onSortClick = onSortOrderChanged,
                 onShuffle = { onSongClick(sorted.shuffled(), 0) },
                 onPlayAll = { onSongClick(sorted, 0) },
                 modifier = Modifier.fillMaxWidth(),
@@ -71,13 +75,14 @@ fun FavoriteTabScreen(
             SongItem(
                 song = song,
                 onClick = { onSongClick(sorted, index) },
-                isPlaying = false, // wire currentSongId if desired
+                isPlaying = song.id == currentSongId && isPlaying,
                 variant = SongItemVariant.Default,
                 showRating = true,
                 menuActions =
                     listOf(
                         SongMenuAction.PlayNext,
                         SongMenuAction.AddToQueue,
+                        SongMenuAction.AddToPlaylist,
                         SongMenuAction.GoToArtist,
                         SongMenuAction.GoToAlbum,
                     ),
@@ -89,6 +94,10 @@ fun FavoriteTabScreen(
 
                         SongMenuAction.AddToQueue -> {
                             onAddToQueue(song)
+                        }
+
+                        SongMenuAction.AddToPlaylist -> {
+                            onAddToPlaylist(listOf(song.id))
                         }
 
                         SongMenuAction.GoToArtist -> {
@@ -104,5 +113,37 @@ fun FavoriteTabScreen(
                 },
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+private fun FavoriteTabScreenPreview() {
+    SyncPlayerTheme(darkTheme = true) {
+        FavoriteTabScreen(
+            metadataUiState = MetadataUiState.Loaded(
+                favorites = listOf(
+                    Song(
+                        id = 1, title = "Imagine", artist = "John Lennon", albumArtist = "John Lennon",
+                        album = "Imagine", albumId = 1, duration = 183000, trackNumber = 1,
+                        year = 1971, dateAdded = 0, contentUri = null, albumArtUri = null, rating = 5,
+                    ),
+                ),
+                mostPlayed = emptyList(),
+                recentlyPlayed = emptyList(),
+                recentlyPlayedAlbums = emptyList(),
+                recentlyPlayedArtists = emptyList(),
+            ),
+            currentSongId = null,
+            isPlaying = false,
+            sortOrder = SortOrder.BY_TITLE,
+            onSortOrderChanged = {},
+            onSongClick = { _, _ -> },
+            onPlayNext = {},
+            onAddToQueue = {},
+            onAddToPlaylist = {},
+            onNavigateToArtist = {},
+            onNavigateToAlbum = { _, _ -> },
+        )
     }
 }

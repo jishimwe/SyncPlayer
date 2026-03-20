@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.data.sync
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.jpishimwe.syncplayer.di.ApplicationScope
@@ -25,18 +26,20 @@ class AuthRepositoryImpl
                 val listener =
                     FirebaseAuth.AuthStateListener { auth ->
                         val user = auth.currentUser
-                        trySend(
+                        val state =
                             if (user == null) {
+                                Log.d(TAG, "AuthState: SignedOut")
                                 AuthState.SignedOut
                             } else {
+                                Log.d(TAG, "AuthState: SignedIn uid=${user.uid} email=${user.email}")
                                 AuthState.SignedIn(
                                     userId = user.uid,
                                     displayName = user.displayName,
                                     email = user.email,
                                     photoUrl = user.photoUrl?.toString(),
                                 )
-                            },
-                        )
+                            }
+                        trySend(state)
                     }
                 firebaseAuth.addAuthStateListener(listener)
                 awaitClose { firebaseAuth.removeAuthStateListener(listener) }
@@ -46,8 +49,10 @@ class AuthRepositoryImpl
             get() = firebaseAuth.currentUser?.uid
 
         override suspend fun signInWithToken(idToken: String) {
+            Log.d(TAG, "signInWithToken: attempting sign-in")
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             firebaseAuth.signInWithCredential(credential).await()
+            Log.d(TAG, "signInWithToken: success, uid=${firebaseAuth.currentUser?.uid}")
         }
 
         override suspend fun signOut() {
@@ -57,5 +62,9 @@ class AuthRepositoryImpl
         private fun currentStateFromAuth(): AuthState {
             val user = firebaseAuth.currentUser ?: return AuthState.SignedOut
             return AuthState.SignedIn(user.uid, user.displayName, user.email, user.photoUrl?.toString())
+        }
+
+        companion object {
+            private const val TAG = "AuthRepository"
         }
     }

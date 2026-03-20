@@ -68,6 +68,24 @@ class MetadataViewModelTest {
             }
         }
 
+    // ── Favorite Sort ─────────────────────────────────────────────────────
+
+    @Test
+    fun `favoriteSortOrder defaults to BY_TITLE`() =
+        runTest {
+            assertEquals(SortOrder.BY_TITLE, viewModel.favoriteSortOrder.value)
+        }
+
+    @Test
+    fun `favoriteSortOrder updates when changed`() =
+        runTest {
+            viewModel.onFavoriteSortOrder(SortOrder.BY_ARTIST)
+            assertEquals(SortOrder.BY_ARTIST, viewModel.favoriteSortOrder.value)
+
+            viewModel.onFavoriteSortOrder(SortOrder.BY_PLAY_COUNT)
+            assertEquals(SortOrder.BY_PLAY_COUNT, viewModel.favoriteSortOrder.value)
+        }
+
     private fun testSong(id: Long) =
         Song(
             id = id,

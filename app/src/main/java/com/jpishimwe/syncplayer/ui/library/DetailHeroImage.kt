@@ -80,7 +80,7 @@ fun DetailHeroImage(
                             colors =
                                 listOf(
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.7f),
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 ),
                         ),
                     ),

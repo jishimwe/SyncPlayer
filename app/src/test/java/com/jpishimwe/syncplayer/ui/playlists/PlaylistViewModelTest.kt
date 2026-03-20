@@ -151,6 +151,56 @@ class PlaylistViewModelTest {
             assertEquals(orderedIds, playlistRepository.lastReorderedIds)
         }
 
+    // ── Art URIs ──────────────────────────────────────────────────────────
+
+    @Test
+    fun `Loaded state includes art URIs for playlists`() =
+        runTest {
+            val playlists = listOf(testPlaylist(1, "Favorites"), testPlaylist(2, "Workout"))
+            playlistRepository.playlistsFlow.value = playlists
+            playlistRepository.artUrisMap.value =
+                mapOf(
+                    1L to listOf("uri1", "uri2"),
+                    2L to listOf("uri3"),
+                )
+
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertTrue(state is PlaylistUiState.Loaded)
+                val loaded = state as PlaylistUiState.Loaded
+                assertEquals(listOf("uri1", "uri2"), loaded.playlistArtUris[1L])
+                assertEquals(listOf("uri3"), loaded.playlistArtUris[2L])
+            }
+        }
+
+    @Test
+    fun `empty playlists produce Loaded with empty art URI map`() =
+        runTest {
+            playlistRepository.playlistsFlow.value = emptyList()
+
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertTrue(state is PlaylistUiState.Loaded)
+                val loaded = state as PlaylistUiState.Loaded
+                assertTrue(loaded.playlists.isEmpty())
+                assertTrue(loaded.playlistArtUris.isEmpty())
+            }
+        }
+
+    @Test
+    fun `art URIs default to empty list when none exist for playlist`() =
+        runTest {
+            playlistRepository.playlistsFlow.value = listOf(testPlaylist(1, "Empty"))
+            // artUrisMap left at default empty map
+
+            viewModel.uiState.test {
+                val state = awaitItem()
+                assertTrue(state is PlaylistUiState.Loaded)
+                val loaded = state as PlaylistUiState.Loaded
+                assertEquals(emptyList<String>(), loaded.playlistArtUris[1L])
+            }
+        }
+
     private fun testPlaylist(
         id: Long,
         name: String,

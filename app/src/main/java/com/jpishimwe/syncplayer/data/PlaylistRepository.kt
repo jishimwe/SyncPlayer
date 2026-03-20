@@ -11,6 +11,8 @@ interface PlaylistRepository {
 
     fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>>
 
+    fun getArtUrisForPlaylist(playlistId: Long): Flow<List<String>>
+
     suspend fun createPlaylist(name: String): Long
 
     suspend fun renamePlaylist(
