@@ -274,6 +274,8 @@ Comprehensive visual overhaul to a Zune-inspired, content-forward aesthetic. Rep
 - ✅ Top bar pills (`renderInSharedTransitionScopeOverlay`): pills rendered in shared transition overlay so they don't jump in after the 300ms shared element transition
 - ✅ Layer 2/Layer 3 scroll overlap: added `padding(top = TopBarHeight)` to LazyColumn so sticky headers and content stop below the top bar pills instead of scrolling behind them
 - ✅ Glass panel lip persistence: converted top panel lip from `item` to `stickyHeader` so it stays visible when scrolling; added bottom panel lip with rounded bottom corners
+- ✅ QueueSheet refactor: replaced `QueueItemRow` with shared `SongItem(variant = Reorderable)`, removed `formatTime` parameter from QueueSheet API, added `isDragging` param to `SongItem`, changed `reorderableScope` type to `ReorderableCollectionItemScope`
+- ⚠️ NowPlaying swipe gestures: 4-directional swipe on album art via `pointerInput` + `detectDragGestures` — left/right for skip next/prev, up for queue, down for dismiss. Gestures functional, but animation feedback (3D tilt approach) needs a full rethink — see `improvements/plan.md` #3.5.
 
 **Plan doc**: [`docs/features/ui-redesign/plan.md`](features/ui-redesign/plan.md)
 
@@ -314,6 +316,7 @@ Before implementing integrations, the following Phase 7 deferred items and backl
 | Audio focus edge case testing (manual)      | Medium   | Medium  | `improvements/plan.md` #7                                      |
 | Listening history detail screen             | Low      | Medium  | `improvements/plan.md` #2                                      |
 | Slide/drag gesture for star rating          | Low      | Medium  | `improvements/plan.md` #3                                      |
+| NowPlaying swipe gesture animations        | Medium   | Medium  | ⚠️ Needs rethink — `improvements/plan.md` #3.5               |
 | Consolidate favorite/star rating            | Low      | Small   | `improvements/plan.md` #4 — defer to dogfooding                |
 | Custom notification layout                  | Low      | Medium  | `improvements/plan.md` #9                                      |
 | Sort for Artists tab                        | Low      | Small   | Phase 7 design doc                                             |

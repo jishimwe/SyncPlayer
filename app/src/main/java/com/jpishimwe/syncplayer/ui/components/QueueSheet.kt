@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -27,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -106,7 +104,12 @@ fun QueueSheetContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (queue.isEmpty()) stringResource(R.string.queue_title) else stringResource(R.string.queue_title_count, queue.size),
+                text =
+                    if (queue.isEmpty()) {
+                        stringResource(R.string.queue_title)
+                    } else {
+                        stringResource(R.string.queue_title_count, queue.size)
+                    },
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
@@ -165,23 +168,7 @@ fun QueueSheetContent(
                         SwipeToDismissBox(
                             state = dismissState,
                             enableDismissFromStartToEnd = false,
-                            backgroundContent = {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .padding(vertical = 4.dp)
-                                            .clip(RoundedCornerShape(8.dp)),
-                                    contentAlignment = Alignment.CenterEnd,
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = stringResource(R.string.cd_remove_from_queue),
-                                        tint = MaterialTheme.colorScheme.onError,
-                                        modifier = Modifier.padding(end = 16.dp),
-                                    )
-                                }
-                            },
+                            backgroundContent = {},
                         ) {
                             SongItem(
                                 song = item.song,

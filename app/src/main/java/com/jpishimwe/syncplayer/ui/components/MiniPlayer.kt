@@ -37,13 +37,14 @@ import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.player.PlaybackState
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerUiState
+import com.jpishimwe.syncplayer.ui.theme.LocalExtendedColorScheme
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.frostedGlass
 import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 
 // Referenced by other files for bottom padding calculations
-val MiniPlayerHeight = 96.dp
+val MiniPlayerHeight = 80.dp
 val MiniPlayerBottomMargin = 8.dp
 val MiniPlayerPeek = MiniPlayerHeight + MiniPlayerBottomMargin
 
@@ -63,7 +64,7 @@ fun MiniPlayer(
     // Accent text when a song is loaded (playing or paused)
     val textColor =
         if (isActive && (isPlaying || uiState.playbackState == PlaybackState.PAUSED)) {
-            myAccentColor
+            LocalExtendedColorScheme.current.accentColor.color
         } else {
             MaterialTheme.colorScheme.onSurface
         }
@@ -180,7 +181,7 @@ fun MiniPlayer(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(
                                     if (isActive) {
-                                        myAccentColor.copy(alpha = 0.15f)
+                                        LocalExtendedColorScheme.current.accentColor.color.copy(alpha = 0.15f)
                                     } else {
                                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                                     },
@@ -191,7 +192,7 @@ fun MiniPlayer(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             modifier = Modifier.size(32.dp),
-                            tint = if (isActive) myAccentColor else MaterialTheme.colorScheme.onSurface,
+                            tint = if (isActive) LocalExtendedColorScheme.current.accentColor.color else MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }

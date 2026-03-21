@@ -10,8 +10,10 @@
 NowPlayingScreenContent
   └── QueueSheet (ModalBottomSheet)
         └── LazyColumn + ReorderableItem (sh.calvin.reorderable:3.0.0)
-              └── QueueItemRow (private composable)
+              └── SongItem (variant = Reorderable)
 ```
+
+> **Note (2026-03-21):** `QueueItemRow` was removed and replaced with the shared `SongItem` component using `SongItemVariant.Reorderable`. The `formatTime` parameter was removed from `QueueSheet`/`QueueSheetContent` as `SongItem` doesn't display duration in its trailing area for the Reorderable variant. `SongItem` gained an `isDragging: Boolean` parameter and its `reorderableScope` type was changed from `ReorderableListItemScope` to `ReorderableCollectionItemScope`.
 
 **Data flow:** `PlayerRepositoryImpl` → `PlayerUiState.queue` (StateFlow) → `PlayerViewModel` → `NowPlayingScreenContent` → `QueueSheet`
 

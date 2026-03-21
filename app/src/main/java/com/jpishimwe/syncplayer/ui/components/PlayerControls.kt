@@ -254,7 +254,8 @@ private fun DiamondPlayButton(
                         shape = PlayButtonShape,
                         ambientColor = Color.Black.copy(alpha = 0.4f),
                         spotColor = Color.Black.copy(alpha = 0.4f),
-                    ).clip(PlayButtonShape)
+                    ).rotate(90f)
+                    .clip(PlayButtonShape)
                     .background(GlassFill),
         )
 

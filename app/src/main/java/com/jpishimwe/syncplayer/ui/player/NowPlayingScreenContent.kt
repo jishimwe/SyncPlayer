@@ -2,8 +2,12 @@ package com.jpishimwe.syncplayer.ui.player
 
 import android.graphics.Bitmap
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,13 +35,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.palette.graphics.Palette
 import coil3.request.ImageRequest
@@ -48,6 +57,8 @@ import com.jpishimwe.syncplayer.ui.components.PlayerControls
 import com.jpishimwe.syncplayer.ui.components.QueueSheet
 import com.jpishimwe.syncplayer.ui.components.SeekBar
 import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun NowPlayingScreenContent(
@@ -181,16 +192,109 @@ fun NowPlayingScreenContent(
                 }
             }
 
-            // --- Album art hero ---
-            AlbumArtwork(
-                song = uiState.currentSong,
+            // --- Album art hero (swipe gestures with 3D tilt feedback) ---
+            val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
+            val artOffset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+            val scope = rememberCoroutineScope()
+
+            // Max tilt angles and visual limits
+            val maxTiltDeg = 12f
+            val maxTranslationFraction = 0.15f // art shifts at most 15% of its width/height
+
+            Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-//                        .padding(horizontal = 8.dp)
-                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
-            )
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .pointerInput(Unit) {
+                            val sizePx = size.width.toFloat()
+                            detectDragGestures(
+                                onDragStart = {
+                                    scope.launch { artOffset.snapTo(Offset.Zero) }
+                                },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    scope.launch {
+                                        artOffset.snapTo(artOffset.value + dragAmount)
+                                    }
+                                },
+                                onDragEnd = {
+                                    val (dx, dy) = artOffset.value
+                                    val triggered =
+                                        if (abs(dx) > abs(dy) && abs(dx) > swipeThresholdPx) {
+                                            if (dx < 0) {
+                                                onEvent(PlayerEvent.SkipToNext)
+                                            } else {
+                                                onEvent(PlayerEvent.SkipToPrevious)
+                                            }
+                                            true
+                                        } else if (abs(dy) > abs(dx) && abs(dy) > swipeThresholdPx) {
+                                            if (dy < 0) {
+                                                showQueue = true
+                                            } else {
+                                                onNavigateBack()
+                                            }
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    scope.launch {
+                                        if (triggered) {
+                                            // Tilt further + fade, then reset
+                                            val exitOffset =
+                                                Offset(
+                                                    x = (dx / abs(dx).coerceAtLeast(1f)) * sizePx * 0.4f,
+                                                    y = (dy / abs(dy).coerceAtLeast(1f)) * sizePx * 0.4f,
+                                                )
+                                            artOffset.animateTo(exitOffset, tween(180))
+                                            artOffset.snapTo(Offset.Zero)
+                                        } else {
+                                            artOffset.animateTo(Offset.Zero, spring(dampingRatio = 0.6f, stiffness = 400f))
+                                        }
+                                    }
+                                },
+                                onDragCancel = {
+                                    scope.launch {
+                                        artOffset.animateTo(Offset.Zero, spring(dampingRatio = 0.6f, stiffness = 400f))
+                                    }
+                                },
+                            )
+                        },
+            ) {
+                val dx = artOffset.value.x
+                val dy = artOffset.value.y
+                val dragProgress = (artOffset.value.getDistance() / (swipeThresholdPx * 2f)).coerceIn(0f, 1f)
+
+                // 3D tilt: rotationY from horizontal drag, rotationX from vertical drag (inverted)
+                val rotY = (dx / swipeThresholdPx).coerceIn(-1f, 1f) * maxTiltDeg
+                val rotX = -(dy / swipeThresholdPx).coerceIn(-1f, 1f) * maxTiltDeg
+
+                // Dampened translation — art shifts subtly, not 1:1
+                val txDampened = dx * maxTranslationFraction
+                val tyDampened = dy * maxTranslationFraction
+
+                // Scale down slightly as you drag
+                val artScale = 1f - dragProgress * 0.08f
+                val artAlpha = 1f - dragProgress * 0.4f
+
+                AlbumArtwork(
+                    song = uiState.currentSong,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                translationX = txDampened
+                                translationY = tyDampened
+                                rotationY = rotY
+                                rotationX = rotX
+                                scaleX = artScale
+                                scaleY = artScale
+                                alpha = artAlpha
+                                cameraDistance = 12f * density
+                            },
+                )
+            }
 
             Spacer(Modifier.height(0.dp))
 

@@ -12,74 +12,74 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 
 ### Core Platform
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Android Gradle Plugin | 9.0.1 | com.android.tools.build | Bundles Kotlin 2.2.10 |
-| Gradle | 9.1.0 | - | Wrapper version |
-| Kotlin | 2.2.10 | org.jetbrains.kotlin | Bundled by AGP 9 |
-| Kotlin Compose Plugin | 2.2.10 | org.jetbrains.kotlin.plugin.compose | Required alongside bundled Kotlin |
+| Library               | Version | Group ID                            | Notes                             |
+|-----------------------|---------|-------------------------------------|-----------------------------------|
+| Android Gradle Plugin | 9.0.1   | com.android.tools.build             | Bundles Kotlin 2.2.10             |
+| Gradle                | 9.1.0   | -                                   | Wrapper version                   |
+| Kotlin                | 2.2.10  | org.jetbrains.kotlin                | Bundled by AGP 9                  |
+| Kotlin Compose Plugin | 2.2.10  | org.jetbrains.kotlin.plugin.compose | Required alongside bundled Kotlin |
 
 ### UI & Compose
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Compose BOM | 2026.01.01 | androidx.compose | Manages all Compose versions |
-| Compose UI | BOM | androidx.compose.ui | |
-| Compose Material 3 | 1.4.0 | androidx.compose.material3 | Pinned; use `PrimaryTabRow` not `TabRow` |
-| Material Icons Extended | BOM | androidx.compose.material | Full icon set |
-| Compose UI Graphics | 1.10.4 | androidx.compose.ui | Pinned separately |
-| Compose UI Tooling | BOM | androidx.compose.ui | Debug only |
-| Compose UI Text Google Fonts | 1.10.3 | androidx.compose.ui | Nunito Sans via downloadable fonts |
-| Activity Compose | 1.10.0 | androidx.activity | |
-| Lifecycle Runtime KTX | 2.9.1 | androidx.lifecycle | |
-| Lifecycle Runtime Compose | 2.10.0 | androidx.lifecycle | For `collectAsStateWithLifecycle()` |
-| Lifecycle ViewModel Compose | 2.9.1 | androidx.lifecycle | For `viewModel()` in Compose |
-| Palette KTX | 1.0.0 | androidx.palette | Dynamic color extraction from album art |
+| Library                      | Version    | Group ID                   | Notes                                    |
+|------------------------------|------------|----------------------------|------------------------------------------|
+| Compose BOM                  | 2026.01.01 | androidx.compose           | Manages all Compose versions             |
+| Compose UI                   | BOM        | androidx.compose.ui        |                                          |
+| Compose Material 3           | 1.4.0      | androidx.compose.material3 | Pinned; use `PrimaryTabRow` not `TabRow` |
+| Material Icons Extended      | BOM        | androidx.compose.material  | Full icon set                            |
+| Compose UI Graphics          | 1.10.4     | androidx.compose.ui        | Pinned separately                        |
+| Compose UI Tooling           | BOM        | androidx.compose.ui        | Debug only                               |
+| Compose UI Text Google Fonts | 1.10.3     | androidx.compose.ui        | Nunito Sans via downloadable fonts       |
+| Activity Compose             | 1.10.0     | androidx.activity          |                                          |
+| Lifecycle Runtime KTX        | 2.9.1      | androidx.lifecycle         |                                          |
+| Lifecycle Runtime Compose    | 2.10.0     | androidx.lifecycle         | For `collectAsStateWithLifecycle()`      |
+| Lifecycle ViewModel Compose  | 2.9.1      | androidx.lifecycle         | For `viewModel()` in Compose             |
+| Palette KTX                  | 1.0.0      | androidx.palette           | Dynamic color extraction from album art  |
 
 ### Dependency Injection
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Hilt | 2.59 | com.google.dagger | **Must be 2.59+ for AGP 9** |
-| Hilt Navigation Compose | 1.2.0 | androidx.hilt | For `hiltViewModel()` |
+| Library                 | Version | Group ID          | Notes                       |
+|-------------------------|---------|-------------------|-----------------------------|
+| Hilt                    | 2.59    | com.google.dagger | **Must be 2.59+ for AGP 9** |
+| Hilt Navigation Compose | 1.2.0   | androidx.hilt     | For `hiltViewModel()`       |
 
 ### Database
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Room Runtime | 2.7.1 | androidx.room | |
-| Room KTX | 2.7.1 | androidx.room | Coroutines support |
-| Room Compiler | 2.7.1 | androidx.room | KSP only |
-| Room Testing | 2.7.1 | androidx.room | In-memory DB for DAO tests |
+| Library       | Version | Group ID      | Notes                      |
+|---------------|---------|---------------|----------------------------|
+| Room Runtime  | 2.7.1   | androidx.room |                            |
+| Room KTX      | 2.7.1   | androidx.room | Coroutines support         |
+| Room Compiler | 2.7.1   | androidx.room | KSP only                   |
+| Room Testing  | 2.7.1   | androidx.room | In-memory DB for DAO tests |
 
 ### Annotation Processing
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| KSP | 2.3.5 | com.google.devtools.ksp | **Must be 2.3.4+ for AGP 9** |
+| Library | Version | Group ID                | Notes                        |
+|---------|---------|-------------------------|------------------------------|
+| KSP     | 2.3.5   | com.google.devtools.ksp | **Must be 2.3.4+ for AGP 9** |
 
 ### Media Playback
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Media3 ExoPlayer | 1.9.2 | androidx.media3 | Audio playback engine |
-| Media3 Session | 1.9.2 | androidx.media3 | MediaSession for notifications + lock screen |
-| Media3 UI | 1.9.2 | androidx.media3 | Player UI utilities |
-| Coroutines Guava | 1.10.2 | org.jetbrains.kotlinx | ListenableFuture → suspend bridge for Media3 |
-| Reorderable | 3.0.0 | sh.calvin.reorderable | Drag-and-drop reordering in queue |
+| Library          | Version | Group ID              | Notes                                        |
+|------------------|---------|-----------------------|----------------------------------------------|
+| Media3 ExoPlayer | 1.9.2   | androidx.media3       | Audio playback engine                        |
+| Media3 Session   | 1.9.2   | androidx.media3       | MediaSession for notifications + lock screen |
+| Media3 UI        | 1.9.2   | androidx.media3       | Player UI utilities                          |
+| Coroutines Guava | 1.10.2  | org.jetbrains.kotlinx | ListenableFuture → suspend bridge for Media3 |
+| Reorderable      | 3.0.0   | sh.calvin.reorderable | Drag-and-drop reordering in queue            |
 
 ### Firebase & Sync (Phase 6)
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Firebase BOM | 34.10.0 | com.google.firebase | Manages versions of all Firebase libs |
-| Firebase Auth | BOM | com.google.firebase | Google Sign-In credential exchange |
-| Cloud Firestore | BOM | com.google.firebase | Sync data store; offline persistence enabled |
-| Credential Manager | 1.5.0 | androidx.credentials | Modern Google Sign-In API (replaces GoogleSignInClient) |
-| Credentials Play Services | 1.5.0 | androidx.credentials | Play Services bridge for CredentialManager |
-| Google ID | 1.1.1 | com.google.android.libraries.identity.googleid | `GoogleIdTokenCredential` type |
-| Coroutines Play Services | 1.10.2 | org.jetbrains.kotlinx | `.await()` on Firebase `Task<T>` |
-| Google Services Plugin | 4.4.3 | com.google.gms | Processes `google-services.json` |
+| Library                   | Version | Group ID                                       | Notes                                                   |
+|---------------------------|---------|------------------------------------------------|---------------------------------------------------------|
+| Firebase BOM              | 34.10.0 | com.google.firebase                            | Manages versions of all Firebase libs                   |
+| Firebase Auth             | BOM     | com.google.firebase                            | Google Sign-In credential exchange                      |
+| Cloud Firestore           | BOM     | com.google.firebase                            | Sync data store; offline persistence enabled            |
+| Credential Manager        | 1.5.0   | androidx.credentials                           | Modern Google Sign-In API (replaces GoogleSignInClient) |
+| Credentials Play Services | 1.5.0   | androidx.credentials                           | Play Services bridge for CredentialManager              |
+| Google ID                 | 1.1.1   | com.google.android.libraries.identity.googleid | `GoogleIdTokenCredential` type                          |
+| Coroutines Play Services  | 1.10.2  | org.jetbrains.kotlinx                          | `.await()` on Firebase `Task<T>`                        |
+| Google Services Plugin    | 4.4.3   | com.google.gms                                 | Processes `google-services.json`                        |
 
 > **Firebase BOM**: Declare as `platform(libs.firebase.bom)` and omit version refs on `firebase-auth` and `firebase-firestore` entries in the catalog.
 
@@ -87,44 +87,44 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 
 ### Networking (Future)
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Retrofit | TBD | com.squareup.retrofit2 | For YouTube Music / MusicBee integrations |
-| OkHttp | TBD | com.squareup.okhttp3 | |
+| Library  | Version | Group ID               | Notes                                     |
+|----------|---------|------------------------|-------------------------------------------|
+| Retrofit | TBD     | com.squareup.retrofit2 | For YouTube Music / MusicBee integrations |
+| OkHttp   | TBD     | com.squareup.okhttp3   |                                           |
 
 ### Image Loading
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Coil | 3.1.0 | io.coil-kt.coil3 | **Group changed in v3** |
-| Coil Compose | 3.1.0 | io.coil-kt.coil3 | |
-| Coil Network OkHttp | 3.1.0 | io.coil-kt.coil3 | For remote image fetching (artist images) |
+| Library             | Version | Group ID         | Notes                                     |
+|---------------------|---------|------------------|-------------------------------------------|
+| Coil                | 3.1.0   | io.coil-kt.coil3 | **Group changed in v3**                   |
+| Coil Compose        | 3.1.0   | io.coil-kt.coil3 |                                           |
+| Coil Network OkHttp | 3.1.0   | io.coil-kt.coil3 | For remote image fetching (artist images) |
 
 ### Navigation
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| Navigation Compose | 2.9.0 | androidx.navigation | |
+| Library            | Version | Group ID            | Notes |
+|--------------------|---------|---------------------|-------|
+| Navigation Compose | 2.9.0   | androidx.navigation |       |
 
 ### Code Quality
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| ktlint (Gradle plugin) | 12.1.0 | org.jlleitschuh.gradle.ktlint | `ktlintFormat` / `ktlintCheck` |
+| Library                | Version | Group ID                      | Notes                          |
+|------------------------|---------|-------------------------------|--------------------------------|
+| ktlint (Gradle plugin) | 12.1.0  | org.jlleitschuh.gradle.ktlint | `ktlintFormat` / `ktlintCheck` |
 
 ### Testing
 
-| Library | Version | Group ID | Notes |
-|---------|---------|----------|-------|
-| JUnit 5 Jupiter API | 5.11.4 | org.junit.jupiter | |
-| JUnit 5 Jupiter Engine | 5.11.4 | org.junit.jupiter | |
-| JUnit Platform Launcher | — | org.junit.platform | Required for JUnit 5 (version managed by JUnit BOM) |
-| Turbine | 1.2.1 | app.cash.turbine | For testing Flows |
-| Kotlin Coroutines Test | 1.10.2 | org.jetbrains.kotlinx | |
-| MockK | 1.14.9 | io.mockk | Mocking concrete classes with Android deps |
-| JUnit 4 | 4.13.2 | junit | For instrumented tests only |
-| Compose UI Test JUnit4 | 1.10.2 | androidx.compose.ui | Pinned; `createAndroidComposeRule` |
-| Compose UI Test Manifest | BOM | androidx.compose.ui | Debug only |
+| Library                  | Version | Group ID              | Notes                                               |
+|--------------------------|---------|-----------------------|-----------------------------------------------------|
+| JUnit 5 Jupiter API      | 5.11.4  | org.junit.jupiter     |                                                     |
+| JUnit 5 Jupiter Engine   | 5.11.4  | org.junit.jupiter     |                                                     |
+| JUnit Platform Launcher  | —       | org.junit.platform    | Required for JUnit 5 (version managed by JUnit BOM) |
+| Turbine                  | 1.2.1   | app.cash.turbine      | For testing Flows                                   |
+| Kotlin Coroutines Test   | 1.10.2  | org.jetbrains.kotlinx |                                                     |
+| MockK                    | 1.14.9  | io.mockk              | Mocking concrete classes with Android deps          |
+| JUnit 4                  | 4.13.2  | junit                 | For instrumented tests only                         |
+| Compose UI Test JUnit4   | 1.10.2  | androidx.compose.ui   | Pinned; `createAndroidComposeRule`                  |
+| Compose UI Test Manifest | BOM     | androidx.compose.ui   | Debug only                                          |
 
 ## AGP 9 Compatibility Notes
 

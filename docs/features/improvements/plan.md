@@ -65,6 +65,31 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 - A: `Modifier.pointerInput` with `detectHorizontalDragGestures`
 - B: Reuse a Compose drag semantics pattern
 
+### 3.5. NowPlaying Album Art Swipe Gestures ⚠️ Functional but needs rethinking (2026-03-21)
+
+**Source:** NowPlayingScreenContent analysis
+**Priority:** Medium
+**Effort:** Medium (needs redesign)
+**Status:** Gestures work, animations need a full rethink
+
+**Context:** NowPlayingScreen had no gesture support. Four directional swipe gestures were added scoped to the album art area using `Modifier.pointerInput` with `detectDragGestures`. A 3D tilt animation was added (rotationX/Y, dampened translation, scale, alpha via `graphicsLayer`) but the result is not satisfying — the interaction model needs a more considered design.
+
+**What works:**
+- Swipe left on album art → `PlayerEvent.SkipToNext`
+- Swipe right on album art → `PlayerEvent.SkipToPrevious`
+- Swipe up on album art → open queue sheet
+- Swipe down on album art → dismiss NowPlaying (`onNavigateBack`)
+- 80dp threshold, `Animatable<Offset>` for spring-back on cancel
+
+**What needs rethinking:**
+- Current 3D tilt + dampened translation animation doesn't feel right — needs a fundamentally different approach, not just parameter tuning
+- Consider `HorizontalPager` for left/right (crossfade between actual album arts of prev/next tracks) instead of gesture-on-single-image
+- Vertical gestures (up/down) may work better as full-screen `AnchoredDraggable` rather than album-art-only
+- The animation feedback should match the *destination* of the gesture (e.g., down-swipe should feel like the whole screen is being dismissed, not just the art tilting)
+- Explore what Spotify, Apple Music, and YouTube Music do for reference
+
+**Current implementation location:** `NowPlayingScreenContent.kt` lines ~195-275
+
 ---
 
 ### 4. Consolidate Favorite Button and Star Rating
@@ -205,18 +230,19 @@ This is a backlog, not an implementation plan. Items should be extracted into th
 
 ## Priority Summary
 
-| #  | Improvement                        | Priority | Effort  | Status                  |
-|----|------------------------------------|----------|---------|-------------------------|
-| 1  | Play count on `SongListItem`       | Medium   | Small   | ✅ Done (Phase 7)        |
-| 2  | History detail screen              | Low      | Medium  | Open                    |
-| 3  | Slide gesture for rating           | Low      | Medium  | Open                    |
-| 4  | Consolidate favorite/star rating   | Low      | Small   | Open (needs dogfooding) |
-| 5  | `LibraryViewModel` 7-flow refactor | Medium   | Large   | ✅ Done (Phase 7)        |
-| 6  | Detail screen tests                | Medium   | Small   | ✅ Done (Phase 7)        |
-| 7  | Audio focus edge case testing      | Medium   | Medium  | Open                    |
-| 8  | Expose `clearQueue` on interface   | Low      | Trivial | ✅ Done (Phase 7)        |
-| 9  | Custom notification layout         | Low      | Medium  | Open                    |
-| 10 | Phase 6 Sync                       | High     | Large   | ✅ Done (Phase 6)        |
+| #   | Improvement                        | Priority | Effort  | Status                        |
+|-----|------------------------------------|----------|---------|-------------------------------|
+| 1   | Play count on `SongListItem`       | Medium   | Small   | ✅ Done (Phase 7)              |
+| 2   | History detail screen              | Low      | Medium  | Open                          |
+| 3   | Slide gesture for rating           | Low      | Medium  | Open                          |
+| 3.5 | NowPlaying swipe gestures          | Medium   | Medium  | ⚠️ Functional, animations need rethink |
+| 4   | Consolidate favorite/star rating   | Low      | Small   | Open (needs dogfooding)       |
+| 5   | `LibraryViewModel` 7-flow refactor | Medium   | Large   | ✅ Done (Phase 7)              |
+| 6   | Detail screen tests                | Medium   | Small   | ✅ Done (Phase 7)              |
+| 7   | Audio focus edge case testing      | Medium   | Medium  | Open                          |
+| 8   | Expose `clearQueue` on interface   | Low      | Trivial | ✅ Done (Phase 7)              |
+| 9   | Custom notification layout         | Low      | Medium  | Open                          |
+| 10  | Phase 6 Sync                       | High     | Large   | ✅ Done (Phase 6)              |
 
 ---
 
