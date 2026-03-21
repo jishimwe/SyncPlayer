@@ -244,12 +244,12 @@ Explicitly out of scope for Phase 7. Carries to Phase 8 backlog:
 
 #### Known gaps from Phase 7
 
-- **Dead code**: `songsFlowOld` and `albumsFlowOld` in `LibraryViewModel` — unused private flows left from an intermediate refactor; no behavioral impact, cleanup deferred
+- ~~**Dead code**: `songsFlowOld` and `albumsFlowOld` in `LibraryViewModel`~~ — cleaned up (no longer in codebase)
 - **Sort broken end-to-end**: three independent sort states (`SortFilterBar` internal state, `SongsTabScreen` local `remember`, `LibraryViewModel._sortOrder`) are never connected — user changes sort in UI but the list doesn't re-sort. Tracked in [`songs-tab-refactor/plan.md`](features/songs-tab-refactor/plan.md)
 - **Sort for Artists tab**: not implemented — sort dropdown shown only on Songs and Albums tabs
 - **Search test fidelity**: `FakeSongRepository.searchSongs` returns `songsFlow` unfiltered; search filtering is a DAO concern and requires an in-memory Room database to test at that level
 - **`SortFilterBar` ignores `sortLabel` param**: internal `selectedSortOrder` state on line 88 overrides the caller-provided label; the component is uncontrollable
-- **`SongsTabScreen` missing testable composable pattern**: no `SongsTabScreenContent` split per style guide
+- ~~**`SongsTabScreen` missing testable composable pattern**~~ — resolved; `SongsTabScreenContent` exists
 - **Duplicate sorting in `LibraryViewModel`**: songs sorted in `songsFlow` (all 6 cases) and again in `uiState` combine (only 3 cases) — inconsistent and wasteful
 
 ---
@@ -279,6 +279,27 @@ Comprehensive visual overhaul to a Zune-inspired, content-forward aesthetic. Rep
 
 ---
 
+### `ui/library` Package Cleanup ✅
+
+Full audit and cleanup of the `ui/library` package. Resolved 9 bugs, 7 feature gaps, and 7 improvements.
+
+- ✅ Fixed `formatDuration` for songs > 1 hour, double refresh on first launch, `fetchMissingArtistImages` crash on network error, unused `_favoriteSortOrder`, redundant context variable
+- ✅ Deleted dead code: `LibraryScreen.kt`, `LibraryScreenTest.kt`, `AlbumGridItem.kt`, `ArtistListItem.kt`
+- ✅ Wired `AddToPlaylist` flow through detail screens with `PlaylistPickerSheet` at NavGraph level
+- ✅ Added `MetadataUiState.Error` state with error UI in HomeScreen
+- ✅ Added pull-to-refresh (`PullToRefreshBox`) in HomeScreen
+- ✅ Replaced overflow menu TODO stubs with working `DropdownMenu` in detail top bars
+- ✅ Extracted shared `DetailTopBar` component (deduplicates `AlbumDetailTopBar`/`ArtistDetailTopBar`)
+- ✅ Shared `PreviewData.kt` for preview constants
+- ✅ Direct DAO query for `getArtistByName` (was fetching all artists + filtering client-side)
+- ✅ Structured concurrency for artist image fetch (stored `Job` for cancellation)
+- ✅ Theme-aware gradient in `DetailHeroImage` (`MaterialTheme.colorScheme.surface` instead of hardcoded `Color.Black`)
+
+**Analysis**: [`docs/features/open-bugs/ui-library-analysis.md`](features/open-bugs/ui-library-analysis.md)
+**Design doc**: [`docs/features/open-bugs/design.md`](features/open-bugs/design.md)
+
+---
+
 ### Phase 8: External Integrations (Planned)
 
 **Prerequisite:** Phase 7 complete and stable. ✅ Requires designing a `SyncProvider` plugin interface before any implementation starts.
@@ -297,7 +318,7 @@ Before implementing integrations, the following Phase 7 deferred items and backl
 | Custom notification layout                  | Low      | Medium  | `improvements/plan.md` #9                                      |
 | Sort for Artists tab                        | Low      | Small   | Phase 7 design doc                                             |
 | Seek bar and star rating Compose UI tests   | Low      | Small   | Testing design doc — deferred pending `semantics` tags         |
-| `LibraryScreenContent` search/sort UI tests | Low      | Small   | Testing design doc — deferred pending Material 3 API stability |
+| ~~`LibraryScreenContent` search/sort UI tests~~ | ~~Low~~ | ~~Small~~ | ~~Removed — `LibraryScreen.kt` deleted (dead code)~~ |
 
 **Recommended order before starting integrations:**
 1. **Songs tab sort refactor** — functional bug, sorting is completely broken end-to-end; also cleans up dead code and adds testable composable pattern

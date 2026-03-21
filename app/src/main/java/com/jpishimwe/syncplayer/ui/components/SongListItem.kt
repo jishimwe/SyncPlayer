@@ -1,5 +1,6 @@
 package com.jpishimwe.syncplayer.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -45,7 +47,7 @@ import com.jpishimwe.syncplayer.ui.library.formatDuration
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
-import sh.calvin.reorderable.ReorderableListItemScope
+import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @Composable
 fun SongListItem(
@@ -120,16 +122,22 @@ fun SongItem(
     modifier: Modifier = Modifier,
     isPlaying: Boolean = false,
     isSelected: Boolean = false,
+    isDragging: Boolean = false,
     showRating: Boolean = false,
     variant: SongItemVariant = SongItemVariant.Default,
     menuActions: List<SongMenuAction> = emptyList(),
     onMenuAction: (SongMenuAction) -> Unit = {},
     onDelete: () -> Unit = {},
-    reorderableScope: ReorderableListItemScope? = null,
+    reorderableScope: ReorderableCollectionItemScope? = null,
 ) {
     val textColor = if (isPlaying) myAccentColor else MaterialTheme.colorScheme.onSurface
 
     val artShape = RoundedCornerShape(4.dp)
+
+    val bgColor = when {
+        isDragging -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        else -> Color.Unspecified
+    }
 
     val itemModifier =
         modifier
@@ -145,7 +153,8 @@ fun SongItem(
                 } else {
                     Modifier
                 },
-            ).noRippleClickable { onClick() }
+            ).background(bgColor)
+            .noRippleClickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
 
     Row(modifier = itemModifier, verticalAlignment = Alignment.CenterVertically) {

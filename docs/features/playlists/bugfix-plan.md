@@ -1,4 +1,4 @@
-# Playlists — Bugfix & Improvement Plan
+# Playlists — Bugfix & Improvement Plan (Complete)
 
 ## Context
 

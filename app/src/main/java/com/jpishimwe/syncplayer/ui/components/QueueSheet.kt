@@ -1,26 +1,17 @@
 package com.jpishimwe.syncplayer.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,15 +28,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.QueueItem
-import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import com.jpishimwe.syncplayer.ui.theme.myFrostedGlassSurface
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -60,7 +47,6 @@ fun QueueSheet(
     onRemove: (String) -> Unit,
     onReorder: (String, Int) -> Unit,
     onClearQueue: () -> Unit,
-    formatTime: (Long) -> String,
     modifier: Modifier = Modifier,
 ) {
     ModalBottomSheet(
@@ -77,7 +63,6 @@ fun QueueSheet(
             onRemove = onRemove,
             onReorder = onReorder,
             onClearQueue = onClearQueue,
-            formatTime = formatTime,
         )
     }
 }
@@ -91,7 +76,6 @@ fun QueueSheetContent(
     onRemove: (String) -> Unit,
     onReorder: (String, Int) -> Unit,
     onClearQueue: () -> Unit,
-    formatTime: (Long) -> String,
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()
@@ -188,7 +172,6 @@ fun QueueSheetContent(
                                             .fillMaxSize()
                                             .padding(vertical = 4.dp)
                                             .clip(RoundedCornerShape(8.dp)),
-//                                            .background(MaterialTheme.colorScheme.error),
                                     contentAlignment = Alignment.CenterEnd,
                                 ) {
                                     Icon(
@@ -200,13 +183,13 @@ fun QueueSheetContent(
                                 }
                             },
                         ) {
-                            QueueItemRow(
-                                item = item,
+                            SongItem(
+                                song = item.song,
+                                onClick = { onSongClick(index) },
                                 isPlaying = index == currentIndex,
-                                onSongClick = { onSongClick(index) },
-                                formatTime = formatTime,
                                 isDragging = isDragging,
-                                dragModifier = Modifier.draggableHandle(),
+                                variant = SongItemVariant.Reorderable,
+                                reorderableScope = this@ReorderableItem,
                             )
                         }
                     }
@@ -215,107 +198,6 @@ fun QueueSheetContent(
         }
     }
 }
-
-@Composable
-private fun QueueItemRow(
-    item: QueueItem,
-    isPlaying: Boolean,
-    onSongClick: () -> Unit,
-    formatTime: (Long) -> String,
-    isDragging: Boolean,
-    dragModifier: Modifier = Modifier,
-) {
-    val accentBorder =
-        if (isPlaying) {
-            Modifier.border(1.5.dp, myAccentColor, RoundedCornerShape(8.dp))
-        } else {
-            Modifier
-        }
-
-    val bgColor =
-        when {
-            isDragging -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            isPlaying -> myAccentColor.copy(alpha = 0.08f)
-            else -> Color.Transparent
-        }
-
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .then(accentBorder)
-                .background(bgColor)
-                .clickable(onClick = onSongClick)
-                .padding(8.dp)
-                .height(56.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Album art
-        AsyncImage(
-            model = item.song.albumArtUri,
-            contentDescription = null,
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-        )
-
-        Spacer(Modifier.width(12.dp))
-
-        // Track info
-        Column(
-            modifier = Modifier.weight(1f),
-        ) {
-            Text(
-                text = item.song.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isPlaying) myAccentColor else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = item.song.artist,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isPlaying) myAccentColor.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        Spacer(Modifier.width(8.dp))
-
-        // Duration
-        Text(
-            text = formatTime(item.song.duration),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        // Playing indicator
-        if (isPlaying) {
-            Spacer(Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Default.GraphicEq,
-                contentDescription = stringResource(R.string.cd_playing),
-                tint = myAccentColor,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-
-        Spacer(Modifier.width(8.dp))
-
-        // Drag handle (replaces overflow menu per spec)
-        Icon(
-            imageVector = Icons.Default.DragHandle,
-            contentDescription = stringResource(R.string.cd_reorder),
-            modifier = dragModifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
 
 @Preview(showBackground = true, backgroundColor = 0xFF111113)
 @Composable
@@ -328,6 +210,5 @@ fun QueueSheetPreview() {
         onRemove = {},
         onReorder = { _, _ -> },
         onClearQueue = {},
-        formatTime = { "" },
     )
 }

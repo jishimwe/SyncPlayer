@@ -59,9 +59,19 @@ Added playlist management to SyncPlayer: users can create, rename, and delete pl
 
 ## Known gaps
 
-- **`songCount` never populated**: `PlaylistRepositoryImpl.getAllPlaylists()` maps entities without querying `getSongCountForPlaylist`, so `Playlist.songCount` is always 0. The `PlaylistListItem` displays it but it shows "0" for all playlists.
-- **No `.trim()` on playlist names**: The plan called for trimming whitespace in `createPlaylist` and `renamePlaylist`, but the implementation passes names through as-is.
-- **`createdAt` displayed as raw Long**: `PlaylistListItem` shows the epoch millisecond in the overline — needs date formatting.
-- **`Loading` state shows Error icon**: `PlaylistsScreenContent` renders `Icons.Default.Error` for the `Loading` state — a placeholder, not intentional UX.
-- **Empty state text differs from plan**: Shows "No playlists found" instead of the planned "No playlists yet".
-- **No tests for add/remove/reorder events**: `FakePlaylistRepository` has call counters for `addSongToPlaylist`, `removeSongFromPlaylist`, and `reorderSongs`, but no tests exercise them.
+All previously listed gaps have been resolved across Phase 7 and the playlist bugfix pass:
+
+- ~~**`songCount` never populated**~~ — Fixed: `PlaylistRepositoryImpl.getAllPlaylists()` now returns `PlaylistDao.getAllPlaylistsWithCount()` directly (aggregate SQL query returning `songCount` + `totalDuration`). Redundant re-mapping removed. *(Phase 7 initial fix; bugfix pass removed the remaining mapping that still dropped `totalDuration`)*
+- ~~**No `.trim()` on playlist names**~~ — Fixed in Phase 7: `PlaylistViewModel.onEvent()` trims names before blank-name guard.
+- ~~**`createdAt` displayed as raw Long**~~ — Fixed in Phase 7: `PlaylistListItem` replaced by `PlaylistItem` component with formatted duration display.
+- ~~**`Loading` state shows Error icon**~~ — Fixed in Phase 7: replaced with `CircularProgressIndicator`.
+- ~~**Empty state text differs from plan**~~ — Fixed in Phase 7 + bugfix pass: `PlaylistsTabScreen` shows "No playlists yet" with a playlist icon in an empty-state composable.
+- ~~**No tests for add/remove/reorder events**~~ — Fixed in Phase 7: 4 new tests added to `PlaylistViewModelTest`.
+
+### Additional fixes from bugfix pass
+
+- **Create playlist UX**: Added `CreatePlaylistDialog` — users now name playlists on creation instead of getting hardcoded "New Playlist".
+- **Duplicate song guard**: `PlaylistRepositoryImpl.addSongToPlaylist()` now checks `isSongInPlaylist()` before inserting.
+- **Atomic reorder**: `PlaylistDao.reorderPlaylistSongs()` wraps `clearPlaylistSongs` + `replacePlaylistSongs` in `@Transaction`.
+- **`getPlaylistById` fixed**: Uses `getPlaylistByIdWithCount()` aggregate query instead of fragile `.first()` on a separate flow.
+- **Dead code removed**: Unused `PlaylistState` sealed interface deleted from `PlaylistViewModel.kt`.

@@ -73,7 +73,6 @@ fun NowPlayingScreenContent(
             },
             onRemove = { id -> onEvent(PlayerEvent.RemoveFromQueue(id)) },
             onReorder = { id, position -> onEvent(PlayerEvent.ReorderQueue(id, position)) },
-            formatTime = formatTime,
             onClearQueue = { onEvent(PlayerEvent.ClearQueue) },
         )
     }
