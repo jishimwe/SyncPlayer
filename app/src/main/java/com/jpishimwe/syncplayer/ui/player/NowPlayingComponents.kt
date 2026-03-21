@@ -33,7 +33,6 @@ import coil3.compose.SubcomposeAsyncImage
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
-import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 
 @Composable
 fun FavoriteButton(
@@ -45,7 +44,7 @@ fun FavoriteButton(
         Icon(
             if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-            tint = myAccentColor,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(40.dp),
         )
     }
@@ -66,7 +65,7 @@ fun StarRating(
                     Icon(
                         if (star.value <= rating.value) Icons.Default.Star else Icons.Default.StarBorder,
                         contentDescription = "${star.value} stars",
-                        tint = myAccentColor,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -93,7 +92,7 @@ fun TrackInfo(song: Song?) {
         ) {
             Text(
                 text = song?.title ?: "",
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -112,7 +111,7 @@ fun TrackInfo(song: Song?) {
         ) {
             Text(
                 text = song?.album ?: "-",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -132,7 +131,7 @@ fun TrackInfo(song: Song?) {
         ) {
             Text(
                 text = song?.artist ?: "",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 maxLines = 1,

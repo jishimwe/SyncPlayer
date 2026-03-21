@@ -21,10 +21,13 @@
     <string name="playlist_picker_name_hint">Playlist name</string>
     <string name="playlist_song_count">%d songs</string>
 
-    <!-- Rename dialog -->
+    <!-- Playlist dialogs -->
+    <string name="create_playlist_title">Create playlist</string>
+    <string name="create_playlist_confirm">Create</string>
     <string name="rename_playlist_title">Rename playlist</string>
     <string name="rename_playlist_confirm">Rename</string>
     <string name="cancel">Cancel</string>
+    <string name="empty_playlists">No playlists yet</string>
 
     <!-- Accessibility -->
     <string name="cd_jump_to_letter">Jump to %1$s</string>

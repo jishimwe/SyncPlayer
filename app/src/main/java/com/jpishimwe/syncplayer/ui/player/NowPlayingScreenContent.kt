@@ -198,6 +198,9 @@ fun NowPlayingScreenContent(
             // --- Seek bar ---
             SeekBar(
                 currentPosition = uiState.currentPosition,
+                playbackState = uiState.playbackState,
+                color = dominantColor,
+                animateColor = animatedBgColor,
                 duration = uiState.duration,
                 onSeek = { onEvent(PlayerEvent.SeekTo(it)) },
                 formatTime = formatTime,

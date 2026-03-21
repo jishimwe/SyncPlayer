@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.jpishimwe.syncplayer.model.Playlist
 import com.jpishimwe.syncplayer.model.Song
@@ -74,6 +75,9 @@ interface PlaylistDao {
     @Query("SELECT COUNT(*) FROM playlist_songs WHERE playlistId = :playlistId")
     fun getSongCountForPlaylist(playlistId: Long): Flow<Int>
 
+    @Query("SELECT COUNT(*) > 0 FROM playlist_songs WHERE playlistId = :playlistId AND songId = :songId")
+    suspend fun isSongInPlaylist(playlistId: Long, songId: Long): Boolean
+
     @Query("SELECT * FROM playlists WHERE id = :playlistId")
     fun getPlaylistById(playlistId: Long): Flow<PlaylistEntity?>
 
@@ -115,7 +119,7 @@ interface PlaylistDao {
 
     @Query(
         """
-        SELECT p.id, p.name, p.createdAt, 
+        SELECT p.id, p.name, p.createdAt,
                COUNT(ps.songId) AS songCount,
                COALESCE(SUM(s.duration), 0) AS totalDuration
         FROM playlists p
@@ -127,4 +131,27 @@ interface PlaylistDao {
     """,
     )
     fun getAllPlaylistsWithCount(): Flow<List<Playlist>>
+
+    @Query(
+        """
+        SELECT p.id, p.name, p.createdAt,
+               COUNT(ps.songId) AS songCount,
+               COALESCE(SUM(s.duration), 0) AS totalDuration
+        FROM playlists p
+        LEFT JOIN playlist_songs ps ON p.id = ps.playlistId
+        LEFT JOIN songs s ON ps.songId = s.id
+        WHERE p.id = :playlistId AND p.deletedAt = 0
+        GROUP BY p.id
+    """,
+    )
+    fun getPlaylistByIdWithCount(playlistId: Long): Flow<Playlist?>
+
+    @Transaction
+    suspend fun reorderPlaylistSongs(
+        playlistId: Long,
+        orderedSongs: List<PlaylistSongCrossRef>,
+    ) {
+        clearPlaylistSongs(playlistId)
+        replacePlaylistSongs(orderedSongs)
+    }
 }

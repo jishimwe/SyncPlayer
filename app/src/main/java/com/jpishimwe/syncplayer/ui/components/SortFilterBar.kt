@@ -50,11 +50,11 @@ import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 @Composable
 fun SortFilterBar(
     selectedSort: SortOrder,
+    modifier: Modifier = Modifier,
     sortOptions: List<SortOrder> = SortOrder.entries.toList(),
     onSortClick: (sortOrder: SortOrder) -> Unit,
     onShuffle: () -> Unit,
     onPlayAll: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val borderBrush =
         Brush.linearGradient(
@@ -71,7 +71,7 @@ fun SortFilterBar(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .padding(horizontal = 0.dp, vertical = 0.dp)
                 .border(BorderStroke(1.dp, borderBrush), barShape)
                 .clip(barShape),
     ) {

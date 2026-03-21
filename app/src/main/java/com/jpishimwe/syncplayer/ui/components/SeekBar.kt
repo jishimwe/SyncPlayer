@@ -1,6 +1,7 @@
 package com.jpishimwe.syncplayer.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -23,18 +24,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.ui.player.PlaybackState
 import com.jpishimwe.syncplayer.ui.theme.gradientBorderStroke
-import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import java.util.Locale
 
 private val TrackHeight = 12.dp
 private val TrackShape = RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)
-private val ThumbWidth = 6.dp
+private val ThumbWidth = 8.dp
 private val ThumbHeight = 20.dp
 private val ThumbShape = RoundedCornerShape(3.dp)
 
@@ -42,6 +44,9 @@ private val ThumbShape = RoundedCornerShape(3.dp)
 fun SeekBar(
     currentPosition: Long,
     duration: Long,
+    color: Color,
+    animateColor: Color,
+    playbackState: PlaybackState,
     onSeek: (Long) -> Unit,
     formatTime: (Long) -> String,
     modifier: Modifier = Modifier,
@@ -105,8 +110,15 @@ fun SeekBar(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .gradientBorderStroke(shape = TrackShape)
-                        .height(TrackHeight)
+                        .gradientBorderStroke(
+                            colors =
+                                listOf(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f),
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f),
+                                ),
+                            shape = TrackShape,
+                        ).height(TrackHeight)
                         .clip(TrackShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
             )
@@ -115,10 +127,20 @@ fun SeekBar(
             Box(
                 modifier =
                     Modifier
-                        .fillMaxWidth(fraction = displayFraction)
+                        .fillMaxWidth(fraction = displayFraction + .008f)
                         .height(TrackHeight)
                         .clip(TrackShape)
-                        .background(myAccentColor),
+                        .then(
+                            if (playbackState == PlaybackState.PLAYING) {
+                                Modifier.background(
+//                                    LocalExtendedColorScheme.current.accentColor.color
+//                                        .copy(alpha = 0.4f),
+                                    color,
+                                )
+                            } else {
+                                Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            },
+                        ),
             )
 
             // Thumb — small pill positioned at the progress edge
@@ -138,7 +160,15 @@ fun SeekBar(
                         ).width(ThumbWidth)
                         .height(ThumbHeight)
                         .clip(ThumbShape)
-                        .background(myAccentColor.copy(alpha = 0.7f)),
+//                        .background(myAccentColor.copy(alpha = 0.7f)),
+                        .then(
+                            if (playbackState == PlaybackState.PLAYING) {
+//                                Modifier.background(LocalExtendedColorScheme.current.accentColor.color)
+                                Modifier.background(animateColor)
+                            } else {
+                                Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
+                            },
+                        ).border(1.dp, MaterialTheme.colorScheme.surfaceVariant, ThumbShape),
             )
         }
 
@@ -178,11 +208,28 @@ fun thisFormatTime(ms: Long): String {
 
 @Preview(showBackground = true, backgroundColor = 0xFF111113)
 @Composable
-fun SeekBarPreview() {
+fun SeekBarPlayingPreview() {
     SeekBar(
         currentPosition = 65000L,
+        playbackState = PlaybackState.PLAYING,
         duration = 213000L,
         onSeek = {},
         formatTime = { thisFormatTime(it) },
+        color = Color.Red,
+        animateColor = Color.Green,
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+fun SeekBarPlayingPaused() {
+    SeekBar(
+        currentPosition = 65000L,
+        playbackState = PlaybackState.PAUSED,
+        duration = 213000L,
+        onSeek = {},
+        formatTime = { thisFormatTime(it) },
+        color = Color.Red,
+        animateColor = Color.Green,
     )
 }

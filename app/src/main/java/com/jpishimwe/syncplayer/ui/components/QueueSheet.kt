@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.jpishimwe.syncplayer.R
@@ -123,6 +124,7 @@ fun QueueSheetContent(
             Text(
                 text = if (queue.isEmpty()) stringResource(R.string.queue_title) else stringResource(R.string.queue_title_count, queue.size),
                 style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
 
@@ -139,6 +141,7 @@ fun QueueSheetContent(
             IconButton(onClick = onDismiss) {
                 Icon(
                     Icons.Default.KeyboardArrowDown,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     contentDescription = stringResource(R.string.cd_collapse_queue),
                 )
             }
@@ -184,8 +187,8 @@ fun QueueSheetContent(
                                         Modifier
                                             .fillMaxSize()
                                             .padding(vertical = 4.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(MaterialTheme.colorScheme.error),
+                                            .clip(RoundedCornerShape(8.dp)),
+//                                            .background(MaterialTheme.colorScheme.error),
                                     contentAlignment = Alignment.CenterEnd,
                                 ) {
                                     Icon(
@@ -311,4 +314,20 @@ private fun QueueItemRow(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+
+@Preview(showBackground = true, backgroundColor = 0xFF111113)
+@Composable
+fun QueueSheetPreview() {
+    QueueSheetContent(
+        queue = emptyList(),
+        currentIndex = 0,
+        onDismiss = {},
+        onSongClick = {},
+        onRemove = {},
+        onReorder = { _, _ -> },
+        onClearQueue = {},
+        formatTime = { "" },
+    )
 }

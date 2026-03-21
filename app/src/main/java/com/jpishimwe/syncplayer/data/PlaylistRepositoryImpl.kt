@@ -16,14 +16,10 @@ class PlaylistRepositoryImpl
         private val playlistDao: PlaylistDao,
     ) : PlaylistRepository {
         override fun getAllPlaylists(): Flow<List<Playlist>> =
-            playlistDao.getAllPlaylistsWithCount().map { entities ->
-                entities.map { Playlist(it.id, it.name, it.createdAt) }
-            }
+            playlistDao.getAllPlaylistsWithCount()
 
         override fun getPlaylistById(playlistId: Long): Flow<Playlist?> =
-            playlistDao.getPlaylistById(playlistId).map { entity ->
-                entity?.let { Playlist(it.id, it.name, it.createdAt, playlistDao.getSongCountForPlaylist(it.id).first()) }
-            }
+            playlistDao.getPlaylistByIdWithCount(playlistId)
 
         override fun getSongsForPlaylist(playlistId: Long): Flow<List<Song>> = playlistDao.getSongsForPlaylist(playlistId)
 
@@ -57,6 +53,7 @@ class PlaylistRepositoryImpl
             playlistId: Long,
             songId: Long,
         ) {
+            if (playlistDao.isSongInPlaylist(playlistId, songId)) return
             val position = playlistDao.getSongCountForPlaylist(playlistId).first()
             playlistDao.addSongToPlaylist(
                 PlaylistSongCrossRef(
@@ -80,8 +77,8 @@ class PlaylistRepositoryImpl
             playlistId: Long,
             orderedSongsId: List<Long>,
         ) {
-            playlistDao.clearPlaylistSongs(playlistId)
-            playlistDao.replacePlaylistSongs(
+            playlistDao.reorderPlaylistSongs(
+                playlistId,
                 orderedSongsId.mapIndexed { index, songId ->
                     PlaylistSongCrossRef(
                         playlistId = playlistId,

@@ -18,14 +18,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed interface PlaylistState {
-    data object Default : PlaylistState
-
-    data object Playing : PlaylistState
-
-    data object Paused : PlaylistState
-}
-
 @HiltViewModel
 class PlaylistViewModel
     @Inject

@@ -1,6 +1,7 @@
 package com.jpishimwe.syncplayer.ui.home.tabs
 
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,10 +9,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,7 +81,7 @@ fun PlaylistsTabScreen(
                 isPlaying = isPlaying,
                 onPlaylistClick = onPlaylistClick,
                 onPlayPlaylist = onPlayPlaylist,
-                onCreatePlaylist = { viewModel.onEvent(PlaylistEvent.CreatePlaylist("New Playlist")) },
+                onCreatePlaylist = { name -> viewModel.onEvent(PlaylistEvent.CreatePlaylist(name)) },
                 onRenamePlaylist = { id, name -> viewModel.onEvent(PlaylistEvent.RenamePlaylist(id, name)) },
                 onDeletePlaylist = { viewModel.onEvent(PlaylistEvent.DeletePlaylist(it)) },
                 modifier = modifier,
@@ -92,16 +98,42 @@ fun PlaylistsTabScreenContent(
     isPlaying: Boolean,
     onPlaylistClick: (Long, String) -> Unit,
     onPlayPlaylist: (Long, String) -> Unit,
-    onCreatePlaylist: () -> Unit,
+    onCreatePlaylist: (String) -> Unit,
     onRenamePlaylist: (Long, String) -> Unit,
     onDeletePlaylist: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var renameTarget by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    var showCreateDialog by remember { mutableStateOf(false) }
 
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = MiniPlayerPeek)) {
         stickyHeader {
-            PlaylistsActionBar(onCreatePlaylist = onCreatePlaylist)
+            PlaylistsActionBar(onCreatePlaylist = { showCreateDialog = true })
+        }
+
+        if (playlists.isEmpty()) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillParentMaxHeight(0.7f)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.PlaylistPlay,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.empty_playlists),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
 
         items(playlists, key = { it.id }) { playlist ->
@@ -124,6 +156,16 @@ fun PlaylistsTabScreenContent(
         }
     }
 
+    if (showCreateDialog) {
+        CreatePlaylistDialog(
+            onConfirm = { name ->
+                onCreatePlaylist(name)
+                showCreateDialog = false
+            },
+            onDismiss = { showCreateDialog = false },
+        )
+    }
+
     renameTarget?.let { (playlistId, currentName) ->
         RenamePlaylistDialog(
             currentName = currentName,
@@ -134,6 +176,43 @@ fun PlaylistsTabScreenContent(
             onDismiss = { renameTarget = null },
         )
     }
+}
+
+@Composable
+private fun CreatePlaylistDialog(
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.create_playlist_title)) },
+        text = {
+            Column {
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(text.trim()) },
+                enabled = text.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.create_playlist_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable

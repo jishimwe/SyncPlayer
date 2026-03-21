@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
@@ -25,12 +26,12 @@ internal val previewSong =
         albumArtist = "NMIXX",
         album = "Fe3O4",
         albumId = 1L,
+        albumArtUri = "android.resource://com.jpishimwe.syncplayer/${R.drawable.album_art}",
         duration = 213000L,
         trackNumber = 1,
         year = 2024,
         dateAdded = 0L,
         contentUri = null,
-        albumArtUri = null,
     )
 
 @Preview(showBackground = true, backgroundColor = 0xFF111113)
@@ -58,7 +59,11 @@ private fun NowPlayingScreenContentPreview() {
 private fun NowPlayingScreenContentEmptyPreview() {
     SyncPlayerTheme(darkTheme = true) {
         NowPlayingScreenContent(
-            uiState = PlayerUiState(),
+            uiState = PlayerUiState(
+                currentSong = previewSong,
+                    playbackState = PlaybackState.PAUSED,
+                    currentPosition = 65000L,
+                    duration = 213000L,),
             onEvent = {},
             onNavigateBack = {},
             formatTime = { ms -> "%d:%02d".format(ms / 60000, (ms / 1000) % 60) },

@@ -349,6 +349,8 @@ class FakePlaylistDao : PlaylistDao {
     override suspend fun softDeletePlaylist(playlistId: Long, deletedAt: Long) {}
     override fun getAllPlaylistsWithCount(): Flow<List<com.jpishimwe.syncplayer.model.Playlist>> = MutableStateFlow(emptyList())
     override fun getArtUrisForPlaylist(playlistId: Long): Flow<List<String>> = MutableStateFlow(emptyList())
+    override suspend fun isSongInPlaylist(playlistId: Long, songId: Long): Boolean = false
+    override fun getPlaylistByIdWithCount(playlistId: Long): Flow<com.jpishimwe.syncplayer.model.Playlist?> = MutableStateFlow(null)
 }
 
 class FakeListeningHistoryDao : ListeningHistoryDao {

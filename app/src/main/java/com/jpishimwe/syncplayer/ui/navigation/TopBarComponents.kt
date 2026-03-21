@@ -31,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -105,7 +104,7 @@ fun TopAppBarContent(
                                 1f to Color.Transparent,
                             ),
                     ),
-                ).padding(bottom = 16.dp),
+                ).padding(bottom = 0.dp),
     ) {
         Row(
             modifier = Modifier.padding(8.dp),
