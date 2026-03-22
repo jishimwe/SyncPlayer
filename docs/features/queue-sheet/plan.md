@@ -20,7 +20,7 @@ NowPlayingScreenContent
 **Files involved:**
 | File | Role |
 |------|------|
-| `ui/components/QueueSheet.kt` | UI component (232 lines) |
+| `ui/components/QueueSheet.kt` | UI component (~215 lines) |
 | `model/QueueItem.kt` | Data class wrapping Song + index + id |
 | `data/local/QueueDao.kt` | Room DAO for queue persistence |
 | `data/PlayerRepositoryImpl.kt` | Queue operations + MediaController sync |
@@ -135,11 +135,12 @@ The current queue model is a flat `List<QueueItem>` with a single `currentIndex`
 - This enables preview and test without the modal scaffold
 - **Why:** Follows project testable composable pattern
 
-### Task 2: Add swipe-to-dismiss for individual items
+### Task 2: Add swipe-to-dismiss for individual items ✅ Done
 - Wrap each `QueueItemRow` in `SwipeToDismissBox` (Material 3)
 - On dismiss, call `onRemove(item.song.id.toString())`
 - Show a red background with trash icon during swipe
 - **Why:** Fixes Bug 1 — `onRemove` is wired but has no UI trigger
+- **Polish (2026-03-21):** Added `animateColorAsState` red background with delete icon, 80dp `positionalThreshold` to prevent accidental dismissals, and `HapticFeedbackType.LongPress` on confirmed removal
 
 ### Task 3: Fix `onSongClick` behavior
 - If tapped index == `currentIndex`: call `onDismiss` (dismiss the sheet)

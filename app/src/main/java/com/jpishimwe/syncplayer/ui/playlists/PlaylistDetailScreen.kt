@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,7 +43,6 @@ import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
-import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -129,16 +127,6 @@ fun PlaylistDetailScreenContent(
 
     val totalDuration = remember(playlistSongs) { playlistSongs.sumOf { it.duration } }
 
-    val accentBorderBrush =
-        Brush.linearGradient(
-            colors =
-                listOf(
-                    myAccentColor.copy(alpha = 0.24f),
-                    myAccentColor.copy(alpha = 0.75f),
-                    myAccentColor.copy(alpha = 0.24f),
-                ),
-        )
-
     // ── Root ─────────────────────────────────────────────────────────────
     Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         // Layer 0 — blurred screenshot of previous screen
@@ -155,7 +143,6 @@ fun PlaylistDetailScreenContent(
             // ── Action bar: song count + shuffle + play ──────────────────
             PlaylistActionBar(
                 label = "${playlistSongs.size} songs · ${formatPlaylistTotalDuration(totalDuration)}",
-                accentBorderBrush = accentBorderBrush,
                 onShuffleClick = onShuffleClick,
                 onPlayAllClick = onPlayAllClick,
             )

@@ -64,20 +64,23 @@ interface ListeningHistoryDao {
 
     /**
      * Returns the most recently played distinct artists, ordered by last play time.
-     * artUri uses the same album-art heuristic as SongDao.getAllArtists(): picks the
-     * most recently added non-null album art for the artist.
+     * artUri mirrors SongDao.getAllArtists(): prefers Deezer image from artist_images,
+     * falls back to the most recently added album art for the artist.
      */
     @Query(
         """
         SELECT s.artist AS name,
                COUNT(DISTINCT s.id) AS songCount,
                COUNT(DISTINCT s.albumId) AS albumCount,
-               (SELECT s2.albumArtUri FROM songs s2
-                WHERE s2.artist = s.artist
-                AND s2.albumArtUri IS NOT NULL
-                ORDER BY s2.dateAdded DESC LIMIT 1) AS artUri
+               COALESCE(ai.imageUrl,
+                   (SELECT s2.albumArtUri FROM songs s2
+                    WHERE s2.artist = s.artist
+                    AND s2.albumArtUri IS NOT NULL
+                    ORDER BY s2.dateAdded DESC LIMIT 1)
+               ) AS artUri
         FROM listening_history h
         INNER JOIN songs s ON s.id = h.songId
+        LEFT JOIN artist_images ai ON ai.artistName = s.artist
         GROUP BY s.artist
         ORDER BY MAX(h.playedAt) DESC
         LIMIT :limit

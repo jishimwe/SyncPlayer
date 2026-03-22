@@ -1,5 +1,7 @@
 package com.jpishimwe.syncplayer.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,8 +26,13 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -147,6 +154,9 @@ fun QueueSheetContent(
                 )
             }
         } else {
+            val haptic = LocalHapticFeedback.current
+            val density = LocalDensity.current
+
             LazyColumn(state = lazyListState) {
                 itemsIndexed(
                     items = queue,
@@ -157,23 +167,55 @@ fun QueueSheetContent(
                             rememberSwipeToDismissBoxState(
                                 confirmValueChange = { value ->
                                     if (value == SwipeToDismissBoxValue.EndToStart) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         onRemove(item.song.id.toString())
                                         true
                                     } else {
                                         false
                                     }
                                 },
+                                positionalThreshold = { _ ->
+                                    with(density) { 80.dp.toPx() }
+                                },
                             )
+
+                        val isSwiping =
+                            dismissState.targetValue != SwipeToDismissBoxValue.Settled
+                        val bgColor by animateColorAsState(
+                            targetValue = if (isSwiping) {
+                                Color(0xFFD32F2F)
+                            } else {
+                                Color.Transparent
+                            },
+                            label = "swipe-bg",
+                        )
 
                         SwipeToDismissBox(
                             state = dismissState,
                             enableDismissFromStartToEnd = false,
-                            backgroundContent = {},
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(bgColor)
+                                        .padding(end = 24.dp),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
+                                    if (isSwiping) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                        )
+                                    }
+                                }
+                            },
                         ) {
                             SongItem(
                                 song = item.song,
                                 onClick = { onSongClick(index) },
                                 isPlaying = index == currentIndex,
+                                isSelected = isSwiping,
                                 isDragging = isDragging,
                                 variant = SongItemVariant.Reorderable,
                                 reorderableScope = this@ReorderableItem,
