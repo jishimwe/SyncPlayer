@@ -56,7 +56,7 @@ import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.ui.components.PlayerControls
 import com.jpishimwe.syncplayer.ui.components.QueueSheet
 import com.jpishimwe.syncplayer.ui.components.SeekBar
-import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
+import com.jpishimwe.syncplayer.ui.effect.BlurredBackground
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 

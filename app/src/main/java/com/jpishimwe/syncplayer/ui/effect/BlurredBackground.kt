@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.theme
+package com.jpishimwe.syncplayer.ui.effect
 
 import android.app.Activity
 import android.content.Context

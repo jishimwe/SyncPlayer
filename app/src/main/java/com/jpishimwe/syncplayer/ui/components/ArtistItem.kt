@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
-import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
+import com.jpishimwe.syncplayer.ui.effect.noRippleClickable
 
 sealed interface ArtistPlaybackState {
     // Name + overflow menu only

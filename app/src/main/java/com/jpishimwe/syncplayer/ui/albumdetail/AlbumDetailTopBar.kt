@@ -1,9 +1,10 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.albumdetail
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
+import com.jpishimwe.syncplayer.ui.shared.DetailTopBar
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

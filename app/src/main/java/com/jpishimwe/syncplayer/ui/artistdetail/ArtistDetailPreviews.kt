@@ -1,7 +1,12 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.artistdetail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.jpishimwe.syncplayer.ui.shared.previewAlbums
+import com.jpishimwe.syncplayer.ui.shared.previewArtist
+import com.jpishimwe.syncplayer.ui.shared.previewSongBlindingLights
+import com.jpishimwe.syncplayer.ui.shared.previewSongSaveYourTears
+import com.jpishimwe.syncplayer.ui.shared.previewSongStarboy
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 
 private val previewSongs = listOf(

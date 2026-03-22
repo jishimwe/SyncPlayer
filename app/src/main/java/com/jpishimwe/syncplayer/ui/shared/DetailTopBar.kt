@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.shared
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi

@@ -48,9 +48,14 @@ This is a Kotlin/Android music player project. When making UI or animation chang
 ```
 app/src/main/java/com/jpishimwe/syncplayer/
 ├── ui/             # Screens, composables, ViewModels
-│   ├── theme/      # Color, Theme, Type
+│   ├── theme/      # Color, Theme, Type (pure theme definitions)
+│   ├── effect/     # Visual effects (BlurredBackground, GlassEffect, Modifiers)
 │   ├── components/ # Reusable UI components
-│   └── <feature>/  # Feature packages (library, player, etc.)
+│   ├── shared/     # Shared ViewModels (Library, Metadata) and detail components
+│   ├── albumdetail/  # Album detail screen
+│   ├── artistdetail/ # Artist detail screen
+│   └── <feature>/  # Feature packages (home, player, playlists, settings, navigation)
+├── util/           # Non-UI utilities (DurationFormatter, PermissionHandler)
 ├── data/           # Repositories, local DB
 │   └── local/      # Room database, DAOs
 ├── model/          # Data classes (Song, Album, Artist)

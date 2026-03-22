@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.theme
+package com.jpishimwe.syncplayer.ui.effect
 
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.ui.theme.myFrostedGlassSurface
 
 fun Modifier.frostedGlass(
     color: Color = myFrostedGlassSurface,

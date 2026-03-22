@@ -33,8 +33,8 @@ import com.jpishimwe.syncplayer.ui.components.ArtistItem
 import com.jpishimwe.syncplayer.ui.components.ArtistPlaybackState
 import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.components.SortFilterBar
-import com.jpishimwe.syncplayer.ui.library.LibraryUiState
-import com.jpishimwe.syncplayer.ui.library.SortOrder
+import com.jpishimwe.syncplayer.ui.shared.LibraryUiState
+import com.jpishimwe.syncplayer.ui.shared.SortOrder
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.launch

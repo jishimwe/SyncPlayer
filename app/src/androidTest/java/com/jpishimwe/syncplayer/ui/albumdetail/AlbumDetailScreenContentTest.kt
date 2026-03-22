@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.albumdetail
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed

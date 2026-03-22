@@ -34,7 +34,8 @@ SyncPlayer follows the MVVM (Model-View-ViewModel) architecture pattern with a s
 ```
 app/src/main/java/com/jpishimwe/syncplayer/
 ├── ui/
-│   ├── theme/              # Color, Theme, Type, accent colors, frosted glass modifier
+│   ├── theme/              # Color, Theme, Type (pure theme definitions only)
+│   ├── effect/             # Visual effects: BlurredBackground, GlassEffect, Modifiers
 │   ├── home/               # Main screen coordinating all tabs
 │   │   ├── HomeScreen.kt          # PermissionHandler + ViewModel wiring
 │   │   └── tabs/                  # One file per tab
@@ -44,30 +45,44 @@ app/src/main/java/com/jpishimwe/syncplayer/
 │   │       ├── FavoriteTabScreen.kt
 │   │       ├── PlaylistsTabScreen.kt
 │   │       └── HistoryTabScreen.kt
-│   ├── library/            # ViewModels and state for library data
+│   ├── shared/             # ViewModels and shared detail components
 │   │   ├── LibraryViewModel.kt    # Songs/albums/artists + LibraryUiState, SortOrder, LibraryTab
 │   │   ├── MetadataViewModel.kt   # Favorites/mostPlayed/recentlyPlayed + MetadataUiState
-│   │   ├── PermissionHandler.kt   # READ_MEDIA_AUDIO permission flow
-│   │   └── DurationFormatter.kt   # formatDuration(ms) utility
+│   │   ├── DetailHeroImage.kt     # Parallax hero image (shared by album + artist detail)
+│   │   ├── DetailTopBar.kt        # Frosted-glass top bar (shared by album + artist detail)
+│   │   └── PreviewData.kt         # Sample data for @Preview composables
+│   ├── albumdetail/        # Album detail screen
+│   │   ├── AlbumDetailScreen.kt
+│   │   ├── AlbumDetailTopBar.kt
+│   │   ├── AlbumActionBar.kt
+│   │   └── AlbumDetailPreviews.kt
+│   ├── artistdetail/       # Artist detail screen
+│   │   ├── ArtistDetailScreen.kt
+│   │   ├── ArtistDetailTopBar.kt
+│   │   ├── ArtistSubTabHeader.kt
+│   │   └── ArtistDetailPreviews.kt
+│   ├── components/         # Reusable UI components used across screens
+│   │   ├── SongListItem.kt        # SongItem, SongMenuAction, SongItemVariant
+│   │   ├── SortFilterBar.kt       # Sort dropdown + shuffle/play-all
+│   │   ├── AlphabeticalIndexSidebar.kt
+│   │   ├── MiniPlayer.kt          # Floating pill + MiniPlayerPeek constant
+│   │   ├── AlbumItem.kt           # Grid card for albums
+│   │   ├── ArtistItem.kt          # Grid card for artists
+│   │   ├── PlaylistItem.kt        # Row item for playlists
+│   │   ├── PlaylistCollage.kt     # 4-image grid thumbnail
+│   │   ├── CollapsibleSection.kt
+│   │   ├── QueueSheet.kt          # Bottom sheet for queue
+│   │   ├── PlayerControls.kt
+│   │   ├── SeekBar.kt
+│   │   ├── CircularArtistImage.kt
+│   │   └── FrostedGlassPill.kt
 │   ├── player/             # Now Playing screen, PlayerViewModel, PlayerEvent
-│   │   ├── components/            # Reusable UI components used across screens
-│   │   │   ├── SongListItem.kt    # SongItem, SongMenuAction, SongItemVariant
-│   │   │   ├── SortFilterBar.kt   # Sort dropdown + shuffle/play-all
-│   │   │   ├── AlphabeticalIndexSidebar.kt
-│   │   │   ├── MiniPlayer.kt      # Floating pill + MiniPlayerPeek constant
-│   │   │   ├── AlbumItem.kt       # Grid card for albums
-│   │   │   ├── ArtistItem.kt      # Grid card for artists
-│   │   │   ├── PlaylistItem.kt    # Row item for playlists
-│   │   │   ├── PlaylistCollage.kt # 4-image grid thumbnail
-│   │   │   ├── CollapsibleSection.kt
-│   │   │   ├── QueueSheet.kt      # Bottom sheet for queue
-│   │   │   ├── PlayerControls.kt
-│   │   │   ├── SeekBar.kt
-│   │   │   ├── CircularArtistImage.kt
-│   │   │   ├── BlurredBackground.kt
-│   │   │   └── FrostedGlassPill.kt
 │   │   ├── NowPlayingScreen.kt
+│   │   ├── NowPlayingScreenContent.kt
+│   │   ├── NowPlayingComponents.kt
 │   │   ├── PlayerViewModel.kt
+│   │   ├── PlayerUiState.kt
+│   │   ├── PlaybackState.kt
 │   │   └── PlayerEvent.kt
 │   ├── playlists/          # Playlist list + detail, SongPickerSheet
 │   ├── settings/           # Sign-in, sync status, manual sync trigger
@@ -77,7 +92,11 @@ app/src/main/java/com/jpishimwe/syncplayer/
 │   │   └── SettingsEvent.kt
 │   └── navigation/         # NavGraph, Screen routes, top tab row
 │       ├── NavGraph.kt            # Routes, CustomTabRow, DockedSearchBar
-│       └── Screen.kt              # Route sealed class + LibraryTab enum
+│       ├── Screens.kt             # Route sealed class + LibraryTab enum
+│       └── TopBarComponents.kt
+├── util/                   # Non-UI utilities
+│   ├── DurationFormatter.kt      # formatDuration(ms) utility
+│   └── PermissionHandler.kt      # READ_MEDIA_AUDIO permission flow
 ├── data/
 │   ├── local/              # Room database, DAOs, entities
 │   │   ├── SyncPlayerDatabase.kt

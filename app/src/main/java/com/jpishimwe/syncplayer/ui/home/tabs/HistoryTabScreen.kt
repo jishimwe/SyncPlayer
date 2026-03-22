@@ -31,7 +31,7 @@ import com.jpishimwe.syncplayer.ui.components.CollapsibleSectionHeader
 import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.components.SongItem
 import com.jpishimwe.syncplayer.ui.components.SongMenuAction
-import com.jpishimwe.syncplayer.ui.library.MetadataUiState
+import com.jpishimwe.syncplayer.ui.shared.MetadataUiState
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import androidx.compose.ui.tooling.preview.Preview
 

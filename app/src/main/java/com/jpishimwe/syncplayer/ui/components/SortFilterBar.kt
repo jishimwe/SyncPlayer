@@ -36,9 +36,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.jpishimwe.syncplayer.ui.library.SortOrder
+import com.jpishimwe.syncplayer.ui.shared.SortOrder
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.effect.frostedGlassRendered
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 
 /**

@@ -29,13 +29,18 @@ Single Activity, Jetpack Compose, MVVM pattern.
 ```
 app/src/main/java/com/jpishimwe/syncplayer/
 ├── ui/             # Screens, composables, ViewModels
-│   ├── theme/      # Color, Theme, Type
+│   ├── theme/      # Color, Theme, Type (pure theme definitions)
+│   ├── effect/     # Visual effects: BlurredBackground, GlassEffect, Modifiers
 │   ├── components/ # Reusable UI components
-│   ├── library/    # Library browsing (songs, albums, artists, detail screens)
+│   ├── shared/     # Shared ViewModels (Library, Metadata) and detail components
+│   ├── albumdetail/  # Album detail screen
+│   ├── artistdetail/ # Artist detail screen
+│   ├── home/       # Main screen with tab pager
 │   ├── player/     # Now Playing screen, player controls, MiniPlayer
 │   ├── playlists/  # Playlist management (list, detail, song picker)
 │   ├── settings/   # Sign-in, sync status, manual trigger
-│   └── navigation/ # NavGraph, Screen routes, bottom nav
+│   └── navigation/ # NavGraph, Screen routes, top tab row
+├── util/           # Non-UI utilities (DurationFormatter, PermissionHandler)
 ├── data/           # Repositories, local DB
 │   ├── local/      # Room database, DAOs, entities
 │   └── sync/       # Firebase Auth, Firestore, conflict resolution, orchestrator
@@ -299,6 +304,19 @@ Full audit and cleanup of the `ui/library` package. Resolved 9 bugs, 7 feature g
 
 **Analysis**: [`docs/features/open-bugs/ui-library-analysis.md`](features/open-bugs/ui-library-analysis.md)
 **Design doc**: [`docs/features/open-bugs/design.md`](features/open-bugs/design.md)
+
+---
+
+### Package Restructuring ✅
+
+Split the monolithic `ui/library/` package (15 files) into focused, single-responsibility packages. Separated visual effects from theme definitions and extracted non-UI utilities.
+
+- ✅ Split `ui/library/` → `ui/albumdetail/` (4 files), `ui/artistdetail/` (4 files), `ui/shared/` (5 files)
+- ✅ Extracted `ui/theme/{BlurredBackground,GlassEffect,Modifiers}` → `ui/effect/` (visual effects ≠ theme definitions)
+- ✅ Extracted `ui/library/{DurationFormatter,PermissionHandler}` → `util/` (non-UI utilities)
+- ✅ Deleted empty `ui/library/` directory
+- ✅ Updated all imports across 25+ source files and 5 test files
+- ✅ `assembleDebug` and `test` pass cleanly
 
 ---
 

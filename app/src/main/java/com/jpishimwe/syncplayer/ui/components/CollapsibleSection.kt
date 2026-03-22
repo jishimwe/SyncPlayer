@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
-import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
+import com.jpishimwe.syncplayer.ui.effect.noRippleClickable
 
 /**
  * A section header with Shuffle + Play All actions and an animated

@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.artistdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,10 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.model.Song
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
-import com.jpishimwe.syncplayer.ui.theme.gradientBorderStroke
+import com.jpishimwe.syncplayer.ui.effect.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.effect.gradientBorderStroke
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
-import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
+import com.jpishimwe.syncplayer.ui.effect.noRippleClickable
 
 /** Sub-tab options shown in the artist detail sticky header. */
 internal enum class ArtistSubTab { Songs, Albums }

@@ -43,10 +43,10 @@ import coil3.compose.SubcomposeAsyncImage
 import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Rating
 import com.jpishimwe.syncplayer.model.Song
-import com.jpishimwe.syncplayer.ui.library.formatDuration
+import com.jpishimwe.syncplayer.util.formatDuration
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
-import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
+import com.jpishimwe.syncplayer.ui.effect.noRippleClickable
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @Composable

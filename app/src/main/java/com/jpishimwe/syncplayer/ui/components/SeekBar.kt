@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.ui.player.PlaybackState
-import com.jpishimwe.syncplayer.ui.theme.gradientBorderStroke
+import com.jpishimwe.syncplayer.ui.effect.gradientBorderStroke
 import java.util.Locale
 
 private val TrackHeight = 12.dp

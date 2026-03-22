@@ -42,7 +42,7 @@ import com.jpishimwe.syncplayer.ui.components.FrostedGlassPill
 import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
-import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
+import com.jpishimwe.syncplayer.ui.effect.BlurredBackground
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 

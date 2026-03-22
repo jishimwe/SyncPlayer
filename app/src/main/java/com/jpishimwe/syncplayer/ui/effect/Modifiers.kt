@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.theme
+package com.jpishimwe.syncplayer.ui.effect
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 
 fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
     composed {

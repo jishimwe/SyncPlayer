@@ -39,8 +39,8 @@ import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerUiState
 import com.jpishimwe.syncplayer.ui.theme.LocalExtendedColorScheme
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
-import com.jpishimwe.syncplayer.ui.theme.frostedGlass
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.effect.frostedGlass
+import com.jpishimwe.syncplayer.ui.effect.frostedGlassRendered
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
 
 // Referenced by other files for bottom padding calculations

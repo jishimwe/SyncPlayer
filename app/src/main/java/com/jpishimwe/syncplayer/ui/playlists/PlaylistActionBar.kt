@@ -21,8 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
-import com.jpishimwe.syncplayer.ui.theme.gradientBorderStroke
+import com.jpishimwe.syncplayer.ui.effect.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.effect.gradientBorderStroke
 
 private val BarShape = RoundedCornerShape(8.dp)
 

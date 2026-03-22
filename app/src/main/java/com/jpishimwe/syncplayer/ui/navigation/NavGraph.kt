@@ -44,9 +44,9 @@ import androidx.navigation.navArgument
 import com.jpishimwe.syncplayer.ui.components.MiniPlayer
 import com.jpishimwe.syncplayer.ui.components.PlaylistPickerSheet
 import com.jpishimwe.syncplayer.ui.home.HomeScreen
-import com.jpishimwe.syncplayer.ui.library.AlbumDetailScreen
-import com.jpishimwe.syncplayer.ui.library.ArtistDetailScreen
-import com.jpishimwe.syncplayer.ui.library.LibraryViewModel
+import com.jpishimwe.syncplayer.ui.albumdetail.AlbumDetailScreen
+import com.jpishimwe.syncplayer.ui.artistdetail.ArtistDetailScreen
+import com.jpishimwe.syncplayer.ui.shared.LibraryViewModel
 import com.jpishimwe.syncplayer.ui.player.NowPlayingScreen
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistDetailScreen
@@ -54,7 +54,7 @@ import com.jpishimwe.syncplayer.ui.playlists.PlaylistEvent
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistUiState
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistViewModel
 import com.jpishimwe.syncplayer.ui.settings.SettingsScreen
-import com.jpishimwe.syncplayer.ui.theme.ScreenshotHolder
+import com.jpishimwe.syncplayer.ui.effect.ScreenshotHolder
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable

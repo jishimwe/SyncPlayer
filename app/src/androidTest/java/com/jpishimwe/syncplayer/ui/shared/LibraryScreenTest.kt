@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.shared
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.Modifier

@@ -18,7 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
-import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
+import com.jpishimwe.syncplayer.ui.effect.noRippleClickable
 
 @Composable
 fun SongMenuOverflow(

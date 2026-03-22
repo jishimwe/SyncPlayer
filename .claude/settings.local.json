@@ -12,7 +12,9 @@
       "Bash(./gradlew.bat compileDebugAndroidTestKotlin:*)",
       "Bash(grep:*)",
       "Bash(./gradlew.bat compileDebugUnitTestKotlin:*)",
-      "Bash(find \"/c/Users/ishim/AndroidStudioProjects/SyncPlayer/app/src/main/res\" -name \"*artist*\" -o -name \"*image*\" 2>/dev/null | head -20)"
+      "Bash(find \"/c/Users/ishim/AndroidStudioProjects/SyncPlayer/app/src/main/res\" -name \"*artist*\" -o -name \"*image*\" 2>/dev/null | head -20)",
+      "Read(//mnt/c/Users/ishim/AndroidStudioProjects/**)",
+      "Bash(rm -v app/src/main/java/com/jpishimwe/syncplayer/ui/library/AlbumDetailScreen.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/AlbumDetailTopBar.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/AlbumActionBar.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/AlbumDetailPreviews.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/ArtistDetailScreen.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/ArtistDetailTopBar.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/ArtistSubTabHeader.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/ArtistDetailPreviews.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/LibraryViewModel.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/MetadataViewModel.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/DetailHeroImage.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/DetailTopBar.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/PreviewData.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/DurationFormatter.kt app/src/main/java/com/jpishimwe/syncplayer/ui/library/PermissionHandler.kt)"
     ]
   }
 }

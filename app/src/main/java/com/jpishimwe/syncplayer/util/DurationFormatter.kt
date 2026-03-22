@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.util
 
 fun formatDuration(ms: Long): String {
     val totalSeconds = ms / 1000

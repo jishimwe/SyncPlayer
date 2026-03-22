@@ -28,8 +28,8 @@ import com.jpishimwe.syncplayer.ui.components.SongItem
 import com.jpishimwe.syncplayer.ui.components.SongItemVariant
 import com.jpishimwe.syncplayer.ui.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.components.SortFilterBar
-import com.jpishimwe.syncplayer.ui.library.LibraryUiState
-import com.jpishimwe.syncplayer.ui.library.SortOrder
+import com.jpishimwe.syncplayer.ui.shared.LibraryUiState
+import com.jpishimwe.syncplayer.ui.shared.SortOrder
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.shared
 
 import app.cash.turbine.test
 import com.jpishimwe.syncplayer.MainDispatcherRule

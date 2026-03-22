@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.shared
 
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.model.Artist

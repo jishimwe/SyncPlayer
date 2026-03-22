@@ -44,7 +44,7 @@ import com.jpishimwe.syncplayer.R
 import com.jpishimwe.syncplayer.model.Album
 import com.jpishimwe.syncplayer.ui.theme.SyncPlayerTheme
 import com.jpishimwe.syncplayer.ui.theme.myAccentColor
-import com.jpishimwe.syncplayer.ui.theme.noRippleClickable
+import com.jpishimwe.syncplayer.ui.effect.noRippleClickable
 
 sealed interface AlbumPlaybackState {
     data object Default : AlbumPlaybackState

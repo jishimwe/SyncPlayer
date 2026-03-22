@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.albumdetail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,7 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import com.jpishimwe.syncplayer.model.Song
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.effect.frostedGlassRendered
 
 private val BarShape = RoundedCornerShape(8.dp)
 

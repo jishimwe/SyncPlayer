@@ -1,4 +1,4 @@
-package com.jpishimwe.syncplayer.ui.library
+package com.jpishimwe.syncplayer.ui.artistdetail
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -49,8 +49,10 @@ import com.jpishimwe.syncplayer.ui.components.SongItemVariant
 import com.jpishimwe.syncplayer.ui.components.SongMenuAction
 import com.jpishimwe.syncplayer.ui.player.PlayerEvent
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
-import com.jpishimwe.syncplayer.ui.theme.BlurredBackground
-import com.jpishimwe.syncplayer.ui.theme.frostedGlassRendered
+import com.jpishimwe.syncplayer.ui.shared.DetailHeroImage
+import com.jpishimwe.syncplayer.ui.shared.LibraryViewModel
+import com.jpishimwe.syncplayer.ui.effect.BlurredBackground
+import com.jpishimwe.syncplayer.ui.effect.frostedGlassRendered
 
 /** Portrait height — roughly square-ish on most phones. */
 private val PortraitHeight = 360.dp

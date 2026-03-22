@@ -34,7 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.jpishimwe.syncplayer.model.Playlist
-import com.jpishimwe.syncplayer.ui.library.formatDuration
+import com.jpishimwe.syncplayer.util.formatDuration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

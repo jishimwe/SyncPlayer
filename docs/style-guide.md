@@ -186,34 +186,39 @@ private fun SongArtwork(...) {
 **By feature under `ui/`:**
 ```
 ui/
-├── library/
-│   ├── LibraryScreen.kt
+├── theme/            # Pure theme: Color, Theme, Type
+├── effect/           # Visual effects: BlurredBackground, GlassEffect, Modifiers
+├── shared/           # Shared ViewModels and detail components
 │   ├── LibraryViewModel.kt
-│   ├── LibraryUiState.kt
-│   ├── LibraryEvent.kt
-│   └── SongListItem.kt
-├── player/
-│   ├── PlayerScreen.kt
-│   ├── PlayerViewModel.kt
-│   └── ...
+│   ├── MetadataViewModel.kt
+│   ├── DetailHeroImage.kt
+│   └── DetailTopBar.kt
+├── albumdetail/      # Album detail screen + sub-components
+├── artistdetail/     # Artist detail screen + sub-components
+├── home/             # Main screen + tab screens
+├── player/           # Now Playing, PlayerViewModel, events
+├── playlists/        # Playlist list + detail, SongPickerSheet
+├── settings/         # Settings screen + ViewModel
+├── navigation/       # NavGraph, Screen routes, top tab row
 └── components/       # Shared across features
-    ├── AppTopBar.kt
-    └── LoadingIndicator.kt
+    ├── SongListItem.kt
+    ├── MiniPlayer.kt
+    └── ...
 ```
 
 ### ViewModel in Same Package as Screen
 
 **Good:**
 ```
-ui/library/
-├── LibraryScreen.kt
-├── LibraryViewModel.kt
+ui/player/
+├── NowPlayingScreen.kt
+├── PlayerViewModel.kt
 ```
 
 **Bad:**
 ```
-ui/library/LibraryScreen.kt
-viewmodel/LibraryViewModel.kt  # Don't separate
+ui/player/NowPlayingScreen.kt
+viewmodel/PlayerViewModel.kt  # Don't separate
 ```
 
 ### Max 300 Lines Per File
