@@ -110,6 +110,10 @@ dependencies {
     // Palette
     implementation(libs.palette)
 
+    // Glance (App Widgets)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // Unit tests
     testImplementation(libs.junit)
     testImplementation(libs.junit5.api)

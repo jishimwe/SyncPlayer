@@ -85,6 +85,13 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 
 > **Requires `google-services.json`**: Download from Firebase Console → Project Settings → Your Apps and place in `app/`. **Never commit to version control** — store as a CI secret. See `docs/features/sync/plan.md` Layer 1 for full setup steps.
 
+### App Widgets
+
+| Library              | Version | Group ID        | Notes                                   |
+|----------------------|---------|-----------------|-----------------------------------------|
+| Glance AppWidget     | 1.1.1   | androidx.glance | Compose-based widget framework          |
+| Glance Material 3    | 1.1.1   | androidx.glance | M3 color/theme integration for widgets  |
+
 ### Networking (Future)
 
 | Library  | Version | Group ID               | Notes                                     |

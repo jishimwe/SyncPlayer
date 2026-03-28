@@ -30,7 +30,7 @@ Adding M3U import/export lets users:
 
 The core challenge: M3U uses file paths, the app uses MediaStore content URIs.
 
-**Export path:** Query MediaStore `DATA` column using the song's ID to get the absolute file path. Write that path into the M3U file.
+**Export path:** Query MediaStore `DATA` column using the song's ID to get the absolute file path. Convert to a relative path (relative to the M3U file's parent directory) for portability, then write into the M3U file.
 
 **Import path:** For each path in the M3U file:
 1. Query MediaStore by `DATA` column (exact match)
@@ -72,11 +72,11 @@ No new dependencies required. M3U parsing is plain string processing; SAF is par
 
 ### Layer 4: Repository and ViewModel
 1. Add to `PlaylistRepository`:
-   - `suspend fun importM3uPlaylist(name: String, songIds: List<Long>): Long`
+   - `suspend fun importM3uPlaylist(name: String, songIds: List<Long>): Long` — creates playlist with the given name; if name already exists, auto-suffixes ("name (2)", "name (3)", etc.)
    - `suspend fun getFilePathsForPlaylist(playlistId: Long, contentResolver: ContentResolver): List<M3uEntry>`
 2. Add import/export events to `PlaylistEvent`:
-   - `ImportM3u(uri: Uri)` — triggered after SAF picker returns
-   - `ExportM3u(playlistId: Long, uri: Uri)` — triggered after SAF picker returns
+   - `ImportM3u(uri: Uri)` — triggered after SAF picker returns; derives playlist name from URI filename (minus extension)
+   - `ExportM3u(playlistId: Long, uri: Uri)` — triggered after SAF picker returns; writes relative paths
 3. Add state for import results (success message, unresolved count)
 4. Handle events in `PlaylistViewModel`
 5. Build and verify
@@ -98,11 +98,12 @@ No new dependencies required. M3U parsing is plain string processing; SAF is par
 4. Unit test ViewModel import/export event handling
 5. Run tests and verify
 
-## Open Questions
+## Design Decisions
 
-1. **Playlist naming on import**: Use the M3U filename (minus extension) as the playlist name? Or prompt the user?
-2. **Duplicate handling**: If an imported playlist name already exists, auto-suffix (e.g., "My Playlist (2)") or ask the user?
-3. **Relative paths in M3U**: Should export use relative paths (more portable but fragile) or absolute paths (less portable but reliable)?
+1. **Playlist naming on import**: Use the M3U filename (minus extension) as the playlist name — no prompt.
+2. **Duplicate name handling**: Auto-suffix with incrementing number (e.g., "My Playlist (2)", "My Playlist (3)").
+3. **Export path style**: Relative paths (relative to M3U file location) for maximum portability across devices.
+4. **Export encoding**: Always `.m3u8` (UTF-8) to avoid encoding ambiguity between players.
 
 ## Verification
 
