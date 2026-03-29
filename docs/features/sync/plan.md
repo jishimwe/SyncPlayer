@@ -53,13 +53,13 @@ fingerprint = SHA-256(lowercase(title) | lowercase(artist) | lowercase(album) | 
 
 ### Conflict resolution
 
-| Data | Strategy | Rationale |
-|------|----------|-----------|
-| `playCount` | max-wins | You can't un-play a song. The device with the higher count has heard it more. |
-| `rating` | last-write-wins by `lastModified` | Rating is a deliberate user preference. The most recent change is most likely what the user intended. On tie, local wins — avoids an unnecessary write. |
-| `lastPlayed` | max-wins | Most recent play is the ground truth. |
-| Playlist name + song list | last-write-wins per playlist by `lastModified` | Playlist is treated as a unit. Competing edits on two devices resolve to the most recently modified. Song-level merging is too complex for Phase 6. |
-| Listening history | append-only union | History is immutable. Any event on any device is valid. Union merge with local deduplication (same `songId` + `playedAt` timestamp). |
+| Data                      | Strategy                                       | Rationale                                                                                                                                               |
+| ------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `playCount`               | max-wins                                       | You can't un-play a song. The device with the higher count has heard it more.                                                                           |
+| `rating`                  | last-write-wins by `lastModified`              | Rating is a deliberate user preference. The most recent change is most likely what the user intended. On tie, local wins — avoids an unnecessary write. |
+| `lastPlayed`              | max-wins                                       | Most recent play is the ground truth.                                                                                                                   |
+| Playlist name + song list | last-write-wins per playlist by `lastModified` | Playlist is treated as a unit. Competing edits on two devices resolve to the most recently modified. Song-level merging is too complex for Phase 6.     |
+| Listening history         | append-only union                              | History is immutable. Any event on any device is valid. Union merge with local deduplication (same `songId` + `playedAt` timestamp).                    |
 
 ### Room migration 4 → 5
 

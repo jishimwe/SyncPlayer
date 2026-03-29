@@ -125,7 +125,7 @@ app/src/main/java/com/jpishimwe/syncplayer/
 │   ├── ArtistImageRepository.kt    # Deezer artist image fetch + cache
 │   └── ArtistImageRepositoryImpl.kt
 ├── model/                  # Domain models (Song, Album, Artist, Playlist, Rating, PlayerUiState, QueueItem, etc.)
-├── service/                # PlaybackService (Media3 MediaSessionService)
+├── service/                # PlaybackService (Media3 MediaLibraryService), MediaBrowseTree
 ├── di/                     # Hilt modules
 │   ├── AppModule.kt        # Repository bindings
 │   ├── DatabaseModule.kt   # Room + DAOs

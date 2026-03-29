@@ -63,7 +63,7 @@ All dependencies are managed via Gradle version catalog: `gradle/libs.versions.t
 | Library          | Version | Group ID              | Notes                                        |
 |------------------|---------|-----------------------|----------------------------------------------|
 | Media3 ExoPlayer | 1.9.2   | androidx.media3       | Audio playback engine                        |
-| Media3 Session   | 1.9.2   | androidx.media3       | MediaSession for notifications + lock screen |
+| Media3 Session   | 1.9.2   | androidx.media3       | MediaLibrarySession for notifications, lock screen, and Android Auto browse tree |
 | Media3 UI        | 1.9.2   | androidx.media3       | Player UI utilities                          |
 | Coroutines Guava | 1.10.2  | org.jetbrains.kotlinx | ListenableFuture → suspend bridge for Media3 |
 | Reorderable      | 3.0.0   | sh.calvin.reorderable | Drag-and-drop reordering in queue            |
