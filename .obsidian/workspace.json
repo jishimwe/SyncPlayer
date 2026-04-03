@@ -4,7 +4,7 @@
     "type": "split",
     "children": [
       {
-        "id": "47bda84ba096250b",
+        "id": "792b1a218914adb2",
         "type": "tabs",
         "children": [
           {
@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "tag:#feature/bugfixes-phase2",
+                "query": "[\"feature\"]",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -184,19 +184,19 @@
       "bases:Create new base": false
     }
   },
-  "active": "3d7538164ebc1db2",
+  "active": "dc185421d80a428e",
   "lastOpenFiles": [
-    "docs/features/ci-cd/ci-cd-plan.md.tmp.20508.1775243442646",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$WhenMappings.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$lambda$30$lambda$21$lambda$20$$inlined$itemsIndexed$default$3.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$lambda$30$lambda$21$lambda$20$$inlined$itemsIndexed$default$2.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$lambda$30$lambda$21$lambda$20$$inlined$itemsIndexed$default$1.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$4$1$1$2$2$1.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$4$1$1$2$1$1.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$4$2$1$1.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/PlaylistsTabScreenKt.dex",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/PlaylistsTabScreenKt$PlaylistsTabScreenContent$lambda$25$lambda$24$$inlined$items$default$4.dex",
+    "app/build/intermediates/lint_return_value/debug/lintReportDebug/return-value-debug.txt",
+    "app/build/reports/lint-results-debug.xml",
+    "app/build/reports/lint-results-debug.html",
+    "app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt",
+    "app/build/reports/lint-results-debug.txt",
+    "app/build/intermediates/lint-cache/lintReportDebug/lint-cache-version.txt",
+    "app/build/intermediates/lint-cache/lintReportDebug",
+    "app/build/intermediates/lint_return_value/debug/lintReportDebug",
+    "app/build/intermediates/lint_return_value/debug",
+    "app/build/intermediates/lint_return_value",
+    "app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug",
     "docs/features/bugfixes-phase2/bugfixes-phase2-design.md",
     "app/build/intermediates/packaged_res/release/packageReleaseResources/mipmap-xhdpi-v4/launcher_v1.webp",
     "app/build/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxhdpi-v4/launcher_v1.webp",
