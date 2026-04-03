@@ -1,3 +1,9 @@
+---
+type: guide
+tags:
+  - type/guide
+---
+
 # Style Guide
 
 Coding conventions and standards for SyncPlayer.

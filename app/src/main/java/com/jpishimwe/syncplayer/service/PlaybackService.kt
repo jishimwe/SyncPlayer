@@ -1,9 +1,11 @@
 package com.jpishimwe.syncplayer.service
 
 import android.content.Intent
-import android.os.Bundle
+import android.telephony.TelephonyCallback
+import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -13,17 +15,23 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSession.ConnectionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.jpishimwe.syncplayer.data.SongRepository
+import com.jpishimwe.syncplayer.data.local.QueueDao
+import com.jpishimwe.syncplayer.model.toMediaItem
 import com.jpishimwe.syncplayer.ui.widget.NowPlayingWidgetUpdater
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -36,12 +44,17 @@ class PlaybackService : MediaLibraryService() {
     }
 
     @Inject lateinit var browseTree: MediaBrowseTree
+    @Inject lateinit var queueDao: QueueDao
+    @Inject lateinit var songRepository: SongRepository
 
     private lateinit var player: ExoPlayer
     private lateinit var mediaSession: MediaLibrarySession
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var searchResults: List<MediaItem> = emptyList()
+
+    // Call interruption: track whether we paused due to a call so we can resume.
+    private var pausedForCall = false
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
@@ -55,7 +68,7 @@ class PlaybackService : MediaLibraryService() {
                         .setUsage(C.USAGE_MEDIA)
                         .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                         .build(),
-                    true,
+                    true, // ExoPlayer manages audio focus
                 ).build()
 
         player.setHandleAudioBecomingNoisy(true)
@@ -64,9 +77,54 @@ class PlaybackService : MediaLibraryService() {
             .build()
 
         player.addListener(widgetListener)
+        registerCallListener()
     }
 
+    // ─── Issue 1 & 2 fix: onConnect + onPlaybackResumption ───────────────────
+
     private val librarySessionCallback = object : MediaLibrarySession.Callback {
+
+        // Explicitly accept all connections and expose the full command set so
+        // Android Auto's browse UI and hardware buttons both work.
+        @OptIn(UnstableApi::class)
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): ConnectionResult {
+            Log.d("PlaybackService", "onConnect: ${controller.packageName}")
+            return ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(
+                    ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS,
+                )
+                .build()
+        }
+
+        // Called when the car starts up and wants to resume the last session.
+        @OptIn(UnstableApi::class)
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            return serviceScope.future {
+                val queue = queueDao.getQueue()
+                if (queue.isEmpty()) {
+                    // Nothing to resume — return an empty result
+                    return@future MediaSession.MediaItemsWithStartPosition(
+                        emptyList(),
+                        0,
+                        0L,
+                    )
+                }
+                val songIds = queue.map { it.songId }
+                val songs = songRepository.getSongsByIds(songIds).first()
+                val songMap = songs.associateBy { it.id }
+                val orderedMediaItems = queue
+                    .sortedBy { it.position }
+                    .mapNotNull { entity -> songMap[entity.songId]?.toMediaItem() }
+                Log.d("PlaybackService", "onPlaybackResumption: restoring ${orderedMediaItems.size} items")
+                MediaSession.MediaItemsWithStartPosition(orderedMediaItems, 0, 0L)
+            }
+        }
 
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
@@ -96,6 +154,7 @@ class PlaybackService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
             return serviceScope.future {
                 val children = browseTree.getChildren(parentId, player)
+                Log.d("PlaybackService", "onGetChildren($parentId): ${children.size} items")
                 LibraryResult.ofItemList(ImmutableList.copyOf(children), params)
             }
         }
@@ -143,6 +202,60 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    // ─── Issue 3 fix: call interruption ──────────────────────────────────────
+
+    // Car head units may send AUDIOFOCUS_LOSS (not AUDIOFOCUS_LOSS_TRANSIENT)
+    // during phone calls, which means ExoPlayer won't auto-resume after the call.
+    // We listen to phone state directly as a safety net.
+    private var telephonyCallback: TelephonyCallback? = null
+
+    @RequiresApi(31)
+    private inner class CallStateCallback : TelephonyCallback(), TelephonyCallback.CallStateListener {
+        override fun onCallStateChanged(state: Int) {
+            when (state) {
+                TelephonyManager.CALL_STATE_RINGING,
+                TelephonyManager.CALL_STATE_OFFHOOK -> {
+                    if (player.isPlaying) {
+                        pausedForCall = true
+                        player.pause()
+                        Log.d("PlaybackService", "Call started — pausing playback")
+                    }
+                }
+                TelephonyManager.CALL_STATE_IDLE -> {
+                    if (pausedForCall) {
+                        pausedForCall = false
+                        player.play()
+                        Log.d("PlaybackService", "Call ended — resuming playback")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun registerCallListener() {
+        if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE)
+            != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w("PlaybackService", "READ_PHONE_STATE not granted — skipping call listener")
+            return
+        }
+        val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+        val callback = CallStateCallback()
+        telephonyCallback = callback
+        telephonyManager.registerTelephonyCallback(
+            Executors.newSingleThreadExecutor(),
+            callback,
+        )
+    }
+
+    private fun unregisterCallListener() {
+        val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+        telephonyCallback?.let { telephonyManager.unregisterTelephonyCallback(it) }
+        telephonyCallback = null
+    }
+
+    // ─── Widget ───────────────────────────────────────────────────────────────
+
     private val widgetListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             updateWidget()
@@ -174,6 +287,8 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
@@ -193,6 +308,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        unregisterCallListener()
         serviceScope.cancel()
         mediaSession.release()
         player.release()

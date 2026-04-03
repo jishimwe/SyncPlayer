@@ -1,3 +1,14 @@
+---
+type: plan
+feature: playlists
+phase: 4
+status: complete
+tags:
+  - type/plan
+  - status/complete
+  - feature/playlists
+---
+
 # Playlists — Bugfix & Improvement Plan (Complete)
 
 ## Context

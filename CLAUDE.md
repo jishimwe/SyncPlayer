@@ -5,10 +5,10 @@ Local audio player for Android that syncs metadata (play counts, playlists, favo
 ## Quick Reference
 
 **Before starting work, read the relevant docs:**
-- 🏗️ **New feature?** → Read `docs/process.md` first
-- 📦 **Adding dependencies?** → Read `docs/dependencies.md` first
-- 💻 **Writing code?** → Reference `docs/style-guide.md`
-- 🏛️ **Architecture questions?** → Read `docs/architecture.md`
+- 🏗️ **New feature?** → Read [[process]] first
+- 📦 **Adding dependencies?** → Read [[dependencies]] first
+- 💻 **Writing code?** → Reference [[style-guide]]
+- 🏛️ **Architecture questions?** → Read [[architecture]]
 
 ## Project Essentials
 

@@ -1,3 +1,9 @@
+---
+type: reference
+tags:
+  - type/reference
+---
+
 # Dependencies & Tech Stack
 
 Complete reference for SyncPlayer's dependencies, versions, and compatibility requirements.

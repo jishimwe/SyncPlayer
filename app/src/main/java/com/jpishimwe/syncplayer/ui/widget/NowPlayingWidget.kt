@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -54,7 +53,6 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.FixedColorProvider
 import com.jpishimwe.syncplayer.MainActivity
 import com.jpishimwe.syncplayer.R
-import com.jpishimwe.syncplayer.ui.theme.LocalExtendedColorScheme
 import java.io.InputStream
 
 /** Accent color matching the app theme (#FF1D58) */
@@ -151,9 +149,9 @@ private fun CompactContent(
                         color =
                             FixedColorProvider(
                                 if (hasContent) {
-                                    LocalExtendedColorScheme.current.accentColor.color
+                                    Color(AccentColor)
                                 } else {
-                                    MaterialTheme.colorScheme.primary
+                                    Color(TextPrimary)
                                 },
                             ),
                         fontWeight = FontWeight.Bold,
@@ -168,7 +166,7 @@ private fun CompactContent(
                         TextStyle(
                             color =
                                 FixedColorProvider(
-                                    MaterialTheme.colorScheme.primary,
+                                    Color(TextPrimary),
                                 ),
                             fontWeight = FontWeight.Medium,
                             fontSize = 12.sp,
@@ -223,9 +221,9 @@ private fun ExpandedContent(
                             color =
                                 FixedColorProvider(
                                     if (hasContent) {
-                                        LocalExtendedColorScheme.current.accentColor.color
+                                        Color(AccentColor)
                                     } else {
-                                        MaterialTheme.colorScheme.primary
+                                        Color(TextPrimary)
                                     },
                                 ),
                             fontWeight = FontWeight.Bold,
@@ -241,7 +239,7 @@ private fun ExpandedContent(
                             TextStyle(
                                 color =
                                     FixedColorProvider(
-                                        MaterialTheme.colorScheme.primary,
+                                        Color(TextPrimary),
                                     ),
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 13.sp,
@@ -279,7 +277,7 @@ private fun MediaControls(isPlaying: Boolean) {
             iconSize = 22.dp,
             action = actionRunCallback<SkipPreviousCallback>(),
             backgroundRes = R.drawable.widget_control_bg,
-            tintColor = MaterialTheme.colorScheme.primary,
+            tintColor = Color(TextPrimary),
         )
 
         Spacer(modifier = GlanceModifier.width(6.dp))
@@ -292,7 +290,7 @@ private fun MediaControls(isPlaying: Boolean) {
             iconSize = 28.dp,
             action = actionRunCallback<PlayPauseCallback>(),
             backgroundRes = R.drawable.widget_play_btn_bg,
-            tintColor = LocalExtendedColorScheme.current.accentColor.color,
+            tintColor = Color(AccentColor),
         )
 
         Spacer(modifier = GlanceModifier.width(6.dp))
@@ -305,7 +303,7 @@ private fun MediaControls(isPlaying: Boolean) {
             iconSize = 22.dp,
             action = actionRunCallback<SkipNextCallback>(),
             backgroundRes = R.drawable.widget_control_bg,
-            tintColor = MaterialTheme.colorScheme.primary,
+            tintColor = Color(TextPrimary),
         )
     }
 }
@@ -375,7 +373,7 @@ private fun AlbumArt(
                 colorFilter =
                     ColorFilter.tint(
                         FixedColorProvider(
-                            MaterialTheme.colorScheme.secondary,
+                            Color(TextSecondary),
                         ),
                     ),
             )

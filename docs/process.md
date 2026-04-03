@@ -1,3 +1,9 @@
+---
+type: guide
+tags:
+  - type/guide
+---
+
 # Implementation Process
 
 This document outlines the step-by-step workflow for implementing features in SyncPlayer.

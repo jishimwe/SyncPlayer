@@ -1,32 +1,25 @@
+---
+type: guide
+tags:
+  - type/guide
+---
+
 # Architecture
 
 SyncPlayer follows the MVVM (Model-View-ViewModel) architecture pattern with a single Activity and Jetpack Compose for UI.
 
 ## High-Level Overview
 
-```
-┌─────────────────────────────────────────┐
-│           UI Layer (Compose)            │
-│  Screens, Composables, ViewModels       │
-└────────────┬────────────────────────────┘
-             │ StateFlow / Events
-             ▼
-┌─────────────────────────────────────────┐
-│         Domain Layer (optional)         │
-│         Use Cases, Entities             │
-└────────────┬────────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────────┐
-│          Data Layer                     │
-│    Repositories, Data Sources           │
-└────────────┬────────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────────┐
-│    Local Database (Room)                │
-│    MediaStore Scanner                   │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    UI["**UI Layer** (Compose)\nScreens · Composables · ViewModels"]
+    Domain["**Domain Layer** (optional)\nUse Cases · Entities"]
+    Data["**Data Layer**\nRepositories · Data Sources"]
+    DB["**Local Database**\nRoom · MediaStore Scanner"]
+
+    UI -->|"StateFlow / Events"| Domain
+    Domain --> Data
+    Data --> DB
 ```
 
 ## Package Structure
@@ -616,18 +609,18 @@ class GetFilteredSongsUseCase @Inject constructor(
 
 Implemented in Phase 6. Room is always the source of truth for reads. The `SyncOrchestrator` pushes local changes to Firestore and pulls remote changes on every app foreground.
 
-```
-┌──────────────────┐
-│    Repository    │
-└────────┬─────────┘
-         │
-         ├──────────► Local DB (Room) ──────► UI (StateFlow)
-         │                  ▲
-         │                  │ applySyncDelta
-         │           SyncOrchestrator
-         │            push ↕ pull
-         └──────────► Cloud Firestore
-                       (offline persistence)
+```mermaid
+flowchart LR
+    Repo["Repository"]
+    DB["Local DB\n(Room)"]
+    UI["UI\n(StateFlow)"]
+    Orch["SyncOrchestrator"]
+    Cloud["Cloud Firestore\n(offline persistence)"]
+
+    Repo --> DB
+    DB --> UI
+    DB <-->|"applySyncDelta"| Orch
+    Orch <-->|"push / pull"| Cloud
 ```
 
 **Conflict resolution per data type:**

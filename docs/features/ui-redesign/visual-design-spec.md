@@ -1,3 +1,14 @@
+---
+type: reference
+feature: ui-redesign
+phase: 7
+status: complete
+tags:
+  - type/reference
+  - status/complete
+  - feature/ui-redesign
+---
+
 # SyncPlayer Visual Design Spec
 
 ## Design Philosophy
@@ -316,3 +327,7 @@ Standard `LazyColumn` with a custom overlay composable on the right. Not a separ
 - Repository layer — untouched
 
 The redesign is **purely UI layer** — composables and theme only.
+
+---
+
+**Plan doc**: [[ui-redesign-plan]]

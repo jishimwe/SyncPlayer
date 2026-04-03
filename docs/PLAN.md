@@ -1,3 +1,9 @@
+---
+type: overview
+tags:
+  - type/overview
+---
+
 # SyncPlayer — Project Plan
 
 A polished local music player for Android that syncs metadata (play counts, playlists, favorites) across devices.
@@ -88,8 +94,8 @@ Scan the device for audio files and display them in a browsable list.
 - ✅ Automatic rescan on app resume (24-hour threshold)
 - ✅ Stale data over error screen when DB has cached songs
 
-**Plan doc**: [`docs/features/library-browsing/plan.md`](features/library-browsing/plan.md)
-**Design doc**: [`docs/features/library-browsing/design.md`](features/library-browsing/design.md)
+**Plan doc**: [[library-browsing-plan]]
+**Design doc**: [[library-browsing-design]]
 
 ---
 
@@ -111,8 +117,8 @@ Play audio using Media3 with full media session support.
 - ✅ Queue persistence via Room (restore on app restart)
 - ✅ Navigation: Library ↔ NowPlaying
 
-**Plan doc**: [`docs/features/playback/plan.md`](features/playback/plan.md)
-**Design doc**: [`docs/features/playback/design.md`](features/playback/design.md)
+**Plan doc**: [[playback-plan]]
+**Design doc**: [[playback-design]]
 
 ---
 
@@ -126,8 +132,8 @@ Connect the library browsing UI to the playback system.
 - ✅ Fix `PlayerEvent.PlaySongs` to include `startIndex`
 - ✅ Add `AlbumDetail` and `ArtistDetail` navigation routes
 
-**Plan doc**: [`docs/features/library-playback-nav/plan.md`](features/library-playback-nav/plan.md)
-**Design doc**: [`docs/features/library-playback-nav/design.md`](features/library-playback-nav/design.md)
+**Plan doc**: [[library-playback-nav-plan]]
+**Design doc**: [[library-playback-nav-design]]
 
 ---
 
@@ -145,8 +151,8 @@ Fixed bugs discovered during manual testing after Phases 2 and 3.
 - ✅ Dead `positionUpdateFlow` removed from PlayerViewModel
 - ✅ Tests updated: `startIndex` passthrough, `SeekToQueueItem` routing, shuffle/repeat/skip button events
 
-**Plan doc**: [`docs/features/bugfixes-phase2/plan.md`](features/bugfixes-phase2/plan.md)
-**Design doc**: [`docs/features/bugfixes-phase2/design.md`](features/bugfixes-phase2/design.md)
+**Plan doc**: [[bugfixes-phase2-plan]]
+**Design doc**: [[bugfixes-phase2-design]]
 
 ---
 
@@ -161,8 +167,8 @@ Create, edit, and manage playlists stored locally.
 - ✅ Bottom navigation bar (Library | Playlists) with state preservation
 - ✅ MiniPlayer stacked below bottom nav on top-level screens
 
-**Plan doc**: [`docs/features/playlists/plan.md`](features/playlists/plan.md)
-**Design doc**: [`docs/features/playlists/design.md`](features/playlists/design.md)
+**Plan doc**: [[playlists-plan]]
+**Design doc**: [[playlists-design]]
 
 ---
 
@@ -179,8 +185,8 @@ Track listening data locally in Room.
 - ✅ Three new Library tabs: Faves (4+ stars), Top Plays, Recent (deduplicated by `GROUP BY songs.id`)
 - ✅ `currentSongRating` StateFlow on `PlayerViewModel` — reacts to song changes via `flatMapLatest`
 
-**Plan doc**: [`docs/features/metadata-tracking/plan.md`](features/metadata-tracking/plan.md)
-**Design doc**: [`docs/features/metadata-tracking/design.md`](features/metadata-tracking/design.md)
+**Plan doc**: [[metadata-tracking-plan]]
+**Design doc**: [[metadata-tracking-design]]
 
 ---
 
@@ -199,17 +205,17 @@ Sync metadata across devices using Firebase.
 - ✅ Settings tab added to bottom navigation (Library | Playlists | Settings)
 - ✅ Sync triggered on every app foreground (`MainActivity.onResume`)
 
-**Plan doc**: [`docs/features/sync/plan.md`](features/sync/plan.md)
-**Design doc**: [`docs/features/sync/design.md`](features/sync/design.md)
+**Plan doc**: [[sync-plan]]
+**Design doc**: [[sync-design]]
 
 ---
 
 ### Phase 7: Polish ✅
 
-Four sub-goals, each shipped independently. See [`docs/features/phase7/design.md`](features/phase7/design.md) for full design notes.
+Four sub-goals, each shipped independently. See [[phase7-design]] for full design notes.
 
-**Plan doc**: [`docs/features/phase7/plan.md`](features/phase7/plan.md)
-**Design doc**: [`docs/features/phase7/design.md`](features/phase7/design.md)
+**Plan doc**: [[phase7-plan]]
+**Design doc**: [[phase7-design]]
 
 #### 7.1 — Sync gap closure ✅
 
@@ -250,7 +256,7 @@ Explicitly out of scope for Phase 7. Carries to Phase 8 backlog:
 #### Known gaps from Phase 7
 
 - ~~**Dead code**: `songsFlowOld` and `albumsFlowOld` in `LibraryViewModel`~~ — cleaned up (no longer in codebase)
-- **Sort broken end-to-end**: three independent sort states (`SortFilterBar` internal state, `SongsTabScreen` local `remember`, `LibraryViewModel._sortOrder`) are never connected — user changes sort in UI but the list doesn't re-sort. Tracked in [`songs-tab-refactor/plan.md`](features/songs-tab-refactor/plan.md)
+- **Sort broken end-to-end**: three independent sort states (`SortFilterBar` internal state, `SongsTabScreen` local `remember`, `LibraryViewModel._sortOrder`) are never connected — user changes sort in UI but the list doesn't re-sort. Tracked in [[songs-tab-refactor-plan]]
 - **Sort for Artists tab**: not implemented — sort dropdown shown only on Songs and Albums tabs
 - **Search test fidelity**: `FakeSongRepository.searchSongs` returns `songsFlow` unfiltered; search filtering is a DAO concern and requires an in-memory Room database to test at that level
 - **`SortFilterBar` ignores `sortLabel` param**: internal `selectedSortOrder` state on line 88 overrides the caller-provided label; the component is uncontrollable
@@ -263,7 +269,7 @@ Explicitly out of scope for Phase 7. Carries to Phase 8 backlog:
 
 Comprehensive visual overhaul to a Zune-inspired, content-forward aesthetic. Replaced bottom navigation with horizontal scrollable top tab row, frosted glass overlays, bold typography, and strict accent color system.
 
-**Source of truth**: `docs/features/ui-redesign/visual-design-spec.md`
+**Source of truth**: `[[visual-design-spec]]`
 
 - ✅ Phase 0 — Theme & design tokens: accent color (`#FF1D58`), near-black background (`#111113`), frosted glass modifier, typography weight variants
 - ✅ Phase 1 — Navigation restructure: bottom nav → horizontal scrollable top tab row with `HorizontalPager`
@@ -282,7 +288,7 @@ Comprehensive visual overhaul to a Zune-inspired, content-forward aesthetic. Rep
 - ✅ QueueSheet refactor: replaced `QueueItemRow` with shared `SongItem(variant = Reorderable)`, removed `formatTime` parameter from QueueSheet API, added `isDragging` param to `SongItem`, changed `reorderableScope` type to `ReorderableCollectionItemScope`
 - ⚠️ NowPlaying swipe gestures: 4-directional swipe on album art via `pointerInput` + `detectDragGestures` — left/right for skip next/prev, up for queue, down for dismiss. Gestures functional, but animation feedback (3D tilt approach) needs a full rethink — see `improvements/plan.md` #3.5.
 
-**Plan doc**: [`docs/features/ui-redesign/plan.md`](features/ui-redesign/plan.md)
+**Plan doc**: [[ui-redesign-plan]]
 
 ---
 
@@ -302,8 +308,8 @@ Full audit and cleanup of the `ui/library` package. Resolved 9 bugs, 7 feature g
 - ✅ Structured concurrency for artist image fetch (stored `Job` for cancellation)
 - ✅ Theme-aware gradient in `DetailHeroImage` (`MaterialTheme.colorScheme.surface` instead of hardcoded `Color.Black`)
 
-**Analysis**: [`docs/features/open-bugs/ui-library-analysis.md`](features/open-bugs/ui-library-analysis.md)
-**Design doc**: [`docs/features/open-bugs/design.md`](features/open-bugs/design.md)
+**Analysis**: [[ui-library-analysis]]
+**Design doc**: [[open-bugs-design]]
 
 ---
 
@@ -330,7 +336,7 @@ Before implementing integrations, the following Phase 7 deferred items and backl
 
 | Item                                        | Priority | Effort  | Source                                                         |
 |---------------------------------------------|----------|---------|----------------------------------------------------------------|
-| **Songs tab sort refactor (broken)**        | **High** | Medium  | [`songs-tab-refactor/plan.md`](features/songs-tab-refactor/plan.md) |
+| **Songs tab sort refactor (broken)**        | **High** | Medium  | [[songs-tab-refactor-plan]] |
 | Audio focus edge case testing (manual)      | Medium   | Medium  | `improvements/plan.md` #7                                      |
 | Listening history detail screen             | Low      | Medium  | `improvements/plan.md` #2                                      |
 | Slide/drag gesture for star rating          | Low      | Medium  | `improvements/plan.md` #3                                      |
@@ -453,7 +459,7 @@ Testing is not a phase — it ships with every phase. Code should be structured 
 - Unit: `LibraryViewModelTest` — 4 new tests: search-active state, search-cleared state, sort by play count descending, sort by date added descending
 - Unit: `MetadataViewModelTest` (new, replaces `LibraryViewModelMetadataTest`) — 3 tests covering favorites, mostPlayed, recentlyPlayed flows in `MetadataViewModel`
 
-**Testing pass — Post-Phase 7** ✅ (see [`docs/features/testing/design.md`](features/testing/design.md))
+**Testing pass — Post-Phase 7** ✅ (see [[testing-design]])
 
 A dedicated audit and implementation pass closed all coverage gaps identified after Phase 7. Work was delivered in five tiers:
 

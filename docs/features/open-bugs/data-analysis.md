@@ -1,3 +1,14 @@
+---
+type: analysis
+feature: open-bugs
+phase: 7
+status: complete
+tags:
+  - type/analysis
+  - status/complete
+  - feature/open-bugs
+---
+
 # `data` Package Analysis
 
 **Date**: 2026-03-22

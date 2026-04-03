@@ -1,3 +1,14 @@
+---
+type: plan
+feature: sync
+phase: 6
+status: complete
+tags:
+  - type/plan
+  - status/complete
+  - feature/sync
+---
+
 # Fix Firestore Sync Not Writing Data — Plan
 
 ## Context

@@ -19,3 +19,13 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# WorkManager: keep InputMerger subclasses and their no-arg constructors
+# R8 strips constructors used only via reflection; this prevents that
+-keep class * extends androidx.work.InputMerger { *; }
+-keepclassmembers class * extends androidx.work.InputMerger {
+    <init>();
+}
+
+# Glance AppWidget: keep ActionCallback subclasses used for widget buttons
+-keep class * extends androidx.glance.appwidget.action.ActionCallback

@@ -1,3 +1,9 @@
+---
+type: guide
+tags:
+  - type/guide
+---
+
 # Token Optimization Guide
 
 How to work efficiently with Claude Code and avoid running out of tokens.
