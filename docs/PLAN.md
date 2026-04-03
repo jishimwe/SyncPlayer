@@ -487,33 +487,33 @@ A dedicated audit and implementation pass closed all coverage gaps identified af
 
 ## CI/CD
 
-GitHub Actions pipeline for automated builds, tests, and releases. **Not yet implemented** — all verification is manual with local Gradle commands.
+GitHub Actions pipeline for automated builds, tests, and releases. **Implemented** — see `.github/workflows/` and `docs/features/ci-cd/ci-cd-plan.md`.
 
-### On every push / PR
+### Workflows
 
-- Build debug APK (`gradlew assembleDebug`)
-- Run unit tests (`gradlew test`)
-- Lint checks (`gradlew lint`)
-- Cache Gradle dependencies and build outputs to speed up runs
+| Workflow | File | Trigger | What it does |
+|----------|------|---------|--------------|
+| CI Shared | `ci-shared.yml` | `workflow_call` | Build, unit tests, lint, artifact uploads |
+| CI | `ci.yml` | Push / PR (all branches) | Calls CI Shared |
+| CI Main | `ci-main.yml` | Push to `master` | CI Shared + instrumented tests + release APK artifact |
+| Release | `release.yml` | `v*` tag push | Signed APK/AAB + GitHub Release |
 
-### On merge to main
+### Getting APK to device
 
-- Everything above, plus:
-- Run instrumented tests on an Android emulator (`gradlew connectedAndroidTest`)
-- Build release AAB/APK (signed with release keystore from GitHub Secrets)
-- Upload APK as build artifact for manual testing
+1. **Per-commit**: Download `release-apk` artifact from Actions tab via GitHub mobile app
+2. **Tagged release**: `git tag v0.1.0 && git push origin v0.1.0` → download APK from GitHub Release page
 
-### Release (tag-triggered)
+### Required GitHub Secrets
 
-- Build signed release AAB
-- Publish to Google Play internal track via Fastlane or Google Play Developer API
-- Optionally distribute via Firebase App Distribution for beta testers
+| Secret | Description |
+|--------|-------------|
+| `GOOGLE_SERVICES_JSON` | Base64-encoded `app/google-services.json` |
+| `RELEASE_KEYSTORE` | Base64-encoded release `.jks` file |
+| `RELEASE_KEYSTORE_PASSWORD` | Keystore password |
+| `RELEASE_KEY_ALIAS` | Key alias |
+| `RELEASE_KEY_PASSWORD` | Key password |
 
-### Secrets management
-
-- Keystore file and passwords stored in GitHub Actions encrypted secrets
-- Firebase config (`google-services.json`) stored as a secret, written at build time
-- Never commit signing keys or service account credentials to the repo
+Encode a file: `base64 -w 0 < file > file.b64` (Linux) or `certutil -encode file file.b64` (Windows).
 
 ---
 

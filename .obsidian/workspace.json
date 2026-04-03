@@ -11,10 +11,14 @@
             "id": "3d7538164ebc1db2",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "docs/features/ci-cd/ci-cd-plan.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "ci-cd-plan"
             }
           }
         ]
@@ -182,17 +186,17 @@
   },
   "active": "3d7538164ebc1db2",
   "lastOpenFiles": [
-    "app/build/intermediates/apk/debug/output-metadata.json",
-    "app/build/intermediates/apk/debug/app-debug.apk",
-    "app/build/intermediates/apk/debug",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/5499f0be5645ba50eb6ef903782d5846c29a0166418286d602b5c8ec5c89bed5_0.jar",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/5499f0be5645ba50eb6ef903782d5846c29a0166418286d602b5c8ec5c89bed5_6.jar",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/5499f0be5645ba50eb6ef903782d5846c29a0166418286d602b5c8ec5c89bed5_5.jar",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/5499f0be5645ba50eb6ef903782d5846c29a0166418286d602b5c8ec5c89bed5_2.jar",
-    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/5499f0be5645ba50eb6ef903782d5846c29a0166418286d602b5c8ec5c89bed5_4.jar",
-    "app/build/tmp/hiltJavaCompileDebug/previous-compilation-data.bin",
-    "app/build/intermediates/classes/debug/hiltJavaCompileDebug/com/jpishimwe/syncplayer/DaggerSyncPlayerApplication_HiltComponents_SingletonC.class",
-    "app/build/intermediates/classes/debug/hiltJavaCompileDebug/com/jpishimwe/syncplayer/DaggerSyncPlayerApplication_HiltComponents_SingletonC$SingletonCImpl.class",
+    "docs/features/ci-cd/ci-cd-plan.md.tmp.20508.1775243442646",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$WhenMappings.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$lambda$30$lambda$21$lambda$20$$inlined$itemsIndexed$default$3.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$lambda$30$lambda$21$lambda$20$$inlined$itemsIndexed$default$2.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$lambda$30$lambda$21$lambda$20$$inlined$itemsIndexed$default$1.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$4$1$1$2$2$1.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$4$1$1$2$1$1.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/SongsTabScreenKt$SongsTabScreenContent$4$2$1$1.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/PlaylistsTabScreenKt.dex",
+    "app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/jpishimwe/syncplayer/ui/home/tabs/PlaylistsTabScreenKt$PlaylistsTabScreenContent$lambda$25$lambda$24$$inlined$items$default$4.dex",
     "docs/features/bugfixes-phase2/bugfixes-phase2-design.md",
     "app/build/intermediates/packaged_res/release/packageReleaseResources/mipmap-xhdpi-v4/launcher_v1.webp",
     "app/build/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxhdpi-v4/launcher_v1.webp",

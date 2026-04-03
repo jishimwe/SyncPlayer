@@ -22,9 +22,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val ks = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (ks != null) {
+                storeFile = file(ks)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug") // use debug key for testing
+            val hasReleaseKey = System.getenv("RELEASE_KEYSTORE_PATH") != null
+            signingConfig = signingConfigs.getByName(if (hasReleaseKey) "release" else "debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
