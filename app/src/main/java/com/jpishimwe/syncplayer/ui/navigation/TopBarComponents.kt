@@ -1,9 +1,9 @@
 package com.jpishimwe.syncplayer.ui.navigation
 
 import android.util.Log
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import com.jpishimwe.syncplayer.ui.theme.MotionTokens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -168,8 +168,17 @@ fun CustomTabRow(
         LibraryTab.entries.forEach { tab ->
             val fontSize by animateFloatAsState(
                 targetValue = if (selectedTab == tab) activeFontSize.value else inactiveFontSize.value,
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                animationSpec = MotionTokens.TabSizeTransition,
                 label = "tabFontSize",
+            )
+            val labelColor by animateColorAsState(
+                targetValue = if (selectedTab == tab) {
+                    LocalExtendedColorScheme.current.accentColor.color
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                animationSpec = MotionTokens.TabColorTransition,
+                label = "tabColor",
             )
             Text(
                 text = tab.label,
@@ -199,12 +208,7 @@ fun CustomTabRow(
                             fontSize = fontSize.sp,
                         )
                     },
-                color =
-                    if (selectedTab == tab) {
-                        LocalExtendedColorScheme.current.accentColor.color
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
+                color = labelColor,
             )
         }
         // ── Trailing spacer: allows the LAST tab to scroll to center ──

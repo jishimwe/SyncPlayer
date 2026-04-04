@@ -10,6 +10,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun NowPlayingScreen(
     viewModel: PlayerViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
     onNavigateBack: () -> Unit,
+    onSheetDrag: (deltaY: Float) -> Unit = {},
+    onSheetDragEnd: (velocityY: Float) -> Unit = {},
+    isFullyExpanded: Boolean = false,
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val rating = viewModel.currentSongRating.collectAsStateWithLifecycle()
@@ -20,5 +23,8 @@ fun NowPlayingScreen(
         onNavigateBack = onNavigateBack,
         formatTime = viewModel::formatTime,
         rating = rating.value,
+        onSheetDrag = onSheetDrag,
+        onSheetDragEnd = onSheetDragEnd,
+        isFullyExpanded = isFullyExpanded,
     )
 }

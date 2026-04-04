@@ -209,6 +209,16 @@ Before considering a feature complete, verify:
 ### Plan Doc Template
 
 ```markdown
+---
+type: plan
+feature: <feature-name>
+status: planned
+tags:
+  - type/plan
+  - status/planned
+  - feature/<feature-name>
+---
+
 # <Feature Name> - Plan
 
 ## Context
@@ -243,6 +253,16 @@ Before considering a feature complete, verify:
 ### Design Doc Template
 
 ```markdown
+---
+type: design
+feature: <feature-name>
+status: complete
+tags:
+  - type/design
+  - status/complete
+  - feature/<feature-name>
+---
+
 # <Feature Name> - Design
 
 ## Overview

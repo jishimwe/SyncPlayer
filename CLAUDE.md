@@ -116,6 +116,36 @@ docs/
         └── design.md  # After implementation
 ```
 
+### Obsidian Doc Format
+
+All docs (except `CLAUDE.md`) must start with YAML frontmatter. Use the correct `type` for each file:
+
+**Guide / reference docs** (`docs/*.md`):
+```yaml
+---
+type: guide          # or: reference, overview, home
+tags:
+  - type/guide
+---
+```
+
+**Feature plan / design docs** (`docs/features/<name>/*.md`):
+```yaml
+---
+type: plan           # or: design
+feature: <feature-name>
+status: planned      # planned | in-progress | complete | implemented
+tags:
+  - type/plan
+  - status/planned
+  - feature/<feature-name>
+---
+```
+
+Cross-references inside docs:
+- **`.md` files** → use `[[wikilinks]]` (filename without extension). Obsidian resolves these; Claude reads by real path.
+- **Non-`.md` files** (`.kt`, `.toml`, `.kts`, etc.) → use backtick inline code (e.g., `` `app/build.gradle.kts` ``). Obsidian cannot open non-markdown files via wikilinks.
+
 ## AI Instructions
 
 ### Start Here

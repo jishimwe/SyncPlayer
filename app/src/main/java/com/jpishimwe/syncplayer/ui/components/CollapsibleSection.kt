@@ -45,6 +45,7 @@ fun CollapsibleSectionHeader(
     onShuffle: () -> Unit,
     onPlayAll: () -> Unit,
     onToggle: () -> Unit,
+    count: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     val chevronRotation by animateFloatAsState(
@@ -68,7 +69,7 @@ fun CollapsibleSectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = title,
+            text = if (count != null) "$title ($count)" else title,
             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),

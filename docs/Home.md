@@ -77,4 +77,4 @@ Local Android music player that syncs metadata (play counts, playlists, favorite
 
 ## Project Plan
 
-See [[PLAN]] for the full phase-by-phase project overview with completion checklists.
+See [[docs/PLAN]] for the full phase-by-phase project overview with completion checklists.

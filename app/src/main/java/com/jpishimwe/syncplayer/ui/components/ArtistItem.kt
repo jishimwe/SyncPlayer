@@ -3,8 +3,7 @@ package com.jpishimwe.syncplayer.ui.components
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
+import com.jpishimwe.syncplayer.ui.theme.MotionTokens
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -98,7 +97,7 @@ fun ArtistItem(
                                 mod.sharedElement(
                                     rememberSharedContentState(key = "artist_art_$artistName"),
                                     animatedVisibilityScope = animatedVisibilityScope,
-                                    boundsTransform = { _, _ -> tween(300, easing = FastOutSlowInEasing) },
+                                    boundsTransform = { _, _ -> MotionTokens.SharedElementBoundsSpec },
                                 )
                             }
                         } else {

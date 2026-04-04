@@ -4,9 +4,8 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
+import com.jpishimwe.syncplayer.ui.effect.rememberContentFadeIn
+import com.jpishimwe.syncplayer.ui.theme.MotionTokens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +20,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -134,10 +132,7 @@ fun AlbumDetailScreenContent(
     }
 
     // Content fade: layers 0/2/3 fade in independently, hero (layer 1) handled by shared element
-    val contentAlpha = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        contentAlpha.animateTo(1f, tween(350, delayMillis = 150, easing = FastOutSlowInEasing))
-    }
+    val contentAlpha = rememberContentFadeIn()
 
     val accentBorderBrush =
         Brush.linearGradient(
@@ -168,7 +163,7 @@ fun AlbumDetailScreenContent(
                                 rememberSharedContentState(key = "album_art_$albumId"),
                                 clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(8.dp)),
                                 animatedVisibilityScope = animatedVisibilityScope,
-                                boundsTransform = { _, _ -> tween(300, easing = FastOutSlowInEasing) },
+                                boundsTransform = { _, _ -> MotionTokens.SharedElementBoundsSpec },
                             )
                         }
                     }

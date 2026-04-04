@@ -13,6 +13,7 @@
     <string name="history_recently_played">Recently played</string>
     <string name="history_recently_played_albums">Recently played albums</string>
     <string name="history_recently_played_artists">Recently Played Artists</string>
+    <string name="history_show_more">Show %1$d more</string>
 
     <!-- Playlist picker -->
     <string name="playlist_picker_title">Add to playlist</string>

@@ -5,17 +5,20 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import com.jpishimwe.syncplayer.ui.theme.MotionTokens
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,11 +26,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -41,20 +49,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import com.jpishimwe.syncplayer.ui.components.MiniPlayer
-import com.jpishimwe.syncplayer.ui.components.PlaylistPickerSheet
-import com.jpishimwe.syncplayer.ui.home.HomeScreen
 import com.jpishimwe.syncplayer.ui.albumdetail.AlbumDetailScreen
 import com.jpishimwe.syncplayer.ui.artistdetail.ArtistDetailScreen
-import com.jpishimwe.syncplayer.ui.shared.LibraryViewModel
+import com.jpishimwe.syncplayer.ui.components.MiniPlayer
+import com.jpishimwe.syncplayer.ui.components.MiniPlayerPeek
+import com.jpishimwe.syncplayer.ui.components.PlaylistPickerSheet
+import com.jpishimwe.syncplayer.ui.effect.ScreenshotHolder
+import com.jpishimwe.syncplayer.ui.home.HomeScreen
 import com.jpishimwe.syncplayer.ui.player.NowPlayingScreen
 import com.jpishimwe.syncplayer.ui.player.PlayerViewModel
+import com.jpishimwe.syncplayer.ui.player.rememberPlayerSheetState
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistDetailScreen
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistEvent
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistUiState
 import com.jpishimwe.syncplayer.ui.playlists.PlaylistViewModel
 import com.jpishimwe.syncplayer.ui.settings.SettingsScreen
-import com.jpishimwe.syncplayer.ui.effect.ScreenshotHolder
+import com.jpishimwe.syncplayer.ui.shared.LibraryViewModel
+import androidx.core.view.WindowInsetsControllerCompat
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -75,14 +87,6 @@ fun NavGraph(
 
     val view = LocalView.current
 
-    // --- Now Playing expansion state (replaces navigation) ---
-    var isNowPlayingExpanded by rememberSaveable { mutableStateOf(false) }
-    val expandNowPlaying: () -> Unit = {
-        ScreenshotHolder.capture(view)
-        isNowPlayingExpanded = true
-    }
-    val collapseNowPlaying = { isNowPlayingExpanded = false }
-
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.SONGS) }
     var searchActive by rememberSaveable { mutableStateOf(false) }
 
@@ -95,13 +99,43 @@ fun NavGraph(
     var overlayHeightPx by remember { mutableIntStateOf(0) }
     val overlayHeightDp = with(LocalDensity.current) { overlayHeightPx.toDp() }
 
-    Box(modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.surface)) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.surface)) {
+        val density = LocalDensity.current
+        val screenHeightPx = with(density) { maxHeight.toPx() }
+        val miniPeekPx = with(density) { MiniPlayerPeek.toPx() }
+        val sheetState = rememberPlayerSheetState(screenHeightPx, miniPeekPx)
+        val scope = rememberCoroutineScope()
+
+        // Flip status bar icon color at the 50% progress crossover.
+        // Now Playing has a dark blurred background regardless of theme, so icons must be light.
+        // On collapse, restore to the theme default.
+        val activity = LocalActivity.current
+        val darkTheme = isSystemInDarkTheme()
+        LaunchedEffect(sheetState.isExpanded) {
+            val window = activity?.window ?: return@LaunchedEffect
+            WindowInsetsControllerCompat(window, view).isAppearanceLightStatusBars =
+                if (sheetState.isExpanded) false else !darkTheme
+        }
+
+        // Expand helper used by all screens that have a "go to now playing" action.
+        // Tap path: capture screenshot synchronously before animating.
+        val expandNowPlaying: () -> Unit = {
+            ScreenshotHolder.capture(view)
+            scope.launch { sheetState.expand() }
+        }
+
         SharedTransitionLayout {
-            // Content sits below the overlay, padded by its actual measured height
             NavHost(
                 navController = navController,
                 startDestination = Screen.Home.route,
-                modifier = modifier.padding(top = if (isOnTopLevelScreen) overlayHeightDp else 0.dp),
+                enterTransition = { fadeIn(tween(MotionTokens.DurationMedium2)) },
+                exitTransition = { fadeOut(tween(MotionTokens.DurationShort4)) },
+                popEnterTransition = { fadeIn(tween(MotionTokens.DurationMedium2)) },
+                popExitTransition = { fadeOut(tween(MotionTokens.DurationShort4)) },
+                modifier = modifier
+                    .padding(top = if (isOnTopLevelScreen) overlayHeightDp else 0.dp)
+                    // Always reserve space for mini peek when a song is loaded
+                    .padding(bottom = if (playerState.currentSong != null) MiniPlayerPeek else 0.dp),
             ) {
                 composable(Screen.Home.route) {
                     HomeScreen(
@@ -184,16 +218,15 @@ fun NavGraph(
                     )
                 }
 
-                // NowPlaying route removed — handled by AnimatedContent overlay below
-
                 composable(Screen.Settings.route) {
                     SettingsScreen()
                 }
             }
         }
 
-        // Overlay: title bar + tab row, measures itself and reports height
-        if (isOnTopLevelScreen && !isNowPlayingExpanded) {
+        // Overlay: title bar + tab row, measures itself and reports height.
+        // Hidden while the sheet is expanded.
+        if (isOnTopLevelScreen && !sheetState.isExpanded) {
             Column(
                 modifier =
                     Modifier
@@ -222,48 +255,88 @@ fun NavGraph(
             }
         }
 
-        // System back while Now Playing is expanded → collapse instead of nav pop
-        BackHandler(enabled = isNowPlayingExpanded) {
-            collapseNowPlaying()
+        // System back while sheet is expanded → collapse instead of nav pop
+        BackHandler(enabled = sheetState.isExpanded) {
+            scope.launch { sheetState.collapse() }
         }
 
-        // --- MiniPlayer: visible when song loaded and NOT expanded ---
-        AnimatedVisibility(
-            visible = playerState.currentSong != null && !isNowPlayingExpanded,
-            enter = fadeIn(animationSpec = tween(300)),
-            exit = fadeOut(animationSpec = tween(200)),
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(8.dp),
-        ) {
-            MiniPlayer(
-                uiState = playerState,
-                onEvent = playerViewModel::onEvent,
-                onClick = {
-                    expandNowPlaying()
-                },
-            )
-        }
+        // --- Player sheet panel ---
+        // Always composed when a song is loaded. Translates between mini (progress=0)
+        // and full-screen (progress=1). Contains both MiniPlayer and NowPlayingScreen
+        // as siblings, crossfading via their respective alphas.
+        if (playerState.currentSong != null) {
+            val velocityTracker = remember { VelocityTracker() }
 
-        // --- Now Playing: full-screen overlay when expanded ---
-        AnimatedVisibility(
-            visible = isNowPlayingExpanded,
-            enter =
-                slideInVertically(
-                    animationSpec = tween(400, easing = FastOutSlowInEasing),
-                    initialOffsetY = { fullHeight -> fullHeight },
-                ) + fadeIn(animationSpec = tween(300)),
-            exit =
-                slideOutVertically(
-                    animationSpec = tween(400, easing = FastOutSlowInEasing),
-                    targetOffsetY = { fullHeight -> fullHeight },
-                ) + fadeOut(animationSpec = tween(200)),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            NowPlayingScreen(
-                onNavigateBack = collapseNowPlaying,
-            )
+            // Read derived values in composition scope so recomposition tracks progress changes
+            val sheetTranslateY = sheetState.translateY
+            val sheetCornerRadius = sheetState.cornerRadius
+            val sheetPlayerAlpha = sheetState.playerAlpha
+            val sheetMiniAlpha = sheetState.miniAlpha
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationY = sheetTranslateY
+                        shape = RoundedCornerShape(sheetCornerRadius)
+                        clip = true
+                    }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { _ ->
+                                velocityTracker.resetTracking()
+                                // Drag-path screenshot: only on first expand (progress == 0)
+                                if (sheetState.progress.value == 0f) {
+                                    ScreenshotHolder.capture(view)
+                                }
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                velocityTracker.addPosition(change.uptimeMillis, change.position)
+                                sheetState.onDragDelta(dragAmount.y)
+                            },
+                            onDragEnd = {
+                                val velocity = velocityTracker.calculateVelocity()
+                                sheetState.onDragEnd(velocity.y)
+                            },
+                            onDragCancel = {
+                                sheetState.onDragEnd(0f)
+                            },
+                        )
+                    },
+            ) {
+                // Layer 0: full player (NowPlayingScreen handles its own BlurredBackground)
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = sheetPlayerAlpha },
+                ) {
+                    NowPlayingScreen(
+                        onNavigateBack = { scope.launch { sheetState.collapse() } },
+                        onSheetDrag = { deltaY -> sheetState.onDragDelta(deltaY) },
+                        onSheetDragEnd = { velocityY -> sheetState.onDragEnd(velocityY) },
+                        isFullyExpanded = sheetState.isExpanded,
+                    )
+                }
+
+                // Layer 1: mini-player strip at the bottom of the panel
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                        .graphicsLayer { alpha = sheetMiniAlpha },
+                ) {
+                    MiniPlayer(
+                        uiState = playerState,
+                        onEvent = playerViewModel::onEvent,
+                        onClick = {
+                            ScreenshotHolder.capture(view)
+                            scope.launch { sheetState.expand() }
+                        },
+                    )
+                }
+            }
         }
 
         // --- Playlist picker bottom sheet (shared across detail screens) ---

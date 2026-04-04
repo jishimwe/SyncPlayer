@@ -29,3 +29,10 @@
 
 # Glance AppWidget: keep ActionCallback subclasses used for widget buttons
 -keep class * extends androidx.glance.appwidget.action.ActionCallback
+
+# Firebase Firestore: keep model classes and gRPC internals used via reflection
+-keep class com.google.firebase.firestore.** { *; }
+-keep class com.google.firestore.** { *; }
+-keep class io.grpc.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*

@@ -1,13 +1,15 @@
 package com.jpishimwe.syncplayer.ui.player
 
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
+import com.jpishimwe.syncplayer.ui.theme.MotionTokens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -33,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -67,8 +74,20 @@ fun NowPlayingScreenContent(
     onNavigateBack: () -> Unit,
     formatTime: (Long) -> String,
     rating: Rating,
+    onSheetDrag: (deltaY: Float) -> Unit = {},
+    onSheetDragEnd: (velocityY: Float) -> Unit = {},
+    isFullyExpanded: Boolean = false,
 ) {
     var showQueue by remember { mutableStateOf(false) }
+
+    // Track which direction the last skip went so AnimatedContent can slide accordingly.
+    // +1 = forward (new enters from right), -1 = backward (new enters from left).
+    var slideDirection by remember { mutableIntStateOf(1) }
+    var prevQueueIndex by remember { mutableIntStateOf(uiState.currentQueueIndex) }
+    LaunchedEffect(uiState.currentSong?.id) {
+        slideDirection = if (uiState.currentQueueIndex >= prevQueueIndex) 1 else -1
+        prevQueueIndex = uiState.currentQueueIndex
+    }
 
     if (showQueue) {
         QueueSheet(
@@ -93,7 +112,7 @@ fun NowPlayingScreenContent(
     var dominantColor by remember { mutableStateOf(Color.Transparent) }
     val animatedBgColor by animateColorAsState(
         targetValue = dominantColor,
-        animationSpec = tween(durationMillis = 600),
+        animationSpec = MotionTokens.BackgroundColorCrossFade,
         label = "bgTint",
     )
 
@@ -157,12 +176,81 @@ fun NowPlayingScreenContent(
         )
 
         // Layer 2 — Content
+        // Hoisted here so both the Column modifier (pointerInput) and art Box content can read them
+        val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
+        val artOffset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+        val scope = rememberCoroutineScope()
+
+        val scrollState = rememberScrollState()
+        val sheetScrollConnection = remember(onSheetDrag, onSheetDragEnd) {
+            object : NestedScrollConnection {
+                // Intercept downward drags only when content is already at the top.
+                // Passes the delta to the sheet so it collapses in sync with the finger.
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    if (available.y > 0f && scrollState.value == 0) {
+                        onSheetDrag(available.y)
+                        return available.copy(x = 0f)
+                    }
+                    return Offset.Zero
+                }
+
+                // Intercept downward flings when at the top so the sheet picks up the velocity.
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    if (available.y > 0f && scrollState.value == 0) {
+                        onSheetDragEnd(available.y)
+                        return available
+                    }
+                    return Velocity.Zero
+                }
+            }
+        }
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+                    .nestedScroll(sheetScrollConnection)
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp)
+                    // Horizontal swipe-to-skip — only active when fully expanded so spurious
+                    // triggers can't fire while the sheet is still animating open.
+                    .pointerInput(isFullyExpanded) {
+                        if (!isFullyExpanded) return@pointerInput
+                        detectHorizontalDragGestures(
+                            onDragStart = {
+                                scope.launch { artOffset.snapTo(Offset.Zero) }
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                scope.launch {
+                                    artOffset.snapTo(artOffset.value + Offset(dragAmount, 0f))
+                                }
+                            },
+                            onDragEnd = {
+                                val dx = artOffset.value.x
+                                if (abs(dx) > swipeThresholdPx) {
+                                    if (dx < 0) onEvent(PlayerEvent.SkipToNext)
+                                    else onEvent(PlayerEvent.SkipToPrevious)
+                                    scope.launch {
+                                        val exitOffset = Offset(
+                                            x = (dx / abs(dx)) * swipeThresholdPx * 3f,
+                                            y = 0f,
+                                        )
+                                        artOffset.animateTo(exitOffset, MotionTokens.SwipeExitFling)
+                                        artOffset.snapTo(Offset.Zero)
+                                    }
+                                } else {
+                                    scope.launch {
+                                        artOffset.animateTo(Offset.Zero, MotionTokens.SnapBackSpring)
+                                    }
+                                }
+                            },
+                            onDragCancel = {
+                                scope.launch {
+                                    artOffset.animateTo(Offset.Zero, MotionTokens.SnapBackSpring)
+                                }
+                            },
+                        )
+                    },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // --- Top bar: back chevron + queue icon ---
@@ -192,113 +280,98 @@ fun NowPlayingScreenContent(
                 }
             }
 
-            // --- Album art hero (swipe gestures with 3D tilt feedback) ---
-            val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
-            val artOffset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
-            val scope = rememberCoroutineScope()
+            // --- Song-change transition block: art + track info + rating slide together ---
+            AnimatedContent(
+                targetState = uiState.currentSong,
+                transitionSpec = {
+                    MotionTokens.songSlideEnter(slideDirection) togetherWith
+                        MotionTokens.songSlideExit(slideDirection)
+                },
+                label = "songTransition",
+                modifier = Modifier.fillMaxWidth(),
+            ) { song ->
+                // Max tilt angles and visual limits
+                val maxTiltDeg = 12f
+                val maxTranslationFraction = 0.15f // art shifts at most 15% of its width/height
 
-            // Max tilt angles and visual limits
-            val maxTiltDeg = 12f
-            val maxTranslationFraction = 0.15f // art shifts at most 15% of its width/height
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // --- Album art hero (3D tilt from horizontal drag on the full column) ---
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                    ) {
+                        val dx = artOffset.value.x
+                        val dy = artOffset.value.y
+                        val dragProgress = (artOffset.value.getDistance() / (swipeThresholdPx * 2f)).coerceIn(0f, 1f)
 
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                        .pointerInput(Unit) {
-                            val sizePx = size.width.toFloat()
-                            detectDragGestures(
-                                onDragStart = {
-                                    scope.launch { artOffset.snapTo(Offset.Zero) }
-                                },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    scope.launch {
-                                        artOffset.snapTo(artOffset.value + dragAmount)
-                                    }
-                                },
-                                onDragEnd = {
-                                    val (dx, dy) = artOffset.value
-                                    val triggered =
-                                        if (abs(dx) > abs(dy) && abs(dx) > swipeThresholdPx) {
-                                            if (dx < 0) {
-                                                onEvent(PlayerEvent.SkipToNext)
-                                            } else {
-                                                onEvent(PlayerEvent.SkipToPrevious)
-                                            }
-                                            true
-                                        } else if (abs(dy) > abs(dx) && abs(dy) > swipeThresholdPx) {
-                                            if (dy < 0) {
-                                                showQueue = true
-                                            } else {
-                                                onNavigateBack()
-                                            }
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    scope.launch {
-                                        if (triggered) {
-                                            // Tilt further + fade, then reset
-                                            val exitOffset =
-                                                Offset(
-                                                    x = (dx / abs(dx).coerceAtLeast(1f)) * sizePx * 0.4f,
-                                                    y = (dy / abs(dy).coerceAtLeast(1f)) * sizePx * 0.4f,
-                                                )
-                                            artOffset.animateTo(exitOffset, tween(180))
-                                            artOffset.snapTo(Offset.Zero)
-                                        } else {
-                                            artOffset.animateTo(Offset.Zero, spring(dampingRatio = 0.6f, stiffness = 400f))
-                                        }
-                                    }
-                                },
-                                onDragCancel = {
-                                    scope.launch {
-                                        artOffset.animateTo(Offset.Zero, spring(dampingRatio = 0.6f, stiffness = 400f))
-                                    }
-                                },
-                            )
-                        },
-            ) {
-                val dx = artOffset.value.x
-                val dy = artOffset.value.y
-                val dragProgress = (artOffset.value.getDistance() / (swipeThresholdPx * 2f)).coerceIn(0f, 1f)
+                        val rotY = (dx / swipeThresholdPx).coerceIn(-1f, 1f) * maxTiltDeg
+                        val rotX = -(dy / swipeThresholdPx).coerceIn(-1f, 1f) * maxTiltDeg
+                        val txDampened = dx * maxTranslationFraction
+                        val tyDampened = dy * maxTranslationFraction
+                        val artScale = 1f - dragProgress * 0.08f
+                        val artAlpha = 1f - dragProgress * 0.4f
 
-                // 3D tilt: rotationY from horizontal drag, rotationX from vertical drag (inverted)
-                val rotY = (dx / swipeThresholdPx).coerceIn(-1f, 1f) * maxTiltDeg
-                val rotX = -(dy / swipeThresholdPx).coerceIn(-1f, 1f) * maxTiltDeg
+                        AlbumArtwork(
+                            song = song,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        translationX = txDampened
+                                        translationY = tyDampened
+                                        rotationY = rotY
+                                        rotationX = rotX
+                                        scaleX = artScale
+                                        scaleY = artScale
+                                        alpha = artAlpha
+                                        cameraDistance = 12f * density
+                                    },
+                        )
+                    }
 
-                // Dampened translation — art shifts subtly, not 1:1
-                val txDampened = dx * maxTranslationFraction
-                val tyDampened = dy * maxTranslationFraction
+                    Spacer(Modifier.height(24.dp))
 
-                // Scale down slightly as you drag
-                val artScale = 1f - dragProgress * 0.08f
-                val artAlpha = 1f - dragProgress * 0.4f
+                    // --- Track info: title / album / artist ---
+                    TrackInfo(song = song)
 
-                AlbumArtwork(
-                    song = uiState.currentSong,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                translationX = txDampened
-                                translationY = tyDampened
-                                rotationY = rotY
-                                rotationX = rotX
-                                scaleX = artScale
-                                scaleY = artScale
-                                alpha = artAlpha
-                                cameraDistance = 12f * density
+                    Spacer(Modifier.height(16.dp))
+
+                    // --- Star rating + heart favorite ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        StarRating(
+                            rating = rating,
+                            onSetRating = { stars -> onEvent(PlayerEvent.SetRating(stars)) },
+                        )
+
+                        Spacer(Modifier.width(12.dp))
+
+                        FavoriteButton(
+                            rating = rating,
+                            onClick = {
+                                if (rating == Rating.NONE) {
+                                    onEvent(PlayerEvent.SetRating(Rating.FAVORITE))
+                                } else {
+                                    onEvent(PlayerEvent.SetRating(Rating.NONE))
+                                }
                             },
-                )
+                        )
+                    }
+                }
             }
 
-            Spacer(Modifier.height(0.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // --- Seek bar ---
+            // --- Seek bar (updates instantly on song change) ---
             SeekBar(
                 currentPosition = uiState.currentPosition,
                 playbackState = uiState.playbackState,
@@ -310,38 +383,6 @@ fun NowPlayingScreenContent(
             )
 
             Spacer(Modifier.height(12.dp))
-
-            // --- Star rating + heart favorite ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                StarRating(
-                    rating = rating,
-                    onSetRating = { stars -> onEvent(PlayerEvent.SetRating(stars)) },
-                )
-
-                Spacer(Modifier.width(12.dp))
-
-                FavoriteButton(
-                    rating = rating,
-                    onClick = {
-                        if (rating == Rating.NONE) {
-                            onEvent(PlayerEvent.SetRating(Rating.FAVORITE))
-                        } else {
-                            onEvent(PlayerEvent.SetRating(Rating.NONE))
-                        }
-                    },
-                )
-            }
-
-            Spacer(Modifier.height(32.dp))
-
-            // --- Track info: title / album / artist ---
-            TrackInfo(song = uiState.currentSong)
-
-            Spacer(Modifier.height(32.dp))
 
             // --- Controls pill: repeat | prev | play | next | shuffle ---
             PlayerControls(
