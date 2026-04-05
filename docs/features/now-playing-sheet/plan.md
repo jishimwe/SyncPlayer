@@ -1,10 +1,10 @@
 ---
 type: plan
 feature: now-playing-sheet
-status: planned
+status: implemented
 tags:
   - type/plan
-  - status/planned
+  - status/implemented
   - feature/now-playing-sheet
 ---
 

@@ -34,6 +34,11 @@
 # these are optional and not needed at runtime
 -dontwarn com.squareup.okhttp.**
 
+# Credential Manager: keep Play Services provider and Google ID library used via reflection
+-if class androidx.credentials.CredentialManager
+-keep class androidx.credentials.playservices.** { *; }
+-keep class com.google.android.libraries.identity.googleid.** { *; }
+
 # Firebase Firestore: keep model classes and gRPC internals used via reflection
 -keep class com.google.firebase.firestore.** { *; }
 -keep class com.google.firestore.** { *; }

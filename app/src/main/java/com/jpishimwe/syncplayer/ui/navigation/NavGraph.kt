@@ -319,10 +319,13 @@ fun NavGraph(
                     )
                 }
 
-                // Layer 1: mini-player strip at the bottom of the panel
+                // Layer 1: mini-player strip at the top of the panel.
+                // When progress=0 the panel is translated down by (screenH - miniPeekPx),
+                // so only the top miniPeekPx of the panel is on-screen. The MiniPlayer
+                // must live here (TopCenter) to be visible in that strip.
                 Box(
                     Modifier
-                        .align(Alignment.BottomCenter)
+                        .align(Alignment.TopCenter)
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 8.dp)
                         .graphicsLayer { alpha = sheetMiniAlpha },
