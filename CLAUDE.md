@@ -112,8 +112,8 @@ docs/
 ├── style-guide.md     # Coding conventions
 └── features/
     └── <feature-name>/
-        ├── plan.md    # Before implementation
-        └── design.md  # After implementation
+        ├── <feature-name>-plan.md    # Before implementation
+        └── <feature-name>-design.md  # After implementation
 ```
 
 ### Obsidian Doc Format
