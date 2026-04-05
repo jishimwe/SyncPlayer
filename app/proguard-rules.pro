@@ -30,6 +30,10 @@
 # Glance AppWidget: keep ActionCallback subclasses used for widget buttons
 -keep class * extends androidx.glance.appwidget.action.ActionCallback
 
+# gRPC OkHttp transport references OkHttp 2.x classes that aren't on the classpath;
+# these are optional and not needed at runtime
+-dontwarn com.squareup.okhttp.**
+
 # Firebase Firestore: keep model classes and gRPC internals used via reflection
 -keep class com.google.firebase.firestore.** { *; }
 -keep class com.google.firestore.** { *; }
